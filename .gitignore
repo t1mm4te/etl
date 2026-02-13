@@ -1,0 +1,7 @@
+.venv/
+venv/
+*.pages
+*.drawio
+__pycache__/
+.env
+env

@@ -1,9 +1,6 @@
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
-from django.contrib.postgres.indexes import HashIndex
-from django.core.validators import MinValueValidator
 from django.db import models
-from django.utils.crypto import get_random_string
 
 from .models_mixins import CreatedAtModelMixin, UUIDPrimaryKeyModelMixin
 

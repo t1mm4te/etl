@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'core',
 ]
 
 MIDDLEWARE = [
@@ -72,6 +73,7 @@ DATABASES = {
     }
 }
 
+AUTH_USER_MODEL = 'core.User'
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -98,3 +100,6 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
+
+USER_LAST_NAME_MAX_LENGTH = 30
+USER_FIRST_NAME_MAX_LENGTH = 30

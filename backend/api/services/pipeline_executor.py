@@ -12,6 +12,7 @@ from core.models import Edge, Node, NodeRun, PipelineRun
 
 from .operations import get_operation
 
+
 logger = logging.getLogger(__name__)
 
 

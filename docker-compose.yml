@@ -1,0 +1,74 @@
+services:
+
+  # ── PostgreSQL ────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file: .env
+    environment:
+      POSTGRES_DB: ${DB_NAME:-etl}
+      POSTGRES_USER: ${DB_USER:-etl}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-etl}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-etl} -d ${DB_NAME:-etl}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── Redis (брокер Celery) ─────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── Django (Gunicorn) ─────────────────────────────────────
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    command: gunicorn etl.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120
+    volumes:
+      - static_data:/app/staticfiles
+      - media_data:/app/media
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ── Celery worker ─────────────────────────────────────────
+  celery:
+    build: ./backend
+    restart: unless-stopped
+    command: celery -A etl worker -l info --concurrency=2
+    volumes:
+      - media_data:/app/media
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ── Nginx ─────────────────────────────────────────────────
+  nginx:
+    build: ./nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - static_data:/var/html/static:ro
+      - media_data:/var/html/media:ro
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  static_data:
+  media_data:

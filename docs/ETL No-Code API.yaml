@@ -1,0 +1,2671 @@
+openapi: 3.0.3
+info:
+  title: ETL No-Code API
+  version: 1.0.0
+  description: |-
+    REST API для визуального ETL-инструмента с NO-CODE-подходом.
+
+    ## Авторизация
+    Все эндпоинты (кроме `/auth/token/login/`) требуют заголовок:
+    ```
+    Authorization: Token <ваш_токен>
+    ```
+
+    ## Основной сценарий
+    1. **Загрузить источник** — `POST /datasources/upload/`
+    2. **Создать пайплайн** — `POST /pipelines/`
+    3. **Добавить узлы** — `POST /pipelines/{id}/nodes/`
+    4. **Связать узлы рёбрами** — `POST /pipelines/{id}/edges/`
+    5. **Запустить** — `POST /pipelines/{id}/run/`
+    6. **Отслеживать статус** — `GET /pipeline-runs/{id}/`
+    7. **Посмотреть результат** — `GET /node-runs/{id}/preview/`
+paths:
+  /api/v1/auth/token/login/:
+    post:
+      operationId: v1_auth_token_login_create
+      description: Use this endpoint to obtain user authentication token.
+      tags:
+      - Пользователи
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenCreateRequest'
+      security:
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenCreate'
+          description: ''
+  /api/v1/auth/token/logout/:
+    post:
+      operationId: v1_auth_token_logout_create
+      description: Use this endpoint to logout user (remove user authentication token).
+      tags:
+      - Пользователи
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/datasources/:
+    get:
+      operationId: v1_datasources_list
+      description: 'Возвращает постраничный список всех источников данных текущего
+        пользователя. Каждый элемент содержит краткую информацию: тип, статус обработки,
+        число строк/столбцов.'
+      summary: Список источников данных
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Источники данных
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDataSourceListList'
+          description: ''
+  /api/v1/datasources/{id}/:
+    get:
+      operationId: v1_datasources_retrieve
+      description: Возвращает полную информацию об источнике, включая метаданные столбцов
+        (`columns_meta`) и размер файла.
+      summary: Детали источника данных
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Источник данных.
+        required: true
+      tags:
+      - Источники данных
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataSourceDetail'
+          description: ''
+    delete:
+      operationId: v1_datasources_destroy
+      description: Удаляет источник данных и связанные файлы (оригинал + Parquet).
+        Действие необратимо.
+      summary: Удаление источника данных
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Источник данных.
+        required: true
+      tags:
+      - Источники данных
+      security:
+      - tokenAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/datasources/{id}/preview/:
+    get:
+      operationId: v1_datasources_preview_retrieve
+      description: Возвращает первые N строк готового источника. Доступен только для
+        источников в статусе `ready`.
+      summary: Предпросмотр данных источника
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Источник данных.
+        required: true
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: Максимальное число строк в предпросмотре (по умолчанию settings.NUMBER_OF_PREVIEW_LINES).
+      tags:
+      - Источники данных
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreviewResponse'
+          description: ''
+  /api/v1/datasources/connect-db/:
+    post:
+      operationId: v1_datasources_connect_db_create
+      description: Создаёт источник данных типа `database`. Данные загружаются из
+        указанной таблицы через SQLAlchemy и конвертируются в Parquet (асинхронно
+        через Celery).
+      summary: Подключение к внешней БД
+      tags:
+      - Источники данных
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataSourceDBRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DataSourceDBRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DataSourceDBRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataSourceDetail'
+          description: ''
+  /api/v1/datasources/upload/:
+    post:
+      operationId: v1_datasources_upload_create
+      description: |-
+        Загружает файл формата CSV или XLSX и ставит его в очередь на обработку (Celery). После обработки источник переходит в статус `ready`, а данные конвертируются в Parquet.
+
+        **Ограничения:** макс. размер файла — 100 МБ, макс. число строк — 5 000.
+      summary: Загрузка файла (CSV / XLSX)
+      tags:
+      - Источники данных
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DataSourceUploadRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DataSourceUploadRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataSourceDetail'
+          description: ''
+  /api/v1/node-runs/{id}/preview/:
+    get:
+      operationId: v1_node_runs_preview_retrieve
+      description: Возвращает первые N строк выходного Parquet-файла для успешно выполненного
+        узла (NodeRun в статусе `success`).
+      summary: Предпросмотр результата узла
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: Максимальное число строк в предпросмотре (по умолчанию settings.NUMBER_OF_PREVIEW_LINES).
+      tags:
+      - Запуски пайплайнов
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreviewResponse'
+          description: ''
+  /api/v1/operations/:
+    get:
+      operationId: v1_operations_retrieve
+      description: Возвращает каталог всех операций, сгруппированных по категориям.
+        Каждая операция содержит `type`, `label`, `description`, `category`, информацию
+        о входных портах и `config_schema` (JSON Schema draft-07 для автоматической
+        генерации формы конфигурации).
+      summary: Каталог доступных операций
+      tags:
+      - Операции
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationCatalog'
+          description: ''
+  /api/v1/pipeline-runs/{id}/:
+    get:
+      operationId: v1_pipeline_runs_retrieve
+      description: Возвращает полную информацию о запуске, включая список NodeRun
+        — результат выполнения каждого узла.
+      summary: Детали запуска пайплайна
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Запуски пайплайнов
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PipelineRunDetail'
+          description: ''
+  /api/v1/pipelines/:
+    get:
+      operationId: v1_pipelines_list
+      description: Возвращает постраничный список пайплайнов текущего пользователя.
+        Каждый элемент содержит аннотированные поля `node_count` и `last_run_status`.
+      summary: Список пайплайнов
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Пайплайны
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPipelineListList'
+          description: ''
+    post:
+      operationId: v1_pipelines_create
+      description: Создаёт пустой пайплайн. Узлы и рёбра добавляются отдельно.
+      summary: Создание пайплайна
+      tags:
+      - Пайплайны
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PipelineCreateUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PipelineCreateUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PipelineCreateUpdateRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PipelineCreateUpdate'
+          description: ''
+  /api/v1/pipelines/{pipeline_pk}/edges/:
+    get:
+      operationId: v1_pipelines_edges_list
+      description: Возвращает все рёбра (связи между узлами) указанного пайплайна.
+      summary: Список рёбер пайплайна
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: path
+        name: pipeline_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Рёбра пайплайна
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedEdgeList'
+          description: ''
+    post:
+      operationId: v1_pipelines_edges_create
+      description: Создаёт направленное ребро между двумя узлами одного пайплайна.
+        Для операции JOIN используйте порты `left` / `right` в `target_port`.
+      summary: Создание ребра
+      parameters:
+      - in: path
+        name: pipeline_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Рёбра пайплайна
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EdgeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EdgeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EdgeRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Edge'
+          description: ''
+  /api/v1/pipelines/{pipeline_pk}/edges/{id}/:
+    delete:
+      operationId: v1_pipelines_edges_destroy
+      description: Удаляет связь между узлами.
+      summary: Удаление ребра
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: pipeline_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Рёбра пайплайна
+      security:
+      - tokenAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/pipelines/{pipeline_pk}/nodes/:
+    get:
+      operationId: v1_pipelines_nodes_list
+      description: Возвращает все узлы указанного пайплайна.
+      summary: Список узлов пайплайна
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: path
+        name: pipeline_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Узлы пайплайна
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedNodeList'
+          description: ''
+    post:
+      operationId: v1_pipelines_nodes_create
+      description: Добавляет новый узел в пайплайн. Поле `operation_type` определяет
+        тип операции, `config` — JSON-объект с параметрами операции (см. `GET /operations/`
+        для списка доступных типов).
+      summary: Создание узла
+      parameters:
+      - in: path
+        name: pipeline_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Узлы пайплайна
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NodeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NodeRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Node'
+          description: ''
+  /api/v1/pipelines/{pipeline_pk}/nodes/{id}/:
+    get:
+      operationId: v1_pipelines_nodes_retrieve
+      description: 'Возвращает информацию об узле: тип, конфигурацию, позицию на холсте.'
+      summary: Детали узла
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: pipeline_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Узлы пайплайна
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Node'
+          description: ''
+    put:
+      operationId: v1_pipelines_nodes_update
+      description: Полное обновление параметров узла.
+      summary: Обновление узла
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: pipeline_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Узлы пайплайна
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NodeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NodeRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Node'
+          description: ''
+    patch:
+      operationId: v1_pipelines_nodes_partial_update
+      description: Частичное обновление (PATCH) — например, изменение только `config`
+        или `position_x`/`position_y`.
+      summary: Частичное обновление узла
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: pipeline_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Узлы пайплайна
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedNodeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedNodeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedNodeRequest'
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Node'
+          description: ''
+    delete:
+      operationId: v1_pipelines_nodes_destroy
+      description: Удаляет узел и все связанные с ним рёбра.
+      summary: Удаление узла
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: pipeline_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Узлы пайплайна
+      security:
+      - tokenAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/pipelines/{pipeline_pk}/nodes/{id}/input-columns/:
+    get:
+      operationId: v1_pipelines_nodes_input_columns_retrieve
+      description: Возвращает список столбцов, доступных на входе узла. Для источников
+        (`source_file`, `source_db`) — столбцы DataSource. Для остальных — столбцы
+        из выходов предыдущих узлов (по входящим рёбрам). Используется фронтендом
+        для автодополнения в полях конфигурации (фильтры, сортировка и т.д.).
+      summary: Доступные столбцы входных данных узла
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: pipeline_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Узлы пайплайна
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputColumns'
+          description: ''
+  /api/v1/pipelines/{id}/:
+    get:
+      operationId: v1_pipelines_retrieve
+      description: Возвращает полную структуру пайплайна, включая вложенные узлы (`nodes`)
+        и рёбра (`edges`).
+      summary: Детали пайплайна
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Пайплайн.
+        required: true
+      tags:
+      - Пайплайны
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PipelineDetail'
+          description: ''
+    put:
+      operationId: v1_pipelines_update
+      description: Полное обновление названия и описания пайплайна.
+      summary: Обновление пайплайна
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Пайплайн.
+        required: true
+      tags:
+      - Пайплайны
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PipelineCreateUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PipelineCreateUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PipelineCreateUpdateRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PipelineCreateUpdate'
+          description: ''
+    patch:
+      operationId: v1_pipelines_partial_update
+      description: Частичное обновление (PATCH) — можно передать только изменённые
+        поля.
+      summary: Частичное обновление пайплайна
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Пайплайн.
+        required: true
+      tags:
+      - Пайплайны
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPipelineCreateUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPipelineCreateUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPipelineCreateUpdateRequest'
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PipelineCreateUpdate'
+          description: ''
+    delete:
+      operationId: v1_pipelines_destroy
+      description: Удаляет пайплайн вместе со всеми его узлами и рёбрами.
+      summary: Удаление пайплайна
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Пайплайн.
+        required: true
+      tags:
+      - Пайплайны
+      security:
+      - tokenAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/pipelines/{id}/run/:
+    post:
+      operationId: v1_pipelines_run_create
+      description: Создаёт новый PipelineRun и ставит задачу в очередь Celery. Узлы
+        выполняются последовательно в топологическом порядке. Статус запуска можно
+        отслеживать через `GET /pipeline-runs/{id}/`.
+      summary: Запуск выполнения пайплайна
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Пайплайн.
+        required: true
+      tags:
+      - Пайплайны
+      security:
+      - tokenAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PipelineRunList'
+          description: ''
+  /api/v1/pipelines/{id}/runs/:
+    get:
+      operationId: v1_pipelines_runs_list
+      description: Возвращает все запуски данного пайплайна, отсортированные от самого
+        нового к старому.
+      summary: История запусков пайплайна
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Пайплайн.
+        required: true
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Пайплайны
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPipelineRunListList'
+          description: ''
+  /api/v1/users/:
+    get:
+      operationId: v1_users_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Пользователи
+      security:
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUserList'
+          description: ''
+    post:
+      operationId: v1_users_create
+      tags:
+      - Пользователи
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserCreateRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserCreate'
+          description: ''
+  /api/v1/users/{id}/:
+    get:
+      operationId: v1_users_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Пользователь.
+        required: true
+      tags:
+      - Пользователи
+      security:
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    put:
+      operationId: v1_users_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Пользователь.
+        required: true
+      tags:
+      - Пользователи
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    patch:
+      operationId: v1_users_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Пользователь.
+        required: true
+      tags:
+      - Пользователи
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+      security:
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    delete:
+      operationId: v1_users_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Пользователь.
+        required: true
+      tags:
+      - Пользователи
+      security:
+      - tokenAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/users/activation/:
+    post:
+      operationId: v1_users_activation_create
+      tags:
+      - Пользователи
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActivationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ActivationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ActivationRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activation'
+          description: ''
+  /api/v1/users/me/:
+    get:
+      operationId: v1_users_me_retrieve
+      tags:
+      - Пользователи
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    put:
+      operationId: v1_users_me_update
+      tags:
+      - Пользователи
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    patch:
+      operationId: v1_users_me_partial_update
+      tags:
+      - Пользователи
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    delete:
+      operationId: v1_users_me_destroy
+      tags:
+      - Пользователи
+      security:
+      - tokenAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/users/me/avatar/:
+    put:
+      operationId: v1_users_me_avatar_update
+      tags:
+      - Пользователи
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: v1_users_me_avatar_destroy
+      tags:
+      - Пользователи
+      security:
+      - tokenAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/users/resend_activation/:
+    post:
+      operationId: v1_users_resend_activation_create
+      tags:
+      - Пользователи
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendEmailResetRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SendEmailResetRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SendEmailResetRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendEmailReset'
+          description: ''
+  /api/v1/users/reset_password/:
+    post:
+      operationId: v1_users_reset_password_create
+      tags:
+      - Пользователи
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendEmailResetRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SendEmailResetRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SendEmailResetRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendEmailReset'
+          description: ''
+  /api/v1/users/reset_password_confirm/:
+    post:
+      operationId: v1_users_reset_password_confirm_create
+      tags:
+      - Пользователи
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordResetConfirm'
+          description: ''
+  /api/v1/users/reset_username/:
+    post:
+      operationId: v1_users_reset_username_create
+      tags:
+      - Пользователи
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendEmailResetRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SendEmailResetRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SendEmailResetRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendEmailReset'
+          description: ''
+  /api/v1/users/reset_username_confirm/:
+    post:
+      operationId: v1_users_reset_username_confirm_create
+      tags:
+      - Пользователи
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsernameResetConfirmRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UsernameResetConfirmRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UsernameResetConfirmRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsernameResetConfirm'
+          description: ''
+  /api/v1/users/set_password/:
+    post:
+      operationId: v1_users_set_password_create
+      tags:
+      - Пользователи
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetPasswordRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SetPasswordRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SetPasswordRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SetPassword'
+          description: ''
+  /api/v1/users/set_username/:
+    post:
+      operationId: v1_users_set_username_create
+      tags:
+      - Пользователи
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetUsernameRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SetUsernameRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SetUsernameRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SetUsername'
+          description: ''
+components:
+  schemas:
+    Activation:
+      type: object
+      properties:
+        uid:
+          type: string
+        token:
+          type: string
+      required:
+      - token
+      - uid
+    ActivationRequest:
+      type: object
+      properties:
+        uid:
+          type: string
+          minLength: 1
+        token:
+          type: string
+          minLength: 1
+      required:
+      - token
+      - uid
+    DataSourceDBRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Название
+          maxLength: 255
+        db_engine:
+          type: string
+          title: Движок БД
+          description: postgresql, mysql, ...
+          maxLength: 50
+        db_host:
+          type: string
+          title: Хост
+          maxLength: 255
+        db_port:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+          title: Порт
+        db_name:
+          type: string
+          title: Имя БД
+          maxLength: 255
+        db_user:
+          type: string
+          title: Пользователь
+          maxLength: 255
+        db_password:
+          type: string
+          writeOnly: true
+          title: Пароль
+          maxLength: 255
+        db_schema:
+          type: string
+          title: Схема
+          maxLength: 255
+        db_table:
+          type: string
+          title: Таблица
+          maxLength: 255
+      required:
+      - db_engine
+      - db_host
+      - db_name
+      - db_password
+      - db_port
+      - db_table
+      - db_user
+      - name
+    DataSourceDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+          title: Название
+        source_type:
+          enum:
+          - file
+          - database
+          type: string
+          description: |-
+            * `file` - Файл
+            * `database` - База данных
+          x-spec-enum-id: a8ebe30c7c40ada3
+          readOnly: true
+          title: Тип источника
+        status:
+          enum:
+          - pending
+          - processing
+          - ready
+          - error
+          type: string
+          description: |-
+            * `pending` - Ожидание
+            * `processing` - Обработка
+            * `ready` - Готов
+            * `error` - Ошибка
+          x-spec-enum-id: 829bb9b715c63436
+          readOnly: true
+          title: Статус
+        original_filename:
+          type: string
+          readOnly: true
+          title: Имя файла
+        sheet_name:
+          type: string
+          readOnly: true
+          title: Лист (для XLSX)
+        row_count:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Число строк
+        column_count:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Число столбцов
+        columns_meta:
+          readOnly: true
+          title: Метаданные столбцов
+          description: '[{"name": "col", "dtype": "int64"}, ...]'
+        file_size_bytes:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Размер файла (байт)
+        error_message:
+          type: string
+          readOnly: true
+          title: Ошибка
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Создано
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Обновлено
+      required:
+      - column_count
+      - columns_meta
+      - created_at
+      - error_message
+      - file_size_bytes
+      - id
+      - name
+      - original_filename
+      - row_count
+      - sheet_name
+      - source_type
+      - status
+      - updated_at
+    DataSourceList:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+          title: Название
+        source_type:
+          enum:
+          - file
+          - database
+          type: string
+          description: |-
+            * `file` - Файл
+            * `database` - База данных
+          x-spec-enum-id: a8ebe30c7c40ada3
+          readOnly: true
+          title: Тип источника
+        status:
+          enum:
+          - pending
+          - processing
+          - ready
+          - error
+          type: string
+          description: |-
+            * `pending` - Ожидание
+            * `processing` - Обработка
+            * `ready` - Готов
+            * `error` - Ошибка
+          x-spec-enum-id: 829bb9b715c63436
+          readOnly: true
+          title: Статус
+        original_filename:
+          type: string
+          readOnly: true
+          title: Имя файла
+        row_count:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Число строк
+        column_count:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Число столбцов
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Создано
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Обновлено
+      required:
+      - column_count
+      - created_at
+      - id
+      - name
+      - original_filename
+      - row_count
+      - source_type
+      - status
+      - updated_at
+    DataSourceUploadRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        sheet_name:
+          type: string
+          maxLength: 255
+      required:
+      - file
+    Edge:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        source_node:
+          type: string
+          format: uuid
+          title: Откуда
+        target_node:
+          type: string
+          format: uuid
+          title: Куда
+        source_port:
+          type: string
+          title: Порт источника
+          description: Для узлов с несколькими выходами.
+          maxLength: 50
+        target_port:
+          type: string
+          title: Порт приёмника
+          description: 'Для узлов с несколькими входами (напр. JOIN: left/right).'
+          maxLength: 50
+      required:
+      - id
+      - source_node
+      - target_node
+    EdgeRequest:
+      type: object
+      properties:
+        source_node:
+          type: string
+          format: uuid
+          title: Откуда
+        target_node:
+          type: string
+          format: uuid
+          title: Куда
+        source_port:
+          type: string
+          minLength: 1
+          title: Порт источника
+          description: Для узлов с несколькими выходами.
+          maxLength: 50
+        target_port:
+          type: string
+          minLength: 1
+          title: Порт приёмника
+          description: 'Для узлов с несколькими входами (напр. JOIN: left/right).'
+          maxLength: 50
+      required:
+      - source_node
+      - target_node
+    InputColumns:
+      type: object
+      properties:
+        columns:
+          type: object
+          additionalProperties: {}
+          description: 'Словарь {порт: [{name, dtype}]}. Для обычных узлов — ключ
+            "main", для JOIN — "left" и "right".'
+      required:
+      - columns
+    Node:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        operation_type:
+          enum:
+          - source_file
+          - source_db
+          - filter_rows
+          - select_columns
+          - rename_columns
+          - sort
+          - join
+          - aggregate
+          - cast_types
+          - computed_column
+          - split_column
+          - merge_columns
+          - deduplicate
+          - fill_missing
+          - export_file
+          type: string
+          description: |-
+            * `source_file` - Загрузка из файла
+            * `source_db` - Загрузка из БД
+            * `filter_rows` - Фильтрация строк
+            * `select_columns` - Выбор столбцов
+            * `rename_columns` - Переименование столбцов
+            * `sort` - Сортировка
+            * `join` - Объединение таблиц (JOIN)
+            * `aggregate` - Агрегация
+            * `cast_types` - Приведение типов
+            * `computed_column` - Вычисляемый столбец
+            * `split_column` - Разделение столбца
+            * `merge_columns` - Слияние столбцов
+            * `deduplicate` - Удаление дубликатов
+            * `fill_missing` - Заполнение пропусков
+            * `export_file` - Экспорт в файл
+          x-spec-enum-id: d1127718ecf1f80c
+          title: Тип операции
+        label:
+          type: string
+          title: Метка
+          description: Человекочитаемое имя узла для отображения на фронте.
+          maxLength: 100
+        config:
+          title: Конфигурация
+          description: Параметры операции (зависят от operation_type).
+        position_x:
+          type: number
+          format: double
+          title: X
+        position_y:
+          type: number
+          format: double
+          title: Y
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Создано
+      required:
+      - created_at
+      - id
+      - label
+      - operation_type
+    NodeRequest:
+      type: object
+      properties:
+        operation_type:
+          enum:
+          - source_file
+          - source_db
+          - filter_rows
+          - select_columns
+          - rename_columns
+          - sort
+          - join
+          - aggregate
+          - cast_types
+          - computed_column
+          - split_column
+          - merge_columns
+          - deduplicate
+          - fill_missing
+          - export_file
+          type: string
+          description: |-
+            * `source_file` - Загрузка из файла
+            * `source_db` - Загрузка из БД
+            * `filter_rows` - Фильтрация строк
+            * `select_columns` - Выбор столбцов
+            * `rename_columns` - Переименование столбцов
+            * `sort` - Сортировка
+            * `join` - Объединение таблиц (JOIN)
+            * `aggregate` - Агрегация
+            * `cast_types` - Приведение типов
+            * `computed_column` - Вычисляемый столбец
+            * `split_column` - Разделение столбца
+            * `merge_columns` - Слияние столбцов
+            * `deduplicate` - Удаление дубликатов
+            * `fill_missing` - Заполнение пропусков
+            * `export_file` - Экспорт в файл
+          x-spec-enum-id: d1127718ecf1f80c
+          title: Тип операции
+        label:
+          type: string
+          minLength: 1
+          title: Метка
+          description: Человекочитаемое имя узла для отображения на фронте.
+          maxLength: 100
+        config:
+          title: Конфигурация
+          description: Параметры операции (зависят от operation_type).
+        position_x:
+          type: number
+          format: double
+          title: X
+        position_y:
+          type: number
+          format: double
+          title: Y
+      required:
+      - label
+      - operation_type
+    NodeRun:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        node:
+          type: string
+          format: uuid
+          readOnly: true
+          title: Узел
+        node_label:
+          type: string
+          readOnly: true
+        node_operation:
+          type: string
+          readOnly: true
+        status:
+          enum:
+          - pending
+          - running
+          - success
+          - failed
+          - skipped
+          type: string
+          description: |-
+            * `pending` - Ожидание
+            * `running` - Выполняется
+            * `success` - Успех
+            * `failed` - Ошибка
+            * `skipped` - Пропущен
+          x-spec-enum-id: 9befec23fcbd9f1b
+          readOnly: true
+          title: Статус
+        output_row_count:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Число строк
+        output_columns_meta:
+          readOnly: true
+          title: Метаданные столбцов
+        error_message:
+          type: string
+          readOnly: true
+          title: Ошибка
+        started_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Начало
+        finished_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Завершение
+      required:
+      - error_message
+      - finished_at
+      - id
+      - node
+      - node_label
+      - node_operation
+      - output_columns_meta
+      - output_row_count
+      - started_at
+      - status
+    OperationCatalog:
+      type: object
+      properties:
+        categories:
+          type: object
+          additionalProperties: {}
+          description: 'Словарь категорий {id: {label, description, icon, order}}.'
+        operations:
+          type: array
+          items: {}
+          description: 'Список операций. Каждая содержит: type, label, description,
+            category, num_inputs, input_ports, config_schema.'
+      required:
+      - categories
+      - operations
+    PaginatedDataSourceListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataSourceList'
+    PaginatedEdgeList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Edge'
+    PaginatedNodeList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Node'
+    PaginatedPipelineListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PipelineList'
+    PaginatedPipelineRunListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PipelineRunList'
+    PaginatedUserList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+    PasswordResetConfirm:
+      type: object
+      properties:
+        uid:
+          type: string
+        token:
+          type: string
+        new_password:
+          type: string
+      required:
+      - new_password
+      - token
+      - uid
+    PasswordResetConfirmRequest:
+      type: object
+      properties:
+        uid:
+          type: string
+          minLength: 1
+        token:
+          type: string
+          minLength: 1
+        new_password:
+          type: string
+          minLength: 1
+      required:
+      - new_password
+      - token
+      - uid
+    PatchedNodeRequest:
+      type: object
+      properties:
+        operation_type:
+          enum:
+          - source_file
+          - source_db
+          - filter_rows
+          - select_columns
+          - rename_columns
+          - sort
+          - join
+          - aggregate
+          - cast_types
+          - computed_column
+          - split_column
+          - merge_columns
+          - deduplicate
+          - fill_missing
+          - export_file
+          type: string
+          description: |-
+            * `source_file` - Загрузка из файла
+            * `source_db` - Загрузка из БД
+            * `filter_rows` - Фильтрация строк
+            * `select_columns` - Выбор столбцов
+            * `rename_columns` - Переименование столбцов
+            * `sort` - Сортировка
+            * `join` - Объединение таблиц (JOIN)
+            * `aggregate` - Агрегация
+            * `cast_types` - Приведение типов
+            * `computed_column` - Вычисляемый столбец
+            * `split_column` - Разделение столбца
+            * `merge_columns` - Слияние столбцов
+            * `deduplicate` - Удаление дубликатов
+            * `fill_missing` - Заполнение пропусков
+            * `export_file` - Экспорт в файл
+          x-spec-enum-id: d1127718ecf1f80c
+          title: Тип операции
+        label:
+          type: string
+          minLength: 1
+          title: Метка
+          description: Человекочитаемое имя узла для отображения на фронте.
+          maxLength: 100
+        config:
+          title: Конфигурация
+          description: Параметры операции (зависят от operation_type).
+        position_x:
+          type: number
+          format: double
+          title: X
+        position_y:
+          type: number
+          format: double
+          title: Y
+    PatchedPipelineCreateUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Название
+          maxLength: 255
+        description:
+          type: string
+          title: Описание
+    PatchedUserRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          title: Имя пользователя
+          description: Обязательное поле. Не более 150 символов. Только буквы, цифры
+            и символы @/./+/-/_.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        last_name:
+          type: string
+          minLength: 1
+          title: Фамилия
+          maxLength: 30
+        first_name:
+          type: string
+          minLength: 1
+          title: Имя
+          maxLength: 30
+    PipelineCreateUpdate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          title: Название
+          maxLength: 255
+        description:
+          type: string
+          title: Описание
+      required:
+      - id
+      - name
+    PipelineCreateUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Название
+          maxLength: 255
+        description:
+          type: string
+          title: Описание
+      required:
+      - name
+    PipelineDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          title: Название
+          maxLength: 255
+        description:
+          type: string
+          title: Описание
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Node'
+          readOnly: true
+        edges:
+          type: array
+          items:
+            $ref: '#/components/schemas/Edge'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Создано
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Обновлено
+      required:
+      - created_at
+      - edges
+      - id
+      - name
+      - nodes
+      - updated_at
+    PipelineList:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          title: Название
+          maxLength: 255
+        description:
+          type: string
+          title: Описание
+        node_count:
+          type: integer
+          readOnly: true
+        last_run_status:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Создано
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Обновлено
+      required:
+      - created_at
+      - id
+      - last_run_status
+      - name
+      - node_count
+      - updated_at
+    PipelineRunDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        pipeline:
+          type: string
+          format: uuid
+          readOnly: true
+          title: Пайплайн
+        status:
+          enum:
+          - pending
+          - running
+          - success
+          - failed
+          - cancelled
+          type: string
+          description: |-
+            * `pending` - Ожидание
+            * `running` - Выполняется
+            * `success` - Успех
+            * `failed` - Ошибка
+            * `cancelled` - Отменён
+          x-spec-enum-id: d7d53b4114438c31
+          readOnly: true
+          title: Статус
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Создано
+        started_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Начало
+        finished_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Завершение
+        error_message:
+          type: string
+          readOnly: true
+          title: Ошибка
+        celery_task_id:
+          type: string
+          readOnly: true
+        node_runs:
+          type: array
+          items:
+            $ref: '#/components/schemas/NodeRun'
+          readOnly: true
+      required:
+      - celery_task_id
+      - created_at
+      - error_message
+      - finished_at
+      - id
+      - node_runs
+      - pipeline
+      - started_at
+      - status
+    PipelineRunList:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        pipeline:
+          type: string
+          format: uuid
+          readOnly: true
+          title: Пайплайн
+        status:
+          enum:
+          - pending
+          - running
+          - success
+          - failed
+          - cancelled
+          type: string
+          description: |-
+            * `pending` - Ожидание
+            * `running` - Выполняется
+            * `success` - Успех
+            * `failed` - Ошибка
+            * `cancelled` - Отменён
+          x-spec-enum-id: d7d53b4114438c31
+          readOnly: true
+          title: Статус
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Создано
+        started_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Начало
+        finished_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Завершение
+        error_message:
+          type: string
+          readOnly: true
+          title: Ошибка
+      required:
+      - created_at
+      - error_message
+      - finished_at
+      - id
+      - pipeline
+      - started_at
+      - status
+    PreviewResponse:
+      type: object
+      properties:
+        columns:
+          type: array
+          items:
+            type: string
+          description: Список имён столбцов.
+        dtypes:
+          type: object
+          additionalProperties:
+            type: string
+          description: 'Словарь {столбец: тип данных}.'
+        total_rows:
+          type: integer
+          description: Общее число строк в датасете.
+        preview_rows:
+          type: integer
+          description: Число строк в выборке.
+        data:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          description: Массив объектов — строки таблицы.
+      required:
+      - columns
+      - data
+      - dtypes
+      - preview_rows
+      - total_rows
+    SendEmailReset:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required:
+      - email
+    SendEmailResetRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+      required:
+      - email
+    SetPassword:
+      type: object
+      properties:
+        new_password:
+          type: string
+        current_password:
+          type: string
+      required:
+      - current_password
+      - new_password
+    SetPasswordRequest:
+      type: object
+      properties:
+        new_password:
+          type: string
+          minLength: 1
+        current_password:
+          type: string
+          minLength: 1
+      required:
+      - current_password
+      - new_password
+    SetUsername:
+      type: object
+      properties:
+        current_password:
+          type: string
+        new_email:
+          type: string
+          format: email
+          title: Почта
+          maxLength: 254
+      required:
+      - current_password
+      - new_email
+    SetUsernameRequest:
+      type: object
+      properties:
+        current_password:
+          type: string
+          minLength: 1
+        new_email:
+          type: string
+          format: email
+          minLength: 1
+          title: Почта
+          maxLength: 254
+      required:
+      - current_password
+      - new_email
+    TokenCreate:
+      type: object
+      properties:
+        password:
+          type: string
+        email:
+          type: string
+    TokenCreateRequest:
+      type: object
+      properties:
+        password:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          minLength: 1
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+          title: Почта
+        username:
+          type: string
+          title: Имя пользователя
+          description: Обязательное поле. Не более 150 символов. Только буквы, цифры
+            и символы @/./+/-/_.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        last_name:
+          type: string
+          title: Фамилия
+          maxLength: 30
+        first_name:
+          type: string
+          title: Имя
+          maxLength: 30
+        avatar:
+          type: string
+          readOnly: true
+      required:
+      - avatar
+      - email
+      - first_name
+      - id
+      - last_name
+      - username
+    UserCreate:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          title: Почта
+          maxLength: 254
+        username:
+          type: string
+          title: Имя пользователя
+          description: Обязательное поле. Не более 150 символов. Только буквы, цифры
+            и символы @/./+/-/_.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        last_name:
+          type: string
+          title: Фамилия
+          maxLength: 30
+        first_name:
+          type: string
+          title: Имя
+          maxLength: 30
+      required:
+      - email
+      - first_name
+      - id
+      - last_name
+      - username
+    UserCreateRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          title: Почта
+          maxLength: 254
+        username:
+          type: string
+          minLength: 1
+          title: Имя пользователя
+          description: Обязательное поле. Не более 150 символов. Только буквы, цифры
+            и символы @/./+/-/_.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        last_name:
+          type: string
+          minLength: 1
+          title: Фамилия
+          maxLength: 30
+        first_name:
+          type: string
+          minLength: 1
+          title: Имя
+          maxLength: 30
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - email
+      - first_name
+      - last_name
+      - password
+      - username
+    UserRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          title: Имя пользователя
+          description: Обязательное поле. Не более 150 символов. Только буквы, цифры
+            и символы @/./+/-/_.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        last_name:
+          type: string
+          minLength: 1
+          title: Фамилия
+          maxLength: 30
+        first_name:
+          type: string
+          minLength: 1
+          title: Имя
+          maxLength: 30
+      required:
+      - first_name
+      - last_name
+      - username
+    UsernameResetConfirm:
+      type: object
+      properties:
+        new_email:
+          type: string
+          format: email
+          title: Почта
+          maxLength: 254
+      required:
+      - new_email
+    UsernameResetConfirmRequest:
+      type: object
+      properties:
+        new_email:
+          type: string
+          format: email
+          minLength: 1
+          title: Почта
+          maxLength: 254
+      required:
+      - new_email
+  securitySchemes:
+    tokenAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: Token-based authentication with required prefix "Token"
+tags:
+- name: Пользователи
+  description: Пользователи, регистрация, получение и удаление токена (djoser).
+- name: Источники данных
+  description: Загрузка файлов (CSV/XLSX), подключение к внешним БД. Файлы автоматически
+    конвертируются в Parquet.
+- name: Пайплайны
+  description: CRUD пайплайнов — визуальных графов обработки данных. Пайплайн содержит
+    узлы и рёбра.
+- name: Узлы пайплайна
+  description: 'Узлы — операции обработки данных внутри пайплайна. URL: `/pipelines/{pipeline_pk}/nodes/`.'
+- name: Рёбра пайплайна
+  description: 'Рёбра — направленные связи между узлами. URL: `/pipelines/{pipeline_pk}/edges/`.'
+- name: Запуски пайплайнов
+  description: Запуск пайплайна, отслеживание статуса, предпросмотр результатов отдельных
+    узлов.
+- name: Операции
+  description: Справочник доступных операций для построения пайплайна. Используйте
+    значение `type` при создании узлов.

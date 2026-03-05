@@ -24,6 +24,12 @@ class User(AbstractUser):
         'Почта',
         unique=True,
     )
+    avatar = models.ImageField(
+        verbose_name='Ссылка на аватар',
+        upload_to='users/',
+        null=True,
+        default=None
+    )
 
     class Meta:
         verbose_name = 'Пользователь'

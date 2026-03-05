@@ -1,5 +1,11 @@
 from django.conf import settings
+from pathlib import Path
 
+
+BASE_DIR = Path(__file__).resolve().parent
+
+
+# test_00_user_registration
 
 user_required_fields: tuple[str, ...] = (
     'email', 'username', 'first_name', 'last_name', 'password'
@@ -89,3 +95,29 @@ valid_data_for_user_fields: dict = {
     'first_name': 'valid first_name',
     'last_name': 'valid last_name'
 }
+
+# test_01_user
+
+
+def get_expected_user(record, response):
+    return {
+        'email': record.email,
+        'id': record.id,
+        'username': record.username,
+        'first_name': record.first_name,
+        'last_name': record.last_name,
+        'avatar': response.wsgi_request.build_absolute_uri(
+            record.avatar.url
+        ) if record.avatar else None,
+    }
+
+
+def get_expected_users(records, response):
+    return [
+        get_expected_user(record, response)
+        for record in records
+    ]
+
+
+with open(BASE_DIR / 'images_base64' / 'image1.txt', 'r') as file:
+    TEST_IMAGE = file.read().strip()

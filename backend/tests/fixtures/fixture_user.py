@@ -82,3 +82,17 @@ def user_client(token_user):
     client = APIClient()
     client.credentials(HTTP_AUTHORIZATION=f'Token {token_user["access"]}')
     return client
+
+
+@pytest.fixture
+def some_users(django_user_model):
+    return [
+        django_user_model.objects.create_user(
+            username=f'TestUser_{i}',
+            email=f'testuser_{i}@etl.fake',
+            password='O1234jkl',
+            first_name=f'user_{i}',
+            last_name=f'userov_{i}'
+        )
+        for i in range(5)
+    ]

@@ -172,8 +172,8 @@ class DataSourceViewSet(
             'Загружает файл формата CSV или XLSX и ставит его в очередь '
             'на обработку (Celery). После обработки источник переходит '
             'в статус `ready`, а данные конвертируются в Parquet.\n\n'
-            '**Ограничения:** макс. размер файла — 100 МБ, '
-            'макс. число строк — 5 000.'
+            '**Ограничения:** макс. размер файла — 100 МБ (MAX_FILE_SIZE), '
+            'макс. число строк — 5 000 (DATASOURCE_MAX_ROWS).'
         ),
         request=DataSourceUploadSerializer,
         responses={status.HTTP_201_CREATED: DataSourceDetailSerializer},

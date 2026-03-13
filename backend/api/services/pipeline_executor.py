@@ -8,9 +8,8 @@ import pandas as pd
 from django.core.files.base import ContentFile
 from django.utils import timezone
 
-from core.models import Edge, Node, NodeRun, PipelineRun
-
 from .operations import get_operation
+from core.models import Edge, Node, NodeRun, PipelineRun
 
 
 logger = logging.getLogger(__name__)

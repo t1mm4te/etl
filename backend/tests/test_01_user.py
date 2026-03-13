@@ -2,7 +2,7 @@ from http import HTTPStatus
 
 import pytest
 
-from .utils import get_expected_user, get_expected_users, TEST_IMAGE
+from .utils import TEST_IMAGE, get_expected_user, get_expected_users
 
 
 @pytest.mark.django_db(transaction=True)

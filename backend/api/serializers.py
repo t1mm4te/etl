@@ -5,6 +5,7 @@ from djoser.serializers import (
 )
 from rest_framework import serializers
 
+from .utils import Base64ImageField
 from core.models import (
     DataSource,
     Edge,
@@ -14,7 +15,6 @@ from core.models import (
     PipelineRun,
     User,
 )
-from .utils import Base64ImageField
 
 
 class UserCreateSerializer(UserCreateSerializerBase):

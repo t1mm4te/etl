@@ -1,11 +1,11 @@
 from django.conf import settings
-from django.db.models import Count, Subquery, OuterRef
+from django.db.models import Count, OuterRef, Subquery
 from djoser.views import UserViewSet as UserViewSetBase
 from drf_spectacular.utils import (
+    OpenApiParameter,
     extend_schema,
     extend_schema_view,
     inline_serializer,
-    OpenApiParameter,
 )
 from rest_framework import (
     generics,
@@ -19,15 +19,6 @@ from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
-from core.models import (
-    DataSource,
-    Edge,
-    Node,
-    NodeRun,
-    Pipeline,
-    PipelineRun,
-)
-from .services.operation_catalog import get_catalog, get_categories
 from .serializers import (
     DataSourceDBSerializer,
     DataSourceDetailSerializer,
@@ -42,7 +33,9 @@ from .serializers import (
     PipelineRunListSerializer,
     UserAvatarSerializer,
 )
+from .services.operation_catalog import get_catalog, get_categories
 from .tasks import process_datasource, run_pipeline
+from core.models import DataSource, Edge, Node, NodeRun, Pipeline, PipelineRun
 
 
 # Общие inline-сериализаторы для preview-ответов

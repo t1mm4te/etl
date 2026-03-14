@@ -33,7 +33,7 @@ class Test01User:
 
     def test_01_users_get_by_correct_id(
             self, client, user):
-        response = client.get(f'{self.URL_USERS_ID.format(id=user.id)}')
+        response = client.get(self.URL_USERS_ID.format(id=user.id))
 
         assert response.status_code == HTTPStatus.OK, (
             f'GET-запрос, отправленный на {self.URL_USERS_ID}, должен'
@@ -52,7 +52,7 @@ class Test01User:
 
     def test_01_users_get_by_incorrect_id(
             self, client):
-        response = client.get(f'{self.URL_USERS_ID.format(id=1234567890)}')
+        response = client.get(self.URL_USERS_ID.format(id=1234567890))
 
         assert response.status_code == HTTPStatus.NOT_FOUND, (
             f'GET-запрос, отправленный на {self.URL_USERS_ID} '

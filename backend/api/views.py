@@ -478,7 +478,7 @@ class NodeViewSet(viewsets.ModelViewSet):
                     node=edge.source_node,
                     status=NodeRun.Status.SUCCESS,
                 )
-                .order_by('-created_at')
+                .order_by('-pipeline_run__created_at')
                 .first()
             )
 

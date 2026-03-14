@@ -2,7 +2,7 @@ from http import HTTPStatus
 
 import pytest
 
-from .utils import TEST_IMAGE, get_expected_user, get_expected_users
+from .utils import BASE64_TEST_IMAGE, get_expected_user, get_expected_users
 
 
 @pytest.mark.django_db(transaction=True)
@@ -119,7 +119,7 @@ class Test01UserMeAvatar:
         # PUT
         response = user_client.put(
             self.URL_USERS_ME_AVATAR,
-            {'avatar': TEST_IMAGE}
+            {'avatar': BASE64_TEST_IMAGE}
         )
         print(response.json())
         assert response.status_code == HTTPStatus.OK, (

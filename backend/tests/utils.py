@@ -120,5 +120,5 @@ def get_expected_users(records, response):
     ]
 
 
-with open(BASE_DIR / 'images_base64' / 'image1.txt', 'r') as file:
-    TEST_IMAGE = file.read().strip()
+with open(BASE_DIR / 'fixtures' / 'images_base64' / 'image1.txt', 'r') as file:
+    BASE64_TEST_IMAGE = file.read().strip()

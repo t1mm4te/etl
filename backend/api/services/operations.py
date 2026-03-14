@@ -61,8 +61,9 @@ def source_db(inputs: dict[str, pd.DataFrame], config: dict) -> pd.DataFrame:
     Загрузка из внешней БД.
     config: {"datasource_id": "<uuid>"}
     """
-    from core.models import DataSource
     from sqlalchemy import create_engine
+
+    from core.models import DataSource
 
     ds = DataSource.objects.get(pk=config['datasource_id'])
     url = (

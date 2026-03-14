@@ -2,9 +2,9 @@ import logging
 
 from celery import shared_task
 
-from core.models import DataSource, PipelineRun
-from .services.pipeline_executor import execute_pipeline
 from .services.file_processing import process_uploaded_file
+from .services.pipeline_executor import execute_pipeline
+from core.models import DataSource, PipelineRun
 
 
 logger = logging.getLogger(__name__)

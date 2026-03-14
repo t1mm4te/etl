@@ -10,8 +10,10 @@ from core.models import DataSource
 @pytest.mark.django_db(transaction=True)
 class Test02DataSourceAPI:
     URL_DATASOURCES = '/api/v1/datasources/'
+    URL_DATASOURCES_ID = '/api/v1/datasources/{datasource_id}/'
     URL_DATASOURCES_UPLOAD = '/api/v1/datasources/upload/'
     URL_DATASOURCES_CONNECT_DB = '/api/v1/datasources/connect-db/'
+    URL_DATASOURCES_PREVIEW = '/api/v1/datasources/{datasource_id}/preview/'
 
     def test_02_datasources_list_returns_only_owner_records(
         self,
@@ -37,7 +39,7 @@ class Test02DataSourceAPI:
         owner_datasource,
     ):
         response = user_client.get(
-            f'{self.URL_DATASOURCES}{owner_datasource.id}/'
+            self.URL_DATASOURCES_ID.format(datasource_id=owner_datasource.id)
         )
 
         assert response.status_code == HTTPStatus.OK
@@ -51,7 +53,7 @@ class Test02DataSourceAPI:
         foreign_datasource,
     ):
         response = user_client.get(
-            f'{self.URL_DATASOURCES}{foreign_datasource.id}/'
+            self.URL_DATASOURCES_ID.format(datasource_id=foreign_datasource.id)
         )
 
         assert response.status_code == HTTPStatus.NOT_FOUND
@@ -63,7 +65,7 @@ class Test02DataSourceAPI:
         owner_datasource,
     ):
         response = user_client.delete(
-            f'{self.URL_DATASOURCES}{owner_datasource.id}/'
+            self.URL_DATASOURCES_ID.format(datasource_id=owner_datasource.id)
         )
 
         assert response.status_code == HTTPStatus.NO_CONTENT
@@ -245,7 +247,9 @@ class Test02DataSourceAPI:
         ready_datasource,
     ):
         response = user_client.get(
-            f'{self.URL_DATASOURCES}{ready_datasource.id}/preview/?limit=2'
+            self.URL_DATASOURCES_PREVIEW.format(
+                datasource_id=ready_datasource.id,
+            ) + '?limit=2'
         )
 
         assert response.status_code == HTTPStatus.OK
@@ -262,7 +266,9 @@ class Test02DataSourceAPI:
         pending_datasource,
     ):
         response = user_client.get(
-            f'{self.URL_DATASOURCES}{pending_datasource.id}/preview/'
+            self.URL_DATASOURCES_PREVIEW.format(
+                datasource_id=pending_datasource.id,
+            )
         )
 
         assert response.status_code == HTTPStatus.CONFLICT
@@ -277,7 +283,9 @@ class Test02DataSourceAPI:
         owner_datasource.save(update_fields=['status'])
 
         response = user_client.get(
-            f'{self.URL_DATASOURCES}{owner_datasource.id}/preview/'
+            self.URL_DATASOURCES_PREVIEW.format(
+                datasource_id=owner_datasource.id,
+            )
         )
 
         assert response.status_code == HTTPStatus.CONFLICT

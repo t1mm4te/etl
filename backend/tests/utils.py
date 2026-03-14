@@ -122,3 +122,11 @@ def get_expected_users(records, response):
 
 with open(BASE_DIR / 'fixtures' / 'images_base64' / 'image1.txt', 'r') as file:
     BASE64_TEST_IMAGE = file.read().strip()
+
+# test_03_pipeline
+
+
+def get_results(response_json):
+    if isinstance(response_json, dict):
+        return response_json.get('results', [])
+    return response_json

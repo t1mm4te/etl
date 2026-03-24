@@ -1,0 +1,39 @@
+@use '../../styles/_vars.scss' as *;
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: $spacingBase;
+
+  .label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    color: $labelColor;
+  }
+
+  .input {
+    width: 100%;
+    min-height: 42px;
+    border: 1px solid $borderColor;
+    border-radius: $borderRadiusSmall;
+    background-color: $darkGrayLighter;
+    color: $lightGray;
+    padding: 0 12px;
+    font-size: $defaultFontSize;
+
+    &:focus {
+      outline: none;
+      border-color: $primaryColor;
+    }
+  }
+
+  .invalid {
+    border-color: $dangerColor;
+  }
+
+  .error {
+    color: $dangerColor;
+    font-size: 12px;
+  }
+}

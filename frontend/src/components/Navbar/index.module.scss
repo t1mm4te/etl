@@ -1,0 +1,66 @@
+@use '../../styles/_vars.scss' as *;
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: rgba($primaryColor, 0.3);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  padding: 0px 100px;
+  height: 85px;
+
+  .inner {
+    width: 100%;
+    margin: 0 auto;
+    min-height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $spacingMedium;
+    padding: 0 $spacingMedium;
+
+    .logo {
+      color: $white;
+      font-weight: 700;
+      font-size: 18px;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: $spacingMedium;
+
+      .navLink {
+        color: $white;
+      }
+
+      .actions {
+        display: flex;
+        gap: $spacingLarge;
+
+        .actionBtn {
+          width: auto;
+          min-width: 130px;
+          min-height: 36px;
+          padding: 0 12px;
+        }
+      }
+
+      .user {
+        color: $white;
+        font-weight: 600;
+      }
+
+      .logout {
+        border: 1px solid rgb(255 255 255 / 45%);
+        color: $white;
+        background: transparent;
+        border-radius: $borderRadiusSmall;
+        padding: 6px 10px;
+        cursor: pointer;
+      }
+    }
+  }
+}

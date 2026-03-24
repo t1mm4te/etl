@@ -1,0 +1,16 @@
+@use '../../styles/_vars.scss' as *;
+
+.layout {
+  min-height: 100vh;
+  color: $defaultTextColor;
+  display: flex;
+  flex-direction: column;
+
+  .content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: $defaultBackgroundColor;
+    background-image: linear-gradient(135deg, $defaultBackgroundColor 0%, #0f0f0f 100%);
+  }
+}

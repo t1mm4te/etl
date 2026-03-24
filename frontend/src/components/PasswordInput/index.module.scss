@@ -1,0 +1,48 @@
+@use '../../styles/_vars.scss' as *;
+
+.label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: $labelColor;
+
+  .wrapper {
+    position: relative;
+
+    .input {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid $borderColor;
+      border-radius: $borderRadiusSmall;
+      padding: 0 88px 0 12px;
+      background-color: $darkGrayLighter;
+      color: $defaultTextColor;
+      font-size: $defaultFontSize;
+
+      &:focus {
+        outline: none;
+        border-color: $primaryColor;
+      }
+    }
+
+    .invalid {
+      border-color: $dangerColor;
+    }
+
+    .toggle {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      border: none;
+      background: transparent;
+      color: $labelColor;
+      cursor: pointer;
+    }
+  }
+
+  .error {
+    color: $dangerColor;
+    font-size: 12px;
+  }
+}

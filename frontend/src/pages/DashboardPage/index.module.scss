@@ -1,0 +1,15 @@
+@use '../../styles/_vars.scss' as *;
+
+.page {
+  flex: 1;
+  padding: 32px;
+
+  h1 {
+    color: $white;
+    margin-bottom: 12px;
+  }
+
+  p {
+    color: $labelColor;
+  }
+}

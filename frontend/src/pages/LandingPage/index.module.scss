@@ -1,0 +1,32 @@
+@use '../../styles/_vars.scss' as *;
+
+.page {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacingXl;
+
+  .hero {
+    max-width: 760px;
+    text-align: center;
+
+    h1 {
+      font-size: 48px;
+      color: $white;
+      margin-bottom: $spacingMedium;
+    }
+
+    p {
+      color: $labelColor;
+      font-size: 18px;
+      margin-bottom: $spacingXl;
+    }
+  }
+
+  .actions {
+    display: flex;
+    justify-content: center;
+    gap: $spacingLarge;
+  }
+}

@@ -1,0 +1,91 @@
+@use '../../styles/_vars.scss' as *;
+@use 'sass:color' as color;
+
+.page {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  // background-color: $defaultBackgroundColor;
+  // background-image: linear-gradient(135deg, $defaultBackgroundColor 0%, #0f0f0f 100%);
+
+  .card {
+    width: 100%;
+    max-width: 420px;
+    background-color: $darkGray;
+    border: 1px solid $borderColor;
+    border-radius: $borderRadiusMedium;
+    padding: $spacingXl;
+    box-shadow: 0 4px 12px rgb(0 0 0 / 30%);
+    animation: slideUp 300ms ease-out;
+
+    .title {
+      margin-bottom: $spacingLarge;
+      font-size: 28px;
+      font-weight: 700;
+      color: $defaultTextColor;
+      text-align: center;
+    }
+
+    .alert {
+      border-radius: $borderRadiusSmall;
+      font-size: 14px;
+      margin-bottom: $spacingBase;
+      padding: 12px $spacingBase;
+      line-height: 1.4;
+      animation: fadeIn 200ms ease-out;
+    }
+
+    .error {
+      background-color: $dangerBg;
+      border: 1px solid $dangerBorder;
+      color: $dangerColor;
+    }
+
+    .success {
+      background-color: $successBg;
+      border: 1px solid $successBorder;
+      color: $successColor;
+    }
+
+    .footer {
+      margin-top: $spacingMedium;
+      font-size: 16px;
+      color: $labelColor;
+      text-align: center;
+
+      .link {
+        color: $primaryColor;
+        text-decoration: none;
+        font-weight: 600;
+
+        &:hover {
+          color: color.adjust($primaryColor, $lightness: 6%);
+          text-decoration: underline;
+        }
+      }
+    }
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}

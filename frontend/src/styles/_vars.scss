@@ -1,0 +1,39 @@
+$defaultFontFamily:
+  system-ui,
+  -apple-system,
+  BlinkMacSystemFont,
+  'Segoe UI',
+  sans-serif;
+$defaultFontSize: 16px;
+$defaultLineHeight: 1.5;
+
+$primaryColor: #1e9059;
+$primaryColorHover: #27a86a;
+$primaryColorLight: rgb(116 184 34 / 15%);
+
+$dangerColor: #ef4444;
+$dangerBg: #fef2f2;
+$dangerBorder: #fecaca;
+$successColor: #15803d;
+$successBg: #f0fdf4;
+$successBorder: #bbf7d0;
+
+$white: #fff;
+$darkGray: #282727;
+$darkGrayLighter: #303030;
+$lightGray: #cdcdcd;
+$borderColor: #4d4b4b;
+
+$defaultBackgroundColor: #1a1919;
+$defaultTextColor: #cdcdcd;
+$labelColor: #a3a3a3;
+
+$borderRadiusSmall: 6px;
+$borderRadiusMedium: 10px;
+
+$spacingBase: 12px;
+$spacingMedium: 16px;
+$spacingLarge: 20px;
+$spacingXl: 28px;
+
+$transitionFast: 150ms ease-in-out;

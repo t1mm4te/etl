@@ -1,0 +1,29 @@
+@use 'reset-css/sass/reset';
+@use './_vars.scss' as *;
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: $defaultFontFamily;
+  font-size: $defaultFontSize;
+  line-height: $defaultLineHeight;
+  background-color: $defaultBackgroundColor;
+  color: $defaultTextColor;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}

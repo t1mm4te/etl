@@ -68,6 +68,20 @@ services:
     depends_on:
       - backend
 
+       # ── Frontend (Vite dev server) ───────────────────────────
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_PROXY_TARGET: http://nginx
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - nginx
+
 volumes:
   postgres_data:
   static_data:

@@ -1,0 +1,112 @@
+@use '../../../styles/_vars.scss' as *;
+
+.sidebar {
+  background: $darkGray;
+  border: 1px solid $borderColor;
+  border-radius: $borderRadiusMedium;
+  padding: $spacingBase;
+  height: 100%;
+  overflow-y: auto;
+
+  .title {
+    color: $white;
+    text-align: center;
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: $spacingBase;
+  }
+
+  .muted {
+    color: $labelColor;
+  }
+
+  .group {
+    border-top: 1px solid $borderColor;
+    // background-color: rgb(83, 6, 6);
+
+    .groupHeader {
+      width: 100%;
+      border: none;
+      background: transparent;
+      padding: 16px 8px;
+      border-radius: $borderRadiusMedium;
+      color: inherit;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      text-align: left;
+
+      .categoryLabel {
+        color: $white;
+        font-size: 18px;
+        font-weight: 600;
+      }
+
+      .categoryDescription {
+        color: $labelColor;
+        font-size: 16px;
+      }
+
+      .groupChevron,
+      .groupChevronOpen {
+        color: $labelColor;
+        transition: transform $transitionFast;
+        flex-shrink: 0;
+        color: $white;
+        font-size: 20px;
+      }
+
+      .groupChevronOpen {
+        transform: rotate(180deg);
+      }
+    }
+
+    .groupItems {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      // background-color: rgba($primaryColor, 0.2);
+
+      .nodeButton {
+        border: 2px solid $borderColor;
+        border-radius: $borderRadiusSmall;
+        color: $white;
+        padding: 10px;
+        text-align: left;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        // background-color: rgba($primaryColor, 0.2);
+        background-color: $darkGrayLighter;
+
+        &:hover {
+          border-color: $primaryColor;
+        }
+
+        .operationLabel {
+          color: $white;
+          font-size: 16px;
+        }
+
+        .nodeContent {
+          display: flex;
+          flex-direction: row;
+          justify-content: space-between;
+
+          .operationDescription {
+            color: $labelColor;
+            font-size: 14px;
+            width: 70%;
+          }
+          > img {
+            width: 80px;
+            object-fit: contain;
+          }
+        }
+      }
+    }
+  }
+}

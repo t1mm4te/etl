@@ -15,7 +15,7 @@ export function useLoginAction() {
     onSuccess: async ({ auth_token }) => {
       setToken(auth_token);
       await queryClient.invalidateQueries({ queryKey: AUTH_ME_QUERY_KEY });
-      navigate('/dashboard');
+      navigate('/pipelines');
     },
   });
 }

@@ -1,0 +1,33 @@
+@use '../../styles/_vars.scss' as *;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: $spacingMedium;
+  padding: 20px;
+  min-height: calc(100vh - 85px);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+  gap: $spacingMedium;
+  min-height: 560px;
+  height: calc(100vh - 220px);
+}
+
+.canvas {
+  border: 1px solid $borderColor;
+  border-radius: $borderRadiusMedium;
+  overflow: hidden;
+  height: 100%;
+  min-height: 0;
+}
+
+.muted {
+  color: $labelColor;
+}
+
+.error {
+  color: $dangerColor;
+}

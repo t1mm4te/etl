@@ -1,0 +1,115 @@
+@use '../../styles/_vars.scss' as *;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: $spacingLarge;
+  padding: 28px;
+
+  h1,
+  h2,
+  h3 {
+    color: $white;
+  }
+
+  p {
+    color: $labelColor;
+  }
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.createCard,
+.list {
+  border: 1px solid $borderColor;
+  border-radius: $borderRadiusMedium;
+  background: $darkGray;
+  padding: $spacingLarge;
+}
+
+.formGrid {
+  margin-top: $spacingMedium;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: $spacingMedium;
+}
+
+.label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: $labelColor;
+
+  input {
+    border: 1px solid $borderColor;
+    border-radius: $borderRadiusSmall;
+    background: $darkGrayLighter;
+    color: $white;
+    padding: 10px;
+  }
+}
+
+.actions {
+  grid-column: 1 / -1;
+}
+
+.list {
+  .items {
+    display: flex;
+    flex-direction: column;
+    margin-top: $spacingMedium;
+    gap: $spacingMedium;
+  }
+
+  .item {
+    border: 1px solid $borderColor;
+    border-radius: $borderRadiusSmall;
+    padding: $spacingMedium;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: $spacingMedium;
+  }
+
+  .meta {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    h3 {
+      margin: 0;
+    }
+
+    p {
+      margin: 0;
+    }
+  }
+
+  .badges {
+    display: flex;
+    gap: 8px;
+
+    span {
+      background: $darkGrayLighter;
+      border-radius: 999px;
+      border: 1px solid $borderColor;
+      padding: 4px 10px;
+      color: $white;
+      font-size: 14px;
+    }
+  }
+}
+
+.muted {
+  margin-top: 10px;
+  color: $labelColor;
+}
+
+.error {
+  margin-top: 8px;
+  color: $dangerColor;
+}

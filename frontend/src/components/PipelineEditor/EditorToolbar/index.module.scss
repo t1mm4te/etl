@@ -1,0 +1,24 @@
+@use '../../../styles/_vars.scss' as *;
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacingLarge;
+
+  h1 {
+    color: $defaultTextColor;
+  }
+
+  .leftTools {
+    display: flex;
+    align-items: center;
+    gap: $spacingMedium;
+  }
+
+  .runBox {
+    display: flex;
+    align-items: center;
+    gap: $spacingMedium;
+  }
+}

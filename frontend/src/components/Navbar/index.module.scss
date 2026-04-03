@@ -4,12 +4,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: rgba($primaryColor, 0.3);
+  background-color: $solidMutedColor;
   position: sticky;
   top: 0;
   z-index: 1000;
   padding: 0px 100px;
   height: 85px;
+  background: linear-gradient(140deg, $solidMutedColor 0%, $defaultBackgroundColor 100%);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.3);
 
   .inner {
     width: 100%;

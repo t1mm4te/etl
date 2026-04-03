@@ -26,6 +26,10 @@ export const createPipeline = async (payload: PipelineCreatePayload) => {
   return response.data as { id: string; name: string; description: string };
 };
 
+export const deletePipeline = async (pipelineId: string) => {
+  await apiClient.delete(`/pipelines/${pipelineId}/`);
+};
+
 export const getPipelineDetail = async (pipelineId: string) => {
   const response = await apiClient.get<PipelineDetail>(`/pipelines/${pipelineId}/`);
   return response.data;

@@ -3,113 +3,315 @@
 .page {
   display: flex;
   flex-direction: column;
-  gap: $spacingLarge;
-  padding: 28px;
+  gap: $spacingXl;
+  padding: 34px 28px 40px;
+  width: min(1440px, 98%);
+  margin: 0 auto;
 
-  h1,
-  h2,
-  h3 {
-    color: $white;
-  }
-
-  p {
-    color: $labelColor;
-  }
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.createCard,
-.list {
-  border: 1px solid $borderColor;
-  border-radius: $borderRadiusMedium;
-  background: $darkGray;
-  padding: $spacingLarge;
-}
-
-.formGrid {
-  margin-top: $spacingMedium;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: $spacingMedium;
-}
-
-.label {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  color: $labelColor;
-
-  input {
-    border: 1px solid $borderColor;
-    border-radius: $borderRadiusSmall;
-    background: $darkGrayLighter;
-    color: $white;
-    padding: 10px;
-  }
-}
-
-.actions {
-  grid-column: 1 / -1;
-}
-
-.list {
-  .items {
+  .header {
     display: flex;
     flex-direction: column;
-    margin-top: $spacingMedium;
-    gap: $spacingMedium;
-  }
+    gap: 10px;
 
-  .item {
-    border: 1px solid $borderColor;
-    border-radius: $borderRadiusSmall;
-    padding: $spacingMedium;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: $spacingMedium;
-  }
-
-  .meta {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-
-    h3 {
+    .headerTitle {
       margin: 0;
-    }
-
-    p {
-      margin: 0;
-    }
-  }
-
-  .badges {
-    display: flex;
-    gap: 8px;
-
-    span {
-      background: $darkGrayLighter;
-      border-radius: 999px;
-      border: 1px solid $borderColor;
-      padding: 4px 10px;
+      font-size: clamp(34px, 4vw, 48px);
+      line-height: 1.06;
+      letter-spacing: -0.02em;
       color: $white;
-      font-size: 14px;
+    }
+
+    .headerSubtitle {
+      max-width: 720px;
+      font-size: 22px;
+      color: $defaultTextColor;
+    }
+  }
+
+  .container {
+    display: flex;
+    flex-direction: row;
+    gap: 50px;
+    align-items: flex-start;
+
+    .createCard {
+      flex: 0 1 360px;
+      min-width: 420px;
+      border-radius: $borderRadiusLarge;
+      padding: 26px;
+      box-shadow:
+        0 18px 40px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba($white, 0.2);
+      position: sticky;
+      top: 110px;
+      border: 1px solid rgba($primaryColor, 0.32);
+      background:
+        linear-gradient(90deg, rgba($primaryColor, 0.1) 0%, transparent 100%),
+        linear-gradient(180deg, rgba($primaryColor, 0.1) 0%, transparent 100%);
+
+      .createCardTitle {
+        margin: 0;
+        font-size: 26px;
+        letter-spacing: -0.02em;
+        color: $white;
+      }
+
+      .formGrid {
+        margin-top: $spacingLarge;
+        display: flex;
+        flex-direction: column;
+        gap: $spacingMedium;
+
+        .label {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          color: $labelColor;
+          font-size: $defaultFontSize;
+
+          input,
+          textarea {
+            width: 100%;
+            min-height: 42px;
+            border: 1px solid $borderColor;
+            border-radius: $borderRadiusSmall;
+            background-color: $darkGrayLighter;
+            color: $lightGray;
+            padding: 12px 14px;
+            font-size: $defaultFontSize;
+            transition:
+              border-color $transitionFast,
+              box-shadow $transitionFast,
+              background-color $transitionFast;
+
+            &::placeholder {
+              color: rgba($labelColor, 0.82);
+            }
+
+            &:focus {
+              outline: none;
+              border-color: rgba($primaryColor, 0.7);
+              box-shadow: 0 0 0 3px rgba($primaryColor, 0.2);
+              background: rgba($darkGrayLighter, 0.95);
+            }
+          }
+
+          textarea {
+            resize: vertical;
+            min-height: 132px;
+          }
+        }
+
+        button {
+          width: 100%;
+        }
+      }
+    }
+
+    .list {
+      flex: 1;
+      min-width: 0;
+
+      .muted {
+        margin-left: 4px;
+        margin-top: 10px;
+        color: $labelColor;
+        text-align: center;
+        font-size: 22px;
+      }
+
+      .error {
+        margin-left: 4px;
+        margin-top: 8px;
+        color: $dangerColor;
+      }
+
+      .items {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+
+        .item {
+          padding: 12px;
+          display: flex;
+          justify-content: space-between;
+          align-items: end;
+          gap: 14px;
+          transition:
+            border-color $transitionFast,
+            transform $transitionFast,
+            box-shadow $transitionFast;
+          border-radius: $borderRadiusLarge;
+          background: linear-gradient(180deg, rgba($darkGray, 0.4), rgba($darkGray, 0.5));
+          border: 1px solid rgba($primaryColor, 0.32);
+
+          &:hover {
+            transform: translateY(-1px);
+            border-color: rgba($primaryColor, 0.62);
+            box-shadow:
+              0 14px 26px rgba(0, 0, 0, 0.28),
+              inset 0 1px 0 rgba($primaryColor, 0.16);
+          }
+
+          .itemCard {
+            cursor: pointer;
+            width: 100%;
+            padding: 10px 10px 10px 12px;
+            border-radius: 8px;
+            position: relative;
+            color: inherit;
+            text-decoration: none;
+
+            &::before {
+              content: '';
+              position: absolute;
+              left: 0;
+              top: 10px;
+              bottom: 10px;
+              width: 3px;
+              border-radius: 999px;
+              background: linear-gradient(180deg, rgba($primaryColor, 0.95), rgba($white, 0.3));
+              opacity: 0.85;
+            }
+
+            &:focus-visible {
+              box-shadow: 0 0 0 3px rgba($primaryColor, 0.3);
+              background: rgba($primaryColor, 0.08);
+            }
+
+            .meta {
+              display: flex;
+              flex-direction: column;
+              gap: 6px;
+              padding-left: 10px;
+
+              .pipelineTitle {
+                margin: 0;
+                font-size: 20px;
+                line-height: 1.2;
+                color: $white;
+              }
+
+              .pipelineDescription {
+                margin: 0;
+                color: rgba($white, 0.7);
+                max-width: 70ch;
+                font-size: $defaultFontSize;
+              }
+
+              .badges {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+
+                span {
+                  background: rgba($darkGrayLighter, 0.84);
+                  border-radius: 999px;
+                  border: 1px solid $borderColor;
+                  padding: 4px 10px;
+                  color: $white;
+                  font-size: 13px;
+                }
+              }
+            }
+          }
+
+          .deleteButton {
+            width: 48px;
+            height: 48px;
+            border: 1px solid $borderColor;
+            border-radius: 10px;
+            background: rgba($lightGray, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 1;
+            transition:
+              opacity $transitionFast,
+              border-color $transitionFast,
+              background $transitionFast;
+
+            img {
+              width: 36px;
+              height: 36px;
+            }
+
+            &:hover {
+              border-color: rgba($dangerColor, 0.62);
+              background: rgba($dangerBorder, 0.7);
+            }
+          }
+        }
+      }
     }
   }
 }
 
-.muted {
-  margin-top: 10px;
-  color: $labelColor;
+@media (max-width: 1080px) {
+  .page {
+    width: min(1200px, 98%);
+
+    .container {
+      flex-direction: column;
+      gap: 24px;
+
+      .createCard {
+        position: static;
+        flex: 1;
+        width: 100%;
+        min-width: 0;
+      }
+
+      .list {
+        width: 100%;
+      }
+    }
+  }
 }
 
-.error {
-  margin-top: 8px;
-  color: $dangerColor;
+@media (max-width: 760px) {
+  .page {
+    padding: 22px 14px 30px;
+
+    .container {
+      gap: 16px;
+
+      .createCard {
+        padding: 20px;
+      }
+
+      .list {
+        min-width: 0;
+
+        .muted {
+          font-size: 18px;
+        }
+
+        .items {
+          gap: 14px;
+
+          .item {
+            align-items: stretch;
+
+            .itemCard {
+              &::before {
+                top: 8px;
+                bottom: 8px;
+              }
+
+              .meta {
+                .pipelineDescription {
+                  max-width: 100%;
+                }
+              }
+            }
+
+            .deleteButton {
+              align-self: flex-end;
+            }
+          }
+        }
+      }
+    }
+  }
 }

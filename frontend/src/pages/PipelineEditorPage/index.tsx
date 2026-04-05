@@ -64,7 +64,6 @@ export function PipelineEditorPage() {
   const {
     editingNode,
     configText,
-    datasourceId,
     modalError,
     onFetchPreview,
     onSaveNodeConfig,
@@ -75,7 +74,6 @@ export function PipelineEditorPage() {
     previewInfo,
     selectedFile,
     setConfigText,
-    setDatasourceId,
     setSelectedFile,
   } = useNodeConfigModalState({
     nodes: pipelineQuery.data?.nodes,
@@ -164,13 +162,11 @@ export function PipelineEditorPage() {
       {editingNode ? (
         <NodeConfigModal
           configText={configText}
-          datasourceId={datasourceId}
           isSourceNode={Boolean(isSourceNode)}
           modalError={modalError}
           node={editingNode}
           onClose={closeModal}
           onConfigTextChange={setConfigText}
-          onDatasourceIdChange={setDatasourceId}
           onFetchPreview={() => {
             void onFetchPreview();
           }}

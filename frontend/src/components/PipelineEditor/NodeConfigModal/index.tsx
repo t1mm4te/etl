@@ -6,7 +6,6 @@ import styles from './index.module.scss';
 type NodeConfigModalProps = {
   node: ApiNode;
   configText: string;
-  datasourceId: string;
   selectedFile: File | null;
   preview: PreviewResponse | null;
   previewInfo?: string;
@@ -14,7 +13,6 @@ type NodeConfigModalProps = {
   isSourceNode: boolean;
   onClose: () => void;
   onConfigTextChange: (value: string) => void;
-  onDatasourceIdChange: (value: string) => void;
   onFileChange: (file: File | null) => void;
   onUploadFile: () => void;
   onFetchPreview: () => void;
@@ -24,7 +22,6 @@ type NodeConfigModalProps = {
 export function NodeConfigModal({
   node,
   configText,
-  datasourceId,
   selectedFile,
   preview,
   previewInfo,
@@ -32,7 +29,6 @@ export function NodeConfigModal({
   isSourceNode,
   onClose,
   onConfigTextChange,
-  onDatasourceIdChange,
   onFileChange,
   onUploadFile,
   onFetchPreview,
@@ -54,17 +50,6 @@ export function NodeConfigModal({
 
         {isSourceNode ? (
           <div className={styles.sourceTools}>
-            <label>
-              datasource_id
-              <input
-                value={datasourceId}
-                onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                  onDatasourceIdChange(event.target.value.trim())
-                }
-                placeholder="UUID источника"
-              />
-            </label>
-
             <label>
               Файл CSV/XLSX
               <input

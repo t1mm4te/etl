@@ -21,7 +21,7 @@ export function useNodeConfigModalState({ nodes, saveNodeConfig }: UseNodeConfig
   const [configText, setConfigText] = useState('{}');
   const [modalError, setModalError] = useState<string>();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [datasourceId, setDatasourceId] = useState<string>('');
+  const [uploadedDatasourceId, setUploadedDatasourceId] = useState<string>('');
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
   const [previewInfo, setPreviewInfo] = useState<string>();
 
@@ -46,7 +46,7 @@ export function useNodeConfigModalState({ nodes, saveNodeConfig }: UseNodeConfig
 
       const cfg = node.config ?? {};
       const currentDatasourceId = typeof cfg.datasource_id === 'string' ? cfg.datasource_id : '';
-      setDatasourceId(currentDatasourceId);
+      setUploadedDatasourceId(currentDatasourceId);
     },
     [nodes]
   );
@@ -64,8 +64,8 @@ export function useNodeConfigModalState({ nodes, saveNodeConfig }: UseNodeConfig
 
     try {
       const parsedConfig = parseConfigText(configText);
-      if (datasourceId) {
-        parsedConfig.datasource_id = datasourceId;
+      if (uploadedDatasourceId) {
+        parsedConfig.datasource_id = uploadedDatasourceId;
       }
 
       await saveNodeConfig(editingNode.id, parsedConfig);
@@ -73,7 +73,7 @@ export function useNodeConfigModalState({ nodes, saveNodeConfig }: UseNodeConfig
     } catch (error) {
       setModalError(extractError(error, 'Не удалось сохранить конфигурацию ноды'));
     }
-  }, [closeModal, configText, datasourceId, editingNode, saveNodeConfig]);
+  }, [closeModal, configText, editingNode, saveNodeConfig, uploadedDatasourceId]);
 
   const onUploadFile = useCallback(async () => {
     if (!selectedFile || !editingNode) {
@@ -85,7 +85,7 @@ export function useNodeConfigModalState({ nodes, saveNodeConfig }: UseNodeConfig
 
     try {
       const uploaded = await uploadDatasource(selectedFile, selectedFile.name);
-      setDatasourceId(uploaded.id);
+      setUploadedDatasourceId(uploaded.id);
       setPreviewInfo(
         'Файл загружен. Если статус не ready, подождите и нажмите «Проверить предпросмотр».'
       );
@@ -101,8 +101,8 @@ export function useNodeConfigModalState({ nodes, saveNodeConfig }: UseNodeConfig
   }, [configText, editingNode, saveNodeConfig, selectedFile]);
 
   const onFetchPreview = useCallback(async () => {
-    if (!datasourceId) {
-      setModalError('Сначала загрузите файл или укажите datasource_id');
+    if (!uploadedDatasourceId) {
+      setModalError('Сначала загрузите файл');
       return;
     }
 
@@ -110,24 +110,23 @@ export function useNodeConfigModalState({ nodes, saveNodeConfig }: UseNodeConfig
     setModalError(undefined);
 
     try {
-      const datasource = await getDatasourceDetail(datasourceId);
+      const datasource = await getDatasourceDetail(uploadedDatasourceId);
       if (datasource.status !== 'ready') {
         setPreview(null);
         setPreviewInfo(`Источник в статусе ${datasource.status}. Данные ещё обрабатываются.`);
         return;
       }
 
-      const previewData = await previewDatasource(datasourceId, 10);
+      const previewData = await previewDatasource(uploadedDatasourceId, 10);
       setPreview(previewData);
     } catch (error) {
       setModalError(extractError(error, 'Не удалось получить предпросмотр'));
     }
-  }, [datasourceId]);
+  }, [uploadedDatasourceId]);
 
   return {
     editingNode,
     configText,
-    datasourceId,
     modalError,
     onFetchPreview,
     onSaveNodeConfig,
@@ -138,7 +137,6 @@ export function useNodeConfigModalState({ nodes, saveNodeConfig }: UseNodeConfig
     previewInfo,
     selectedFile,
     setConfigText,
-    setDatasourceId,
     setSelectedFile,
   };
 }

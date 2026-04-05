@@ -1,6 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { MouseEvent as ReactMouseEvent } from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   addEdge,
   Background,
@@ -22,22 +22,10 @@ import {
   createNode,
   deleteEdge,
   deleteNode,
-  getDatasourceDetail,
-  getOperationsCatalog,
-  getPipelineDetail,
-  getPipelineRun,
   patchNode,
-  previewDatasource,
   runPipeline,
-  uploadDatasource,
 } from '../../api/pipelines';
-import type {
-  Node as ApiNode,
-  NodeConfig,
-  NodeUpdatePayload,
-  OperationItem,
-  PreviewResponse,
-} from '../../api/types';
+import type { Node as ApiNode, NodeUpdatePayload, OperationItem } from '../../api/types';
 import {
   PipelineOperationNode,
   type PipelineOperationNodeData,
@@ -47,10 +35,10 @@ import { NodeConfigModal } from '../../components/PipelineEditor/NodeConfigModal
 import { OperationsSidebar } from '../../components/PipelineEditor/OperationsSidebar';
 import { RunResultsCard } from '../../components/PipelineEditor/RunResultsCard';
 import { extractError } from '../../lib/extractError';
+import { pipelineQueryKey, usePipelineEditorQueries } from './hooks/usePipelineEditorQueries';
+import { useNodeConfigModalState } from './hooks/useNodeConfigModalState';
 import styles from './index.module.scss';
 
-const pipelineQueryKey = (pipelineId: string) => ['pipeline-detail', pipelineId] as const;
-const operationsQueryKey = ['operations-catalog'] as const;
 const NODE_TYPES = {
   operation: PipelineOperationNode,
 };
@@ -77,14 +65,6 @@ function toFlowNode(
   };
 }
 
-function parseConfigText(configText: string): NodeConfig {
-  const parsed = JSON.parse(configText) as unknown;
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new Error('Конфиг должен быть JSON-объектом');
-  }
-  return parsed as NodeConfig;
-}
-
 export function PipelineEditorPage() {
   const { pipelineId = '' } = useParams();
   const navigate = useNavigate();
@@ -97,46 +77,8 @@ export function PipelineEditorPage() {
   const [runId, setRunId] = useState<string | null>(null);
   const [flowInstance, setFlowInstance] = useState<ReactFlowInstance | null>(null);
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
-
-  const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
-  const [configText, setConfigText] = useState('{}');
-  const [modalError, setModalError] = useState<string>();
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [datasourceId, setDatasourceId] = useState<string>('');
-  const [preview, setPreview] = useState<PreviewResponse | null>(null);
-  const [previewInfo, setPreviewInfo] = useState<string>();
-
-  const pipelineQuery = useQuery({
-    queryKey: pipelineQueryKey(pipelineId),
-    queryFn: () => getPipelineDetail(pipelineId),
-    enabled: Boolean(pipelineId),
-  });
-
-  const operationsQuery = useQuery({
-    queryKey: operationsQueryKey,
-    queryFn: getOperationsCatalog,
-  });
-
-  const runQuery = useQuery({
-    queryKey: ['pipeline-run', runId],
-    queryFn: () => getPipelineRun(runId ?? ''),
-    enabled: Boolean(runId),
-    refetchInterval: (query) => {
-      const status = query.state.data?.status;
-      if (status === 'pending' || status === 'running') {
-        return 2000;
-      }
-      return false;
-    },
-  });
-
-  const operationMetaByType = useMemo(() => {
-    const byType = new Map<string, OperationItem>();
-    operationsQuery.data?.operations.forEach((operation) => {
-      byType.set(operation.type, operation);
-    });
-    return byType;
-  }, [operationsQuery.data?.operations]);
+  const { pipelineQuery, operationsQuery, runQuery, operationMetaByType, sortedCategories } =
+    usePipelineEditorQueries(pipelineId, runId);
 
   const getNewNodePosition = useCallback(() => {
     if (!flowInstance || !canvasRef.current) {
@@ -211,20 +153,6 @@ export function PipelineEditorPage() {
     },
   });
 
-  const editingNode = useMemo(
-    () => pipelineQuery.data?.nodes.find((node) => node.id === editingNodeId) ?? null,
-    [editingNodeId, pipelineQuery.data?.nodes]
-  );
-
-  const sortedCategories = useMemo(() => {
-    const categories = operationsQuery.data?.categories;
-    if (!categories) {
-      return [];
-    }
-
-    return Object.entries(categories).sort((first, second) => first[1].order - second[1].order);
-  }, [operationsQuery.data?.categories]);
-
   const toggleCategory = (categoryId: string) => {
     setOpenCategories((current) => ({
       ...current,
@@ -232,30 +160,33 @@ export function PipelineEditorPage() {
     }));
   };
 
-  const openNodeModal = useCallback(
-    (nodeId: string) => {
-      const node = pipelineQuery.data?.nodes.find((item) => item.id === nodeId);
-      if (!node) {
-        return;
-      }
-
-      setEditingNodeId(node.id);
-      setConfigText(JSON.stringify(node.config ?? {}, null, 2));
-      setModalError(undefined);
-      setPreview(null);
-      setPreviewInfo(undefined);
-      setSelectedFile(null);
-
-      const cfg = node.config ?? {};
-      const currentDatasourceId = typeof cfg.datasource_id === 'string' ? cfg.datasource_id : '';
-      setDatasourceId(currentDatasourceId);
+  const {
+    editingNode,
+    configText,
+    datasourceId,
+    modalError,
+    onFetchPreview,
+    onSaveNodeConfig,
+    onUploadFile,
+    openNodeModal,
+    closeModal,
+    preview,
+    previewInfo,
+    selectedFile,
+    setConfigText,
+    setDatasourceId,
+    setSelectedFile,
+  } = useNodeConfigModalState({
+    nodes: pipelineQuery.data?.nodes,
+    saveNodeConfig: async (nodeId, config) => {
+      await patchNodeMutation.mutateAsync({
+        nodeId,
+        payload: {
+          config,
+        },
+      });
     },
-    [pipelineQuery.data?.nodes]
-  );
-
-  const closeModal = () => {
-    setEditingNodeId(null);
-  };
+  });
 
   useEffect(() => {
     if (!pipelineQuery.data) {
@@ -304,31 +235,6 @@ export function PipelineEditorPage() {
     }
   };
 
-  const onSaveNodeConfig = async () => {
-    if (!editingNode) {
-      return;
-    }
-
-    setModalError(undefined);
-
-    try {
-      const parsedConfig = parseConfigText(configText);
-      if (datasourceId) {
-        parsedConfig.datasource_id = datasourceId;
-      }
-
-      await patchNodeMutation.mutateAsync({
-        nodeId: editingNode.id,
-        payload: {
-          config: parsedConfig,
-        },
-      });
-      closeModal();
-    } catch (error) {
-      setModalError(extractError(error, 'Не удалось сохранить конфигурацию ноды'));
-    }
-  };
-
   const onDeleteEdges = async (edgesToDelete: FlowEdge[]) => {
     if (!pipelineId || edgesToDelete.length === 0) {
       return;
@@ -352,60 +258,6 @@ export function PipelineEditorPage() {
 
     await Promise.all(nodesToDelete.map(async (node) => onDeleteNode(node.id)));
     await queryClient.invalidateQueries({ queryKey: pipelineQueryKey(pipelineId) });
-  };
-
-  const onUploadFile = async () => {
-    if (!selectedFile || !editingNode) {
-      return;
-    }
-
-    setPreviewInfo(undefined);
-    setModalError(undefined);
-
-    try {
-      const uploaded = await uploadDatasource(selectedFile, selectedFile.name);
-      setDatasourceId(uploaded.id);
-      setPreviewInfo(
-        'Файл загружен. Если статус не ready, подождите и нажмите «Проверить предпросмотр».'
-      );
-
-      const parsedConfig = parseConfigText(configText);
-      parsedConfig.datasource_id = uploaded.id;
-      setConfigText(JSON.stringify(parsedConfig, null, 2));
-
-      await patchNodeMutation.mutateAsync({
-        nodeId: editingNode.id,
-        payload: {
-          config: parsedConfig,
-        },
-      });
-    } catch (error) {
-      setModalError(extractError(error, 'Не удалось загрузить файл'));
-    }
-  };
-
-  const onFetchPreview = async () => {
-    if (!datasourceId) {
-      setModalError('Сначала загрузите файл или укажите datasource_id');
-      return;
-    }
-
-    setPreviewInfo(undefined);
-    setModalError(undefined);
-
-    try {
-      const datasource = await getDatasourceDetail(datasourceId);
-      if (datasource.status !== 'ready') {
-        setPreview(null);
-        setPreviewInfo(`Источник в статусе ${datasource.status}. Данные ещё обрабатываются.`);
-        return;
-      }
-
-      const previewData = await previewDatasource(datasourceId, 10);
-      setPreview(previewData);
-    } catch (error) {
-      setModalError(extractError(error, 'Не удалось получить предпросмотр'));
-    }
   };
 
   const isSourceNode =

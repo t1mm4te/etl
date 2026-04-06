@@ -5,6 +5,8 @@ import pytest
 from tests.utils import (
     invalid_data_for_user_fields,
     valid_data_for_user_fields,
+    valid_data_for_user_login,
+    invalid_data_for_user_login,
 )
 
 
@@ -13,7 +15,6 @@ class Test00UserRegistration:
     URL_SIGNUP = '/api/v1/users/'
     URL_SET_PASSWORD = '/api/v1/users/set_password/'
     URL_LOGIN = '/api/v1/auth/token/login/'
-    URL_LOGOUT = '/api/v1/auth/token/logout/'
 
     @pytest.mark.parametrize(
         'data,invalid_fields', invalid_data_for_user_fields
@@ -85,3 +86,48 @@ class Test00UserRegistration:
         )
 
         new_user.delete()
+
+    def test_00_valid_data_user_login(self, client, django_user_model):
+        django_user_model.objects.create_user(**valid_data_for_user_fields)
+        response = client.post(self.URL_LOGIN,
+                               data=valid_data_for_user_login)
+
+        assert response.status_code != HTTPStatus.NOT_FOUND, (
+            f'Эндпоинт `{self.URL_SIGNUP}` не найден. Проверьте настройки '
+            'в *urls.py*.'
+        )
+
+        assert response.status_code == HTTPStatus.OK, (
+            'POST-запрос с корректными данными, отправленный на эндпоинт '
+            f'`{self.URL_SIGNUP}`, должен вернуть ответ со статусом 200.'
+        )
+
+        response_json = response.json()
+
+        assert response_json.get('auth_token') is not None, (
+            'POST-запрос с корректными данными, отправленный на эндпоинт '
+            f'`{self.URL_SIGNUP}`, должен вернуть ответ с `id`.'
+            f'{response_json}'
+        )
+
+    @pytest.mark.parametrize(
+        'data,invalid_fields', invalid_data_for_user_login
+    )
+    def test_00_unsuccessful_login(
+            self,
+            client,
+            django_user_model,
+            data,
+            invalid_fields
+    ):
+        django_user_model.objects.create_user(**valid_data_for_user_fields)
+
+        response = client.post(self.URL_LOGIN, data=data)
+        assert response.status_code == HTTPStatus.BAD_REQUEST, (
+            f'Принимаются неправильные данные на {self.URL_SIGNUP}: {data}. '
+            f'Поля с ошибками: {invalid_fields}'
+        )
+
+        response_json = response.json()
+        assert len(response_json) == 1
+        assert response_json.get('non_field_errors') is not None

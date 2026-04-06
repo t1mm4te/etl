@@ -97,6 +97,33 @@ valid_data_for_user_fields: dict = {
     'last_name': 'valid last_name'
 }
 
+valid_data_for_user_login: dict = {
+    'email': valid_data_for_user_fields['email'],
+    'password': valid_data_for_user_fields['password'],
+}
+
+invalid_data_for_user_login: tuple[tuple[dict, tuple[str, ...]], ...] = (
+    (
+        {},
+        ('email', 'password')
+    ),
+    (
+        {
+            'email': ('a' * 246) + '@etl.fake',
+            'username': 'valid-username',
+            'password': 'O1234jkl'
+        },
+        ('email', 'username')
+    ),
+    (
+        {
+            'email': 'valid@etl.fake',
+            'password': ''
+        },
+        ('password',)
+    ),
+)
+
 # test_01_user
 
 

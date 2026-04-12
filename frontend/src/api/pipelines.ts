@@ -40,6 +40,11 @@ export const runPipeline = async (pipelineId: string) => {
   return response.data;
 };
 
+export const listPipelineRuns = async (pipelineId: string) => {
+  const response = await apiClient.get<PipelineRun[]>(`/pipelines/${pipelineId}/runs/`);
+  return response.data;
+};
+
 export const getPipelineRun = async (pipelineRunId: string) => {
   const response = await apiClient.get<PipelineRunDetail>(`/pipeline-runs/${pipelineRunId}/`);
   return response.data;

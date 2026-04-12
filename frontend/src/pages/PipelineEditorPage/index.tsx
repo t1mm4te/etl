@@ -83,6 +83,7 @@ export function PipelineEditorPage() {
     setActivePreviewTab,
     setSelectedFile,
   } = useNodeConfigModalState({
+    pipelineId,
     nodes: pipelineQuery.data?.nodes,
     edges: pipelineQuery.data?.edges,
     nodeRuns: runQuery.data?.node_runs,

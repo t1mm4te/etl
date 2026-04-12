@@ -1,8 +1,11 @@
 import { useCallback, useMemo } from 'react';
 import {
+  getPipelineRun,
   getDatasourceDetail,
+  listPipelineRuns,
   previewDatasource,
   previewNodeRun,
+  runPipeline,
   uploadDatasource,
 } from '../../../api/pipelines';
 import type { Edge, Node as ApiNode, NodeConfig, NodeRun } from '../../../api/types';
@@ -18,6 +21,7 @@ function parseConfigText(configText: string): NodeConfig {
 }
 
 type UseNodeConfigModalStateParams = {
+  pipelineId: string;
   nodes: ApiNode[] | undefined;
   edges: Edge[] | undefined;
   nodeRuns: NodeRun[] | undefined;
@@ -40,6 +44,7 @@ function getNodeKind(operationType: string): NodeKind {
 }
 
 export function useNodeConfigModalState({
+  pipelineId,
   nodes,
   edges,
   nodeRuns,
@@ -66,6 +71,7 @@ export function useNodeConfigModalState({
   const setActivePreviewTab = usePipelineEditorStore((state) => state.setActivePreviewTab);
   const setPreviewInfo = usePipelineEditorStore((state) => state.setPreviewInfo);
   const setModalError = usePipelineEditorStore((state) => state.setModalError);
+  const setRunId = usePipelineEditorStore((state) => state.setRunId);
 
   const editingNode = useMemo(
     () => nodes?.find((node) => node.id === editingNodeId) ?? null,
@@ -87,9 +93,46 @@ export function useNodeConfigModalState({
   }, [editingNode, edges]);
 
   const getSuccessfulNodeRun = useCallback(
-    (nodeId: string) => nodeRuns?.find((run) => run.node === nodeId && run.status === 'success') ?? null,
+    (nodeId: string, runs: NodeRun[] | undefined = nodeRuns) =>
+      runs?.find((run) => run.node === nodeId && run.status === 'success') ?? null,
     [nodeRuns]
   );
+
+  const waitForRunCompletion = useCallback(async (runId: string) => {
+    const maxAttempts = 40;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      const runDetail = await getPipelineRun(runId);
+      if (runDetail.status === 'success' || runDetail.status === 'failed') {
+        return runDetail;
+      }
+
+      await new Promise((resolve) => {
+        setTimeout(resolve, 1500);
+      });
+    }
+
+    throw new Error('Не дождались завершения фонового запуска пайплайна для предпросмотра');
+  }, []);
+
+  const resolveNodeRunsForPreview = useCallback(async () => {
+    if (nodeRuns && nodeRuns.length > 0) {
+      return nodeRuns;
+    }
+
+    const runs = await listPipelineRuns(pipelineId);
+    const latestCompletedRun = runs.find(
+      (run) => run.status === 'success' || run.status === 'failed'
+    );
+
+    if (!latestCompletedRun) {
+      return null;
+    }
+
+    setRunId(latestCompletedRun.id);
+    const runDetail = await getPipelineRun(latestCompletedRun.id);
+    return runDetail.node_runs;
+  }, [nodeRuns, pipelineId, setRunId]);
 
   const fetchSourcePreview = useCallback(
     async (datasourceId: string) => {
@@ -118,7 +161,7 @@ export function useNodeConfigModalState({
   );
 
   const fetchNodePreviewsFromRuns = useCallback(
-    async (node: ApiNode) => {
+    async (node: ApiNode, runsOverride?: NodeRun[]) => {
       setIsPreviewLoading(true);
       setPreviewInfo(undefined);
       setModalError(undefined);
@@ -128,7 +171,7 @@ export function useNodeConfigModalState({
           const incomingEdge = edges?.find((edge) => edge.target_node === node.id);
 
           if (incomingEdge) {
-            const upstreamRun = getSuccessfulNodeRun(incomingEdge.source_node);
+            const upstreamRun = getSuccessfulNodeRun(incomingEdge.source_node, runsOverride);
             if (upstreamRun) {
               const upstreamPreview = await previewNodeRun(upstreamRun.id, 10);
               setInputPreview(upstreamPreview);
@@ -152,7 +195,7 @@ export function useNodeConfigModalState({
           }
         }
 
-        const ownRun = getSuccessfulNodeRun(node.id);
+        const ownRun = getSuccessfulNodeRun(node.id, runsOverride);
         if (ownRun) {
           const ownPreview = await previewNodeRun(ownRun.id, 10);
           setResultPreview(ownPreview);
@@ -164,7 +207,9 @@ export function useNodeConfigModalState({
       } catch (error) {
         setInputPreview(null);
         setResultPreview(null);
-        setModalError(extractError(error, 'Не удалось получить предпросмотр по последнему запуску'));
+        setModalError(
+          extractError(error, 'Не удалось получить предпросмотр по последнему запуску')
+        );
       } finally {
         setIsPreviewLoading(false);
       }
@@ -199,10 +244,17 @@ export function useNodeConfigModalState({
       }
 
       if (kind !== 'source') {
-        await fetchNodePreviewsFromRuns(node);
+        const runsForPreview = await resolveNodeRunsForPreview();
+        await fetchNodePreviewsFromRuns(node, runsForPreview ?? undefined);
       }
     },
-    [fetchNodePreviewsFromRuns, fetchSourcePreview, nodes, openModalState]
+    [
+      fetchNodePreviewsFromRuns,
+      fetchSourcePreview,
+      nodes,
+      openModalState,
+      resolveNodeRunsForPreview,
+    ]
   );
 
   const closeModal = useCallback(() => {
@@ -278,6 +330,9 @@ export function useNodeConfigModalState({
     }
 
     setModalError(undefined);
+    setPreviewInfo(undefined);
+    setIsPreviewLoading(true);
+
     try {
       const parsedConfig = parseConfigText(configText);
       if (uploadedDatasourceId) {
@@ -285,22 +340,47 @@ export function useNodeConfigModalState({
       }
 
       await saveNodeConfig(editingNode.id, parsedConfig);
-      setPreviewInfo(
-        'Конфигурация сохранена. По текущей спецификации API результат узла обновляется после запуска пайплайна.'
-      );
+
+      if (nodeKind === 'transform') {
+        setPreviewInfo(
+          'Конфигурация сохранена. Запускаем пайплайн для обновления предпросмотра...'
+        );
+        const startedRun = await runPipeline(pipelineId);
+        setRunId(startedRun.id);
+        const completedRun = await waitForRunCompletion(startedRun.id);
+
+        if (completedRun.status === 'failed') {
+          throw new Error(
+            completedRun.error_message || 'Фоновый запуск пайплайна завершился с ошибкой'
+          );
+        }
+
+        setPreviewInfo('Пайплайн выполнен. Загружаем свежий предпросмотр...');
+        await fetchNodePreviewsFromRuns(editingNode, completedRun.node_runs);
+        setActivePreviewTab('result');
+        setPreviewInfo('Предпросмотр обновлен.');
+        return;
+      }
+
       await fetchNodePreviewsFromRuns(editingNode);
     } catch (error) {
       setModalError(extractError(error, 'Не удалось применить настройки для предпросмотра'));
+      setIsPreviewLoading(false);
     }
   }, [
     configText,
     editingNode,
     fetchNodePreviewsFromRuns,
     nodeKind,
+    pipelineId,
     saveNodeConfig,
+    setActivePreviewTab,
+    setIsPreviewLoading,
     setModalError,
     setPreviewInfo,
+    setRunId,
     uploadedDatasourceId,
+    waitForRunCompletion,
   ]);
 
   return {

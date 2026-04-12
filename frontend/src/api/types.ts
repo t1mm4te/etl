@@ -20,6 +20,22 @@ export interface LoginPayload {
   password: string;
 }
 
+export interface ProfileUpdatePayload {
+  username: string;
+  first_name: string;
+  last_name: string;
+}
+
+export interface SetPasswordPayload {
+  current_password: string;
+  new_password: string;
+}
+
+export interface SetEmailPayload {
+  current_password: string;
+  new_email: string;
+}
+
 export interface LoginResponse {
   auth_token: string;
 }

@@ -1,0 +1,178 @@
+@use '../../styles/_vars.scss' as *;
+
+.page {
+  width: min(1180px, 96%);
+  margin: 0 auto;
+  padding: 34px 18px 42px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+
+  .header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    .title {
+      margin: 0;
+      color: $white;
+      font-size: clamp(32px, 3.7vw, 44px);
+      letter-spacing: -0.02em;
+      line-height: 1.08;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: rgba($defaultTextColor, 0.9);
+      max-width: 780px;
+      font-size: 21px;
+    }
+  }
+
+  .muted {
+    color: $labelColor;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 16px;
+
+    .card {
+      grid-column: span 6;
+      border-radius: $borderRadiusLarge;
+      border: 1px solid rgba($primaryColor, 0.28);
+      background:
+        radial-gradient(circle at 0% 0%, rgba($primaryColor, 0.16) 0%, transparent 45%),
+        linear-gradient(180deg, rgba($darkGray, 0.6), rgba($darkGray, 0.82));
+      box-shadow:
+        0 20px 36px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba($white, 0.12);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+
+      h2 {
+        margin: 0;
+        color: $white;
+        font-size: 25px;
+        letter-spacing: -0.01em;
+      }
+
+      .hint {
+        margin: 0;
+        color: rgba($labelColor, 0.95);
+      }
+
+      .form {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+
+        > button {
+          width: 100%;
+        }
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .label {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        color: $labelColor;
+
+        input {
+          min-height: 42px;
+          border-radius: $borderRadiusSmall;
+          border: 1px solid $borderColor;
+          background-color: rgba($darkGrayLighter, 0.95);
+          color: $defaultTextColor;
+          padding: 10px 12px;
+          font-size: 16px;
+          transition:
+            border-color $transitionFast,
+            box-shadow $transitionFast,
+            background-color $transitionFast;
+
+          &:focus {
+            outline: none;
+            border-color: rgba($primaryColor, 0.85);
+            box-shadow: 0 0 0 3px rgba($primaryColor, 0.18);
+            background-color: rgba($darkGrayLighter, 1);
+          }
+        }
+      }
+
+      .invalid {
+        border-color: rgba($dangerColor, 0.72) !important;
+      }
+    }
+
+    .cardPrimary {
+      grid-column: 1 / -1;
+    }
+  }
+
+  .error,
+  .success {
+    margin: 0;
+    border-radius: $borderRadiusSmall;
+    padding: 10px 12px;
+    font-size: 15px;
+  }
+
+  .error {
+    color: $dangerColor;
+    background: rgba($dangerBg, 0.12);
+    border: 1px solid rgba($dangerBorder, 0.35);
+  }
+
+  .success {
+    color: $successColor;
+    background: rgba($successBg, 0.1);
+    border: 1px solid rgba($successBorder, 0.32);
+  }
+}
+
+@media (max-width: 920px) {
+  .page {
+    .grid {
+      .card {
+        grid-column: 1 / -1;
+      }
+    }
+  }
+}
+
+@media (max-width: 720px) {
+  .page {
+    padding: 22px 12px 32px;
+
+    .header {
+      .subtitle {
+        font-size: 18px;
+      }
+    }
+
+    .grid {
+      .card {
+        padding: 16px;
+
+        h2 {
+          font-size: 22px;
+        }
+
+        .row {
+          grid-template-columns: 1fr;
+          gap: 10px;
+        }
+      }
+    }
+  }
+}

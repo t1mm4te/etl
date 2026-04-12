@@ -20,7 +20,9 @@ export function Navbar() {
         <nav className={styles.nav}>
           {isAuthorized ? (
             <>
-              <span className={styles.user}>{user?.username ?? 'Пользователь'}</span>
+              <Link className={styles.user} to="/profile">
+                {user?.username ?? 'Пользователь'}
+              </Link>
               <Button onClick={() => logoutMutation.mutate()} type="button" color="white">
                 Выйти
               </Button>

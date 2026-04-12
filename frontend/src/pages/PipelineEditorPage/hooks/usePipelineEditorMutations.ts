@@ -48,6 +48,9 @@ export function usePipelineEditorMutations({ pipelineId }: UsePipelineEditorMuta
         source_port: payload.connection.sourceHandle ?? 'output',
         target_port: payload.connection.targetHandle ?? 'main',
       }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: pipelineQueryKey(pipelineId) });
+    },
   });
 
   const runPipelineMutation = useMutation({

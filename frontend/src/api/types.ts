@@ -81,6 +81,11 @@ export interface PipelineCreatePayload {
   description?: string;
 }
 
+export interface PipelineUpdatePayload {
+  name: string;
+  description?: string;
+}
+
 export interface NodeCreatePayload {
   operation_type: string;
   label: string;

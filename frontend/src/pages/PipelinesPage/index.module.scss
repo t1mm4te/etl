@@ -135,7 +135,6 @@
           padding: 12px;
           display: flex;
           justify-content: space-between;
-          align-items: end;
           gap: 14px;
           transition:
             border-color $transitionFast,
@@ -151,6 +150,13 @@
             box-shadow:
               0 14px 26px rgba(0, 0, 0, 0.28),
               inset 0 1px 0 rgba($primaryColor, 0.16);
+          }
+
+          .itemEditForm {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            gap: 14px;
           }
 
           .itemCard {
@@ -185,6 +191,46 @@
               gap: 6px;
               padding-left: 10px;
 
+              .editLabel {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                color: $labelColor;
+                font-size: 13px;
+
+                .inputError {
+                  color: $dangerColor;
+                  font-size: 12px;
+                }
+
+                input,
+                textarea {
+                  width: 100%;
+                  border: 1px solid $borderColor;
+                  border-radius: $borderRadiusSmall;
+                  background-color: $darkGrayLighter;
+                  color: $lightGray;
+                  padding: 10px 12px;
+                  font-size: $defaultFontSize;
+                  transition:
+                    border-color $transitionFast,
+                    box-shadow $transitionFast,
+                    background-color $transitionFast;
+
+                  &:focus {
+                    outline: none;
+                    border-color: rgba($primaryColor, 0.7);
+                    box-shadow: 0 0 0 3px rgba($primaryColor, 0.2);
+                    background: rgba($darkGrayLighter, 0.95);
+                  }
+                }
+
+                textarea {
+                  resize: vertical;
+                  min-height: 92px;
+                }
+              }
+
               .pipelineTitle {
                 margin: 0;
                 font-size: 20px;
@@ -216,7 +262,55 @@
             }
           }
 
-          .deleteButton {
+          .itemCardEditing {
+            cursor: default;
+
+            &::before {
+              opacity: 0.45;
+            }
+          }
+
+          .buttons {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 8px;
+          }
+          .saveButton,
+          .cancelButton {
+            width: 116px;
+            min-height: 42px;
+            border: 1px solid $borderColor;
+            border-radius: 10px;
+            color: $white;
+            font-size: 14px;
+            padding: 10px;
+            transition:
+              opacity $transitionFast,
+              border-color $transitionFast,
+              background $transitionFast;
+          }
+
+          .saveButton {
+            background: rgba($successBorder, 0.45);
+
+            &:hover {
+              border-color: rgba($successColor, 0.62);
+              background: rgba($successBorder, 0.62);
+            }
+          }
+
+          .cancelButton {
+            background: rgba($darkGrayLighter, 0.82);
+
+            &:hover {
+              border-color: rgba($white, 0.45);
+              background: rgba($darkGrayLighter, 1);
+            }
+          }
+
+          .deleteButton,
+          .editButton {
             width: 48px;
             height: 48px;
             border: 1px solid $borderColor;
@@ -235,11 +329,16 @@
               width: 36px;
               height: 36px;
             }
+          }
 
-            &:hover {
-              border-color: rgba($dangerColor, 0.62);
-              background: rgba($dangerBorder, 0.7);
-            }
+          .deleteButton:hover {
+            border-color: rgba($dangerColor, 0.62);
+            background: rgba($dangerBorder, 0.5);
+          }
+
+          .editButton:hover {
+            border-color: rgba($primaryColor, 0.62);
+            background: rgba($successBorder, 0.5);
           }
         }
       }
@@ -304,10 +403,6 @@
                   max-width: 100%;
                 }
               }
-            }
-
-            .deleteButton {
-              align-self: flex-end;
             }
           }
         }

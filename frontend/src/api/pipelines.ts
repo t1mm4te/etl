@@ -13,6 +13,7 @@ import type {
   PipelineListItem,
   PipelineRun,
   PipelineRunDetail,
+  PipelineUpdatePayload,
   PreviewResponse,
 } from './types';
 
@@ -28,6 +29,11 @@ export const createPipeline = async (payload: PipelineCreatePayload) => {
 
 export const deletePipeline = async (pipelineId: string) => {
   await apiClient.delete(`/pipelines/${pipelineId}/`);
+};
+
+export const patchPipeline = async (pipelineId: string, payload: PipelineUpdatePayload) => {
+  const response = await apiClient.patch(`/pipelines/${pipelineId}/`, payload);
+  return response.data as { id: string; name: string; description: string };
 };
 
 export const getPipelineDetail = async (pipelineId: string) => {

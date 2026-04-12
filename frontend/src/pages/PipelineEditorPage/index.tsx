@@ -1,5 +1,5 @@
 import type { MouseEvent as ReactMouseEvent } from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Background, Controls, MiniMap, ReactFlow } from 'reactflow';
 import { useNavigate, useParams } from 'react-router-dom';
 import { PipelineOperationNode } from '../../components/PipelineOperationNode';
@@ -7,6 +7,7 @@ import { EditorToolbar } from '../../components/PipelineEditor/EditorToolbar';
 import { NodeConfigModal } from '../../components/PipelineEditor/NodeConfigModal';
 import { OperationsSidebar } from '../../components/PipelineEditor/OperationsSidebar';
 import { RunResultsCard } from '../../components/PipelineEditor/RunResultsCard';
+import { usePipelineEditorStore } from '../../store/pipelineEditorStore';
 import { usePipelineCanvasState } from './hooks/usePipelineCanvasState';
 import { usePipelineEditorMutations } from './hooks/usePipelineEditorMutations';
 import { usePipelineEditorQueries } from './hooks/usePipelineEditorQueries';
@@ -21,9 +22,9 @@ const NODE_TYPES = {
 export function PipelineEditorPage() {
   const { pipelineId = '' } = useParams();
   const navigate = useNavigate();
-  const [runId, setRunId] = useState<string | null>(null);
+  const resetEditorState = usePipelineEditorStore((state) => state.resetEditorState);
   const { pipelineQuery, operationsQuery, runQuery, operationMetaByType, sortedCategories } =
-    usePipelineEditorQueries(pipelineId, runId);
+    usePipelineEditorQueries(pipelineId);
 
   const {
     createNodeMutation,
@@ -33,7 +34,6 @@ export function PipelineEditorPage() {
     saveNodeConfig,
   } = usePipelineEditorMutations({
     pipelineId,
-    onRunCreated: setRunId,
   });
 
   const {
@@ -63,25 +63,35 @@ export function PipelineEditorPage() {
 
   const {
     editingNode,
+    nodeKind,
+    hasIncomingData,
     configText,
     modalError,
-    onFetchPreview,
+    onApplyPreview,
+    onRefreshSourcePreview,
     onSaveNodeConfig,
     onUploadFile,
     openNodeModal,
     closeModal,
-    preview,
+    inputPreview,
+    resultPreview,
+    isPreviewLoading,
+    activePreviewTab,
     previewInfo,
     selectedFile,
     setConfigText,
+    setActivePreviewTab,
     setSelectedFile,
   } = useNodeConfigModalState({
     nodes: pipelineQuery.data?.nodes,
+    edges: pipelineQuery.data?.edges,
+    nodeRuns: runQuery.data?.node_runs,
     saveNodeConfig,
   });
 
-  const isSourceNode =
-    editingNode?.operation_type === 'source_file' || editingNode?.operation_type === 'source_db';
+  useEffect(() => {
+    resetEditorState();
+  }, [pipelineId, resetEditorState]);
 
   useEffect(() => {
     const createdNode = createNodeMutation.data;
@@ -143,7 +153,9 @@ export function PipelineEditorPage() {
             onNodesDelete={(items) => {
               void onDeleteNodes(items);
             }}
-            onNodeDoubleClick={(_event: ReactMouseEvent, node) => openNodeModal(node.id)}
+            onNodeDoubleClick={(_event: ReactMouseEvent, node) => {
+              void openNodeModal(node.id);
+            }}
             onNodeDragStop={(_event: ReactMouseEvent, node) => {
               void onNodeDragStop(_event, node);
             }}
@@ -161,14 +173,22 @@ export function PipelineEditorPage() {
 
       {editingNode ? (
         <NodeConfigModal
+          activePreviewTab={activePreviewTab}
           configText={configText}
-          isSourceNode={Boolean(isSourceNode)}
+          hasIncomingData={hasIncomingData}
+          inputPreview={inputPreview}
+          isPreviewLoading={isPreviewLoading}
           modalError={modalError}
           node={editingNode}
+          nodeKind={nodeKind}
+          onActivePreviewTabChange={setActivePreviewTab}
+          onApplyPreview={() => {
+            void onApplyPreview();
+          }}
           onClose={closeModal}
           onConfigTextChange={setConfigText}
-          onFetchPreview={() => {
-            void onFetchPreview();
+          onRefreshSourcePreview={() => {
+            void onRefreshSourcePreview();
           }}
           onFileChange={setSelectedFile}
           onSaveConfig={() => {
@@ -177,7 +197,7 @@ export function PipelineEditorPage() {
           onUploadFile={() => {
             void onUploadFile();
           }}
-          preview={preview}
+          resultPreview={resultPreview}
           previewInfo={previewInfo}
           selectedFile={selectedFile}
         />

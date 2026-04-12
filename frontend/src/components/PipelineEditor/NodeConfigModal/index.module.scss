@@ -6,70 +6,122 @@
   background: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
-  align-items: center;
-  padding: $spacingLarge;
-}
+  align-items: flex-start;
+  overflow-y: auto;
+  z-index: 1000;
+  padding: clamp(56px, 8vh, 96px) $spacingLarge $spacingLarge;
 
-.modal {
-  width: min(860px, 100%);
-  max-height: 90vh;
-  overflow: auto;
-  background: $darkGray;
-  border: 1px solid $borderColor;
-  border-radius: $borderRadiusMedium;
-  padding: $spacingMedium;
-  display: flex;
-  flex-direction: column;
-  gap: $spacingMedium;
-
-  input,
-  textarea {
-    background: $darkGrayLighter;
-    border: 1px solid $borderColor;
-    border-radius: $borderRadiusSmall;
-    color: $white;
-    padding: 10px;
-    width: 100%;
-  }
-}
-
-.modalHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  h3 {
-    color: $white;
-    margin: 0;
-  }
-
-  button {
-    border: none;
-    background: transparent;
-    color: $white;
-    cursor: pointer;
-    font-size: 20px;
-  }
-}
-
-.sourceTools {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-
-  label {
-    color: $labelColor;
+  .modal {
+    width: clamp(860px, 90%, 1100px);
+    max-height: calc(100vh - clamp(72px, 10vh, 120px));
+    background: $darkGray;
+    border: 1px solid $solidMutedColor;
+    border-radius: $borderRadiusMedium;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    overflow: hidden;
+
+    .modalHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: $darkGray;
+      z-index: 2;
+      padding: 12px $spacingMedium;
+      background: $solidMutedColor;
+      box-shadow: 0 10px 10px rgba(0, 0, 0, 0.1);
+      border-radius: $borderRadiusMedium $borderRadiusMedium 0 0;
+
+      h3 {
+        color: $white;
+        margin: 0;
+        font-size: 20px;
+      }
+
+      button {
+        border: none;
+        background: transparent;
+        color: $white;
+        cursor: pointer;
+        font-size: 20px;
+      }
+    }
+
+    .modalContent {
+      display: flex;
+      flex-direction: column;
+      gap: $spacingMedium;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: $spacingMedium;
+    }
+
+    input,
+    textarea {
+      background: $darkGrayLighter;
+      border: 1px solid $borderColor;
+      border-radius: $borderRadiusSmall;
+      color: $white;
+      padding: 10px;
+      width: 100%;
+    }
   }
 }
 
-.configLabel {
-  color: $labelColor;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.transformLayout {
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) 1fr;
+  gap: $spacingMedium;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+
+  .configPanel {
+    display: flex;
+    flex-direction: column;
+    gap: $spacingMedium;
+    width: 100%;
+
+    .configLabel {
+      color: $labelColor;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+  }
+
+  .previewPanel {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+
+    .tabRow {
+      display: flex;
+      gap: 8px;
+
+      .tab,
+      .tabActive {
+        background: $darkGrayLighter;
+        border: 1px solid $borderColor;
+        color: $labelColor;
+        border-radius: $borderRadiusSmall $borderRadiusSmall 0 0;
+        padding: 8px 10px;
+        cursor: pointer;
+        font-size: 16px;
+        background-color: $darkGray;
+        border-bottom: none;
+      }
+
+      .tabActive {
+        color: $white;
+        background-color: $darkGrayLighter;
+        position: relative;
+        top: 1px;
+        z-index: 1;
+      }
+    }
+  }
 }
 
 .modalActions {
@@ -78,13 +130,21 @@
 }
 
 .previewTableWrapper {
-  overflow: auto;
+  width: 100%;
+  max-width: 100%;
+  max-height: clamp(280px, 60vh, 560px);
+  overflow-x: auto;
+  overflow-y: auto;
   border: 1px solid $borderColor;
-  border-radius: $borderRadiusSmall;
+  border-radius: 0 $borderRadiusSmall 0 0;
+  background-color: $darkGrayLighter;
+  padding: 10px;
 
   table {
-    width: 100%;
+    width: max-content;
+    min-width: 100%;
     border-collapse: collapse;
+    background-color: $darkGrayLighter;
 
     th,
     td {
@@ -93,7 +153,7 @@
       color: $white;
       text-align: left;
       white-space: nowrap;
-      font-size: 14px;
+      font-size: 16px;
     }
 
     th {

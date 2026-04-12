@@ -1,13 +1,12 @@
 import { useQueryClient } from '@tanstack/react-query';
 import type { MouseEvent as ReactMouseEvent } from 'react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import {
   addEdge,
   MarkerType,
   type Connection,
   type Edge as FlowEdge,
   type Node as FlowNode,
-  type ReactFlowInstance,
   useEdgesState,
   useNodesState,
 } from 'reactflow';
@@ -15,6 +14,7 @@ import { deleteEdge, deleteNode } from '../../../api/pipelines';
 import type { Edge, Node, OperationItem, PipelineDetail } from '../../../api/types';
 import { type PipelineOperationNodeData } from '../../../components/PipelineOperationNode';
 import { extractError } from '../../../lib/extractError';
+import { usePipelineEditorStore } from '../../../store/pipelineEditorStore';
 import { pipelineQueryKey } from './usePipelineEditorQueries';
 
 type SortedCategories = Array<[string, { order: number }]>;
@@ -63,9 +63,12 @@ export function usePipelineCanvasState({
 
   const [nodes, setNodes, onNodesChange] = useNodesState<PipelineOperationNodeData>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const [canvasError, setCanvasError] = useState<string>();
-  const [flowInstance, setFlowInstance] = useState<ReactFlowInstance | null>(null);
-  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
+  const canvasError = usePipelineEditorStore((state) => state.canvasError);
+  const flowInstance = usePipelineEditorStore((state) => state.flowInstance);
+  const openCategories = usePipelineEditorStore((state) => state.openCategories);
+  const setCanvasError = usePipelineEditorStore((state) => state.setCanvasError);
+  const setFlowInstance = usePipelineEditorStore((state) => state.setFlowInstance);
+  const toggleCategoryState = usePipelineEditorStore((state) => state.toggleCategory);
 
   const getNewNodePosition = useCallback(() => {
     if (!flowInstance || !canvasRef.current) {
@@ -89,7 +92,7 @@ export function usePipelineCanvasState({
         setCanvasError(extractError(error, 'Не удалось удалить ноду'));
       }
     },
-    [pipelineId, queryClient]
+    [pipelineId, queryClient, setCanvasError]
   );
 
   useEffect(() => {
@@ -115,10 +118,7 @@ export function usePipelineCanvasState({
   }, [onDeleteNode, operationMetaByType, pipeline, setEdges, setNodes]);
 
   const toggleCategory = (categoryId: string) => {
-    setOpenCategories((current) => ({
-      ...current,
-      [categoryId]: !(current[categoryId] ?? sortedCategories[0]?.[0] === categoryId),
-    }));
+    toggleCategoryState(categoryId, sortedCategories[0]?.[0]);
   };
 
   const onConnect = async (connection: Connection) => {

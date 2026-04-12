@@ -2,11 +2,14 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getOperationsCatalog, getPipelineDetail, getPipelineRun } from '../../../api/pipelines';
 import type { OperationItem } from '../../../api/types';
+import { usePipelineEditorStore } from '../../../store/pipelineEditorStore';
 
 export const pipelineQueryKey = (pipelineId: string) => ['pipeline-detail', pipelineId] as const;
 // export const operationsQueryKey = ['operations-catalog'] as const;
 
-export function usePipelineEditorQueries(pipelineId: string, runId: string | null) {
+export function usePipelineEditorQueries(pipelineId: string) {
+  const runId = usePipelineEditorStore((state) => state.runId);
+
   const pipelineQuery = useQuery({
     queryKey: pipelineQueryKey(pipelineId),
     queryFn: () => getPipelineDetail(pipelineId),

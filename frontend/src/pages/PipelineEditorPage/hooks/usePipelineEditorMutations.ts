@@ -2,11 +2,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Connection } from 'reactflow';
 import { createEdge, createNode, patchNode, runPipeline } from '../../../api/pipelines';
 import type { NodeConfig, NodeUpdatePayload, OperationItem } from '../../../api/types';
+import { usePipelineEditorStore } from '../../../store/pipelineEditorStore';
 import { pipelineQueryKey } from './usePipelineEditorQueries';
 
 type UsePipelineEditorMutationsParams = {
   pipelineId: string;
-  onRunCreated: (runId: string) => void;
 };
 
 type CreateNodeInput = {
@@ -14,11 +14,9 @@ type CreateNodeInput = {
   position: { x: number; y: number };
 };
 
-export function usePipelineEditorMutations({
-  pipelineId,
-  onRunCreated,
-}: UsePipelineEditorMutationsParams) {
+export function usePipelineEditorMutations({ pipelineId }: UsePipelineEditorMutationsParams) {
   const queryClient = useQueryClient();
+  const setRunId = usePipelineEditorStore((state) => state.setRunId);
 
   const patchNodeMutation = useMutation({
     mutationFn: ({ nodeId, payload }: { nodeId: string; payload: NodeUpdatePayload }) =>
@@ -37,7 +35,7 @@ export function usePipelineEditorMutations({
         position_x: position.x,
         position_y: position.y,
       }),
-      onSuccess: async () => {
+    onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: pipelineQueryKey(pipelineId) });
     },
   });
@@ -55,7 +53,7 @@ export function usePipelineEditorMutations({
   const runPipelineMutation = useMutation({
     mutationFn: () => runPipeline(pipelineId),
     onSuccess: (run) => {
-      onRunCreated(run.id);
+      setRunId(run.id);
     },
   });
 

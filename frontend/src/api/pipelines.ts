@@ -103,3 +103,10 @@ export const previewDatasource = async (datasourceId: string, limit = 10) => {
   });
   return response.data;
 };
+
+export const previewNodeRun = async (nodeRunId: string, limit = 10) => {
+  const response = await apiClient.get<PreviewResponse>(`/node-runs/${nodeRunId}/preview/`, {
+    params: { limit },
+  });
+  return response.data;
+};

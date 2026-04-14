@@ -308,6 +308,7 @@ class PipelineViewSet(viewsets.ModelViewSet):
                     .values('status')[:1]
                 ),
             )
+            .order_by('-created_at', 'pk')
         )
 
     def get_serializer_class(self):

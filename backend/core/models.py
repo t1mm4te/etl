@@ -168,7 +168,7 @@ class DataSource(UUIDPrimaryKeyModelMixin, TimestampedModelMixin):
     class Meta:
         verbose_name = 'Источник данных'
         verbose_name_plural = 'источники данных'
-        ordering = ['-created_at']
+        ordering = ['-created_at', 'pk']
 
     def __str__(self):
         return self.name
@@ -192,7 +192,7 @@ class Pipeline(UUIDPrimaryKeyModelMixin, TimestampedModelMixin):
     class Meta:
         verbose_name = 'Пайплайн'
         verbose_name_plural = 'пайплайны'
-        ordering = ['-created_at']
+        ordering = ['-created_at', 'pk']
 
     def __str__(self):
         return self.name
@@ -253,7 +253,7 @@ class Node(UUIDPrimaryKeyModelMixin, TimestampedModelMixin):
     class Meta:
         verbose_name = 'Узел'
         verbose_name_plural = 'узлы'
-        ordering = ['created_at']
+        ordering = ['pk']
 
     def __str__(self):
         return f'{self.label} ({self.get_operation_type_display()})'
@@ -303,6 +303,7 @@ class Edge(UUIDPrimaryKeyModelMixin):
                 name='unique_edge',
             ),
         ]
+        ordering = ['pk']
 
     def __str__(self):
         return f'{self.source_node_id} -> {self.target_node_id}'
@@ -342,7 +343,7 @@ class PipelineRun(UUIDPrimaryKeyModelMixin, CreatedAtModelMixin):
     class Meta:
         verbose_name = 'Запуск пайплайна'
         verbose_name_plural = 'запуски пайплайна'
-        ordering = ['-created_at']
+        ordering = ['-created_at', 'pk']
 
     def __str__(self):
         return f'Run {self.pk} — {self.get_status_display()}'
@@ -398,7 +399,7 @@ class NodeRun(UUIDPrimaryKeyModelMixin):
     class Meta:
         verbose_name = 'Запуск узла'
         verbose_name_plural = 'запуски узлов'
-        ordering = ['started_at']
+        ordering = ['started_at', 'pk']
 
     def __str__(self):
         return f'{self.node} — {self.get_status_display()}'

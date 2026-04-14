@@ -81,6 +81,35 @@ def minimal_xlsx_upload_file():
 
 
 @pytest.fixture
+def multi_sheet_xlsx_upload_file():
+    first_sheet_df = pd.DataFrame(
+        [
+            {'city': 'Moscow', 'population_mln': 13.1},
+            {'city': 'Kazan', 'population_mln': 1.3},
+        ]
+    )
+    second_sheet_df = pd.DataFrame(
+        [
+            {'id': 10, 'name': 'Desk', 'amount': 2.0},
+            {'id': 20, 'name': 'Lamp', 'amount': 5.5},
+            {'id': 30, 'name': 'Chair', 'amount': 1.0},
+        ]
+    )
+    buffer = BytesIO()
+    with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+        first_sheet_df.to_excel(writer, sheet_name='summary', index=False)
+        second_sheet_df.to_excel(writer, sheet_name='orders', index=False)
+    buffer.seek(0)
+    return SimpleUploadedFile(
+        name='multi_sheet.xlsx',
+        content=buffer.getvalue(),
+        content_type=(
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        ),
+    )
+
+
+@pytest.fixture
 def owner_datasource(user):
     return DataSource.objects.create(
         owner=user,
@@ -159,3 +188,9 @@ def valid_connect_db_payload():
         'db_schema': 'public',
         'db_table': 'orders',
     }
+
+
+@pytest.fixture
+def celery_task_eager(settings):
+    settings.CELERY_TASK_ALWAYS_EAGER = True
+    settings.CELERY_TASK_EAGER_PROPAGATES = True

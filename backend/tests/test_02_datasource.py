@@ -21,6 +21,7 @@ class Test02DataSourceAPI:
         owner_datasource,
         foreign_datasource,
     ):
+        """Пользователю возвращает только его Datasource."""
         response = user_client.get(self.URL_DATASOURCES)
 
         assert response.status_code == HTTPStatus.OK
@@ -38,6 +39,7 @@ class Test02DataSourceAPI:
         user_client,
         owner_datasource,
     ):
+        """Пользователь обращается к конкретному Datasource."""
         response = user_client.get(
             self.URL_DATASOURCES_ID.format(datasource_id=owner_datasource.id)
         )
@@ -52,6 +54,7 @@ class Test02DataSourceAPI:
         user_client,
         foreign_datasource,
     ):
+        """Пользователь обращается к конкретному ошибочному Datasource."""
         response = user_client.get(
             self.URL_DATASOURCES_ID.format(datasource_id=foreign_datasource.id)
         )
@@ -64,6 +67,7 @@ class Test02DataSourceAPI:
         user_client,
         owner_datasource,
     ):
+        """Пользователь удаляет Datasource."""
         response = user_client.delete(
             self.URL_DATASOURCES_ID.format(datasource_id=owner_datasource.id)
         )
@@ -75,17 +79,10 @@ class Test02DataSourceAPI:
         self,
         user_client,
         user,
-        datasource_media_root,
         minimal_csv_upload_file,
-        monkeypatch,
+        celery_task_eager
     ):
-        called_ids = []
-
-        def _delay_mock(datasource_id):
-            called_ids.append(datasource_id)
-
-        monkeypatch.setattr('api.views.process_datasource.delay', _delay_mock)
-
+        """Успешная загрузка и обработка CSV файла."""
         response = user_client.post(
             self.URL_DATASOURCES_UPLOAD,
             data={
@@ -102,24 +99,22 @@ class Test02DataSourceAPI:
         ds = DataSource.objects.get(id=created_id)
         assert ds.owner.pk == user.pk
         assert ds.source_type == DataSource.SourceType.FILE
-        assert ds.status == DataSource.Status.PENDING
         assert ds.original_filename == 'minimal_valid.csv'
-        assert called_ids == [str(ds.id)]
+
+        assert ds.status == DataSource.Status.READY, ds.error_message
+        assert ds.parquet_file
+        assert ds.row_count == 3
+        assert ds.column_count == 3
 
     def test_02_datasources_upload_xlsx_success(
         self,
         user_client,
         datasource_media_root,
+        user,
         minimal_xlsx_upload_file,
-        monkeypatch,
+        celery_task_eager,
     ):
-        called_ids = []
-
-        def _delay_mock(datasource_id):
-            called_ids.append(datasource_id)
-
-        monkeypatch.setattr('api.views.process_datasource.delay', _delay_mock)
-
+        """Успешная загрузка и обработка XLSX файла."""
         response = user_client.post(
             self.URL_DATASOURCES_UPLOAD,
             data={'file': minimal_xlsx_upload_file},
@@ -130,21 +125,123 @@ class Test02DataSourceAPI:
         created_id = response.json()['id']
         ds = DataSource.objects.get(id=created_id)
 
+        assert ds.owner.pk == user.pk
+        assert ds.source_type == DataSource.SourceType.FILE
+        assert ds.name == 'minimal_valid.xlsx'
         assert ds.original_filename == 'minimal_valid.xlsx'
-        assert called_ids == [str(ds.id)]
+        assert ds.status == DataSource.Status.READY, ds.error_message
+        assert ds.parquet_file
+        assert ds.row_count == 2
+        assert ds.column_count == 3
+        assert [col['name'] for col in ds.columns_meta] == [
+            'id',
+            'name',
+            'amount',
+        ]
+        assert ds.error_message == ''
+
+    def test_02_datasources_upload_xlsx_with_sheet_name_success(
+        self,
+        user_client,
+        user,
+        multi_sheet_xlsx_upload_file,
+        celery_task_eager,
+        datasource_media_root,
+    ):
+        """Обработка XLSX с несколькими листами по выбранному листу."""
+        response = user_client.post(
+            self.URL_DATASOURCES_UPLOAD,
+            data={
+                'file': multi_sheet_xlsx_upload_file,
+                'sheet_name': 'orders',
+            },
+            format='multipart',
+        )
+
+        assert response.status_code == HTTPStatus.CREATED
+        created_id = response.json()['id']
+        ds = DataSource.objects.get(id=created_id)
+
+        assert ds.owner.pk == user.pk
+        assert ds.source_type == DataSource.SourceType.FILE
+        assert ds.name == 'multi_sheet.xlsx'
+        assert ds.original_filename == 'multi_sheet.xlsx'
+        assert ds.sheet_name == 'orders'
+        assert ds.status == DataSource.Status.READY, ds.error_message
+        assert ds.parquet_file
+        assert ds.row_count == 3
+        assert ds.column_count == 3
+        assert [col['name'] for col in ds.columns_meta] == [
+            'id',
+            'name',
+            'amount',
+        ]
+        assert ds.error_message == ''
+
+        preview_response = user_client.get(
+            self.URL_DATASOURCES_PREVIEW.format(
+                datasource_id=ds.id) + '?limit=5'
+        )
+        assert preview_response.status_code == HTTPStatus.OK
+        preview_json = preview_response.json()
+
+        assert preview_json['columns'] == ['id', 'name', 'amount']
+        assert preview_json['total_rows'] == 3
+        assert preview_json['preview_rows'] == 3
+        assert preview_json['data'][0] == {
+            'id': 10, 'name': 'Desk', 'amount': 2.0}
+        assert preview_json['data'][-1] == {
+            'id': 30,
+            'name': 'Chair',
+            'amount': 1.0,
+        }
+
+    def test_02_datasources_upload_xlsx_with_unknown_sheet_sets_error(
+        self,
+        user_client,
+        user,
+        multi_sheet_xlsx_upload_file,
+        celery_task_eager,
+        datasource_media_root,
+    ):
+        """Для несуществующего листа источник переходит в ERROR."""
+        response = user_client.post(
+            self.URL_DATASOURCES_UPLOAD,
+            data={
+                'file': multi_sheet_xlsx_upload_file,
+                'sheet_name': 'missing_sheet',
+            },
+            format='multipart',
+        )
+
+        assert response.status_code == HTTPStatus.CREATED
+        created_id = response.json()['id']
+        ds = DataSource.objects.get(id=created_id)
+
+        assert ds.owner.pk == user.pk
+        assert ds.source_type == DataSource.SourceType.FILE
+        assert ds.original_filename == 'multi_sheet.xlsx'
+        assert ds.sheet_name == 'missing_sheet'
+        assert ds.status == DataSource.Status.ERROR
+        assert not ds.parquet_file
+        assert ds.row_count is None
+        assert ds.column_count is None
+        assert ds.columns_meta == []
+        assert ds.error_message
+        assert 'missing_sheet' in ds.error_message
+
+        preview_response = user_client.get(
+            self.URL_DATASOURCES_PREVIEW.format(datasource_id=ds.id)
+        )
+        assert preview_response.status_code == HTTPStatus.CONFLICT
 
     def test_02_datasources_upload_unsupported_extension_returns_400(
         self,
         user_client,
         unsupported_upload_file,
-        monkeypatch,
     ):
-        called_ids = []
-
-        def _delay_mock(datasource_id):
-            called_ids.append(datasource_id)
-
-        monkeypatch.setattr('api.views.process_datasource.delay', _delay_mock)
+        """Загрузка файла с неподдерживаемым расширением возвращает 400."""
+        before_count = DataSource.objects.count()
 
         response = user_client.post(
             self.URL_DATASOURCES_UPLOAD,
@@ -154,27 +251,28 @@ class Test02DataSourceAPI:
 
         assert response.status_code == HTTPStatus.BAD_REQUEST
         assert 'file' in response.json()
-        assert called_ids == []
+        assert DataSource.objects.count() == before_count
 
     @pytest.mark.parametrize(
-        'file_fixture_name',
-        ['empty_headers_upload_file', 'malformed_upload_file'],
+        ('file_fixture_name', 'expected_error_part'),
+        [
+            ('empty_headers_upload_file', 'Файл не содержит данных.'),
+            ('malformed_upload_file', 'Ошибка чтения файла:'),
+        ],
     )
     def test_02_upload_empty_and_malformed_are_accepted_at_api_level(
         self,
         user_client,
+        user,
         datasource_media_root,
         request,
         file_fixture_name,
-        monkeypatch,
+        expected_error_part,
+        celery_task_eager,
     ):
-        called_ids = []
-
-        def _delay_mock(datasource_id):
-            called_ids.append(datasource_id)
-
-        monkeypatch.setattr('api.views.process_datasource.delay', _delay_mock)
-
+        """
+        Пустой и битый CSV создают источник, но завершаются ошибкой обработки.
+        """
         upload_file = request.getfixturevalue(file_fixture_name)
         response = user_client.post(
             self.URL_DATASOURCES_UPLOAD,
@@ -183,7 +281,18 @@ class Test02DataSourceAPI:
         )
 
         assert response.status_code == HTTPStatus.CREATED
-        assert len(called_ids) == 1
+        created_id = response.json()['id']
+        ds = DataSource.objects.get(id=created_id)
+
+        assert ds.owner.pk == user.pk
+        assert ds.source_type == DataSource.SourceType.FILE
+        assert ds.original_filename == upload_file.name
+        assert ds.status == DataSource.Status.ERROR
+        assert not ds.parquet_file
+        assert ds.row_count is None
+        assert ds.column_count is None
+        assert ds.columns_meta == []
+        assert expected_error_part in ds.error_message
 
     def test_02_datasources_connect_db_success(
         self,

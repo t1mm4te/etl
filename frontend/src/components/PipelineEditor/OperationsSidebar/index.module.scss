@@ -1,19 +1,28 @@
 @use '../../../styles/_vars.scss' as *;
 
 .sidebar {
-  background: $darkGray;
-  border: 1px solid $borderColor;
-  border-radius: $borderRadiusMedium;
-  padding: $spacingBase;
+  background: linear-gradient(180deg, rgba($darkGray, 0.5), rgba($darkGray, 0.72));
+  border: 1px solid rgba($borderColor, 0.92);
+  border-radius: $borderRadiusLarge;
+  padding: 18px 14px;
   height: 100%;
   overflow-y: auto;
+  box-shadow:
+    0 16px 34px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba($white, 0.12);
 
   .title {
     color: $white;
-    text-align: center;
-    font-size: 24px;
-    font-weight: 600;
-    margin-bottom: $spacingBase;
+    margin: 0;
+    font-size: 26px;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+
+  .subtitle {
+    margin: 8px 0 14px;
+    color: $labelColor;
+    font-size: 14px;
   }
 
   .muted {
@@ -21,14 +30,13 @@
   }
 
   .group {
-    border-top: 1px solid $borderColor;
-    // background-color: rgb(83, 6, 6);
+    border-top: 1px solid rgba($borderColor, 0.75);
 
     .groupHeader {
       width: 100%;
       border: none;
       background: transparent;
-      padding: 16px 8px;
+      padding: 14px 8px;
       border-radius: $borderRadiusMedium;
       color: inherit;
       cursor: pointer;
@@ -38,15 +46,21 @@
       gap: 10px;
       text-align: left;
 
+      &:hover {
+        background: rgba($primaryColor, 0.08);
+      }
+
       .categoryLabel {
         color: $white;
-        font-size: 18px;
-        font-weight: 600;
+        font-size: 17px;
+        font-weight: 700;
+        margin: 0;
       }
 
       .categoryDescription {
         color: $labelColor;
-        font-size: 16px;
+        font-size: 14px;
+        margin: 2px 0 0;
       }
 
       .groupChevron,
@@ -66,45 +80,81 @@
     .groupItems {
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      // background-color: rgba($primaryColor, 0.2);
+      gap: 10px;
+      padding-bottom: 10px;
 
       .nodeButton {
-        border: 2px solid $borderColor;
-        border-radius: $borderRadiusSmall;
+        border: 1px solid rgba($primaryColor, 0.32);
+        border-radius: $borderRadiusLarge;
         color: $white;
-        padding: 10px;
+        padding: 12px;
         text-align: left;
         cursor: pointer;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        // background-color: rgba($primaryColor, 0.2);
-        background-color: $darkGrayLighter;
+        transition:
+          border-color $transitionFast,
+          transform $transitionFast,
+          box-shadow $transitionFast,
+          background-color $transitionFast;
+        background: linear-gradient(180deg, rgba($darkGray, 0.4), rgba($darkGray, 0.5));
+        position: relative;
+
+        &::before {
+          content: '';
+          position: absolute;
+          left: 12px;
+          top: 10px;
+          bottom: 10px;
+          width: 3px;
+          border-radius: 999px;
+          background: linear-gradient(180deg, rgba($primaryColor, 0.95), rgba($white, 0.3));
+          opacity: 0.85;
+        }
 
         &:hover {
-          border-color: $primaryColor;
+          transform: translateY(-1px);
+          border-color: rgba($primaryColor, 0.62);
+          box-shadow:
+            0 14px 26px rgba(0, 0, 0, 0.28),
+            inset 0 1px 0 rgba($primaryColor, 0.16);
+        }
+
+        &:focus-visible {
+          outline: none;
+          box-shadow: 0 0 0 3px rgba($primaryColor, 0.26);
+        }
+
+        .nodeContent {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+          padding-left: 12px;
+        }
+
+        .nodeText {
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
         }
 
         .operationLabel {
           color: $white;
           font-size: 16px;
+          line-height: 1.25;
         }
 
-        .nodeContent {
-          display: flex;
-          flex-direction: row;
-          justify-content: space-between;
+        .operationDescription {
+          color: $labelColor;
+          font-size: 14px;
+          line-height: 1.4;
+        }
 
-          .operationDescription {
-            color: $labelColor;
-            font-size: 14px;
-            width: 70%;
-          }
-          > img {
-            width: 80px;
-            object-fit: contain;
-          }
+        .operationIcon {
+          width: 58px;
+          height: 58px;
+          object-fit: contain;
+          flex-shrink: 0;
         }
       }
     }

@@ -10,15 +10,18 @@
   .card {
     width: 100%;
     max-width: 420px;
-    background-color: $darkGray;
     border-radius: $borderRadiusMedium;
     padding: $spacingXl;
-    box-shadow: 0 4px 12px rgb(0 0 0 / 30%);
+    box-shadow:
+      0 18px 40px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba($white, 0.2);
     animation: slideUp 300ms ease-out;
-    border: 1px solid rgba($primaryColor, 0.32);
-    background:
-      linear-gradient(90deg, rgba($primaryColor, 0.1) 0%, transparent 100%),
-      linear-gradient(180deg, rgba($primaryColor, 0.1) 0%, transparent 100%);
+    border: 1px solid rgba($solidMutedColor, 0.82);
+    background: linear-gradient(
+      145deg,
+      rgba($solidMutedColor, 0.34) 0%,
+      rgba($solidMutedColor2, 0.66) 100%
+    );
 
     .title {
       margin-bottom: $spacingLarge;

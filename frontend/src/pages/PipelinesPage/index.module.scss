@@ -44,10 +44,12 @@
         inset 0 1px 0 rgba($white, 0.2);
       position: sticky;
       top: 110px;
-      border: 1px solid rgba($primaryColor, 0.32);
-      background:
-        linear-gradient(90deg, rgba($primaryColor, 0.1) 0%, transparent 100%),
-        linear-gradient(180deg, rgba($primaryColor, 0.1) 0%, transparent 100%);
+      border: 1px solid rgba($solidMutedColor, 0.82);
+      background: linear-gradient(
+        145deg,
+        rgba($solidMutedColor, 0.34) 0%,
+        rgba($solidMutedColor2, 0.66) 100%
+      );
 
       .createCardTitle {
         margin: 0;
@@ -75,7 +77,7 @@
             min-height: 42px;
             border: 1px solid $borderColor;
             border-radius: $borderRadiusSmall;
-            background-color: $darkGrayLighter;
+            background-color: #1d1d1d;
             color: $lightGray;
             padding: 12px 14px;
             font-size: $defaultFontSize;
@@ -142,6 +144,7 @@
             box-shadow $transitionFast;
           border-radius: $borderRadiusLarge;
           background: linear-gradient(180deg, rgba($darkGray, 0.4), rgba($darkGray, 0.5));
+
           border: 1px solid rgba($primaryColor, 0.32);
 
           &:hover {
@@ -208,7 +211,7 @@
                   width: 100%;
                   border: 1px solid $borderColor;
                   border-radius: $borderRadiusSmall;
-                  background-color: $darkGrayLighter;
+                  background-color: $darkGray;
                   color: $lightGray;
                   padding: 10px 12px;
                   font-size: $defaultFontSize;
@@ -264,7 +267,6 @@
 
           .itemCardEditing {
             cursor: default;
-
             &::before {
               opacity: 0.45;
             }

@@ -3,15 +3,16 @@
 .page {
   display: flex;
   flex-direction: column;
-  gap: $spacingMedium;
-  padding: 20px;
+  padding: 16px;
   min-height: calc(100vh - 85px);
+  width: 100%;
+  margin: 0;
 }
 
 .layout {
   display: grid;
   grid-template-columns: 340px minmax(0, 1fr);
-  gap: $spacingMedium;
+  gap: 22px;
   min-height: 560px;
   height: calc(100vh - 220px);
 }

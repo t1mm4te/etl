@@ -36,18 +36,20 @@
   .grid {
     display: grid;
     grid-template-columns: repeat(12, minmax(0, 1fr));
-    gap: 16px;
+    gap: 26px;
 
     .card {
       grid-column: span 6;
       border-radius: $borderRadiusLarge;
-      border: 1px solid rgba($primaryColor, 0.28);
-      background:
-        radial-gradient(circle at 0% 0%, rgba($primaryColor, 0.16) 0%, transparent 45%),
-        linear-gradient(180deg, rgba($darkGray, 0.6), rgba($darkGray, 0.82));
+      border: 1px solid rgba($solidMutedColor, 0.82);
+      background: linear-gradient(
+        145deg,
+        rgba($solidMutedColor, 0.34) 0%,
+        rgba($solidMutedColor2, 0.66) 100%
+      );
       box-shadow:
-        0 20px 36px rgba(0, 0, 0, 0.35),
-        inset 0 1px 0 rgba($white, 0.12);
+        0 18px 40px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba($white, 0.2);
       padding: 20px;
       display: flex;
       flex-direction: column;

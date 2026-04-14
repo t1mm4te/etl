@@ -50,7 +50,8 @@ export function OperationsSidebar({
 }: OperationsSidebarProps) {
   return (
     <aside className={styles.sidebar}>
-      <h2 className={styles.title}>Ноды</h2>
+      <h2 className={styles.title}>Операции</h2>
+      <p className={styles.subtitle}>Добавьте ноду в пайплайн одним кликом</p>
       {isLoading ? <p className={styles.muted}>Загрузка каталога...</p> : null}
 
       {sortedCategories.map(([categoryId, category], index) => {
@@ -80,10 +81,12 @@ export function OperationsSidebar({
                     type="button"
                     onClick={() => onCreateNode(operation)}
                   >
-                    <strong className={styles.operationLabel}>{operation.label}</strong>
                     <div className={styles.nodeContent}>
-                      <span className={styles.operationDescription}>{operation.description}</span>
-                      <img alt={operation.type} src={resolveIcon(operation)} />
+                      <div className={styles.nodeText}>
+                        <strong className={styles.operationLabel}>{operation.label}</strong>
+                        <span className={styles.operationDescription}>{operation.description}</span>
+                      </div>
+                      <img className={styles.operationIcon} alt={operation.type} src={resolveIcon(operation)} />
                     </div>
                   </button>
                 ))}

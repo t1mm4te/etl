@@ -8,60 +8,65 @@
   position: sticky;
   top: 0;
   z-index: 1000;
-  padding: 0px 100px;
-  height: 85px;
-  background: linear-gradient(140deg, $solidMutedColor 0%, $defaultBackgroundColor 100%);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.3);
+  padding: 0 30px;
+  min-height: 85px;
+  background: linear-gradient(160deg, #1e4130 0%, #13261d 100%);
+  border-bottom: 1px solid rgba($white, 0.12);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28);
 
   .inner {
     width: 100%;
     margin: 0 auto;
-    min-height: 64px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: $spacingMedium;
-    padding: 0 $spacingMedium;
+    padding: 0;
 
     .logo {
-      color: $white;
-      font-weight: 700;
-      font-size: 18px;
+      display: inline-flex;
+      align-items: center;
+      text-decoration: none;
+      line-height: 0;
+
+      .logoImage {
+        display: block;
+        width: auto;
+        height: 64px;
+      }
     }
 
     .nav {
       display: flex;
       align-items: center;
-      gap: $spacingMedium;
+      gap: 30px;
 
       .navLink {
+        color: rgba($white, 0.94);
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 24px;
+        letter-spacing: 0.01em;
+        text-align: center;
+        transition:
+          color $transitionFast,
+          opacity $transitionFast;
+
+        &:hover {
+          color: $white;
+          opacity: 1;
+        }
+      }
+
+      .navLinkActive {
         color: $white;
+        text-decoration: underline;
+        text-underline-offset: 6px;
       }
 
       .actions {
         display: flex;
-        gap: $spacingLarge;
-
-        .actionBtn {
-          width: auto;
-          min-width: 130px;
-          min-height: 36px;
-          padding: 0 12px;
-        }
-      }
-
-      .user {
-        color: $white;
-        font-weight: 600;
-      }
-
-      .logout {
-        border: 1px solid rgb(255 255 255 / 45%);
-        color: $white;
-        background: transparent;
-        border-radius: $borderRadiusSmall;
-        padding: 6px 10px;
-        cursor: pointer;
+        align-items: center;
+        gap: 30px;
       }
     }
   }

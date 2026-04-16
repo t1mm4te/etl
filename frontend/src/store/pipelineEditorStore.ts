@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { ReactFlowInstance } from 'reactflow';
-import type { PreviewResponse } from '../api/types';
+import type { NodeConfig, PreviewResponse } from '../api/types';
 
 type PipelineEditorStore = {
   resetEditorState: () => void;
@@ -15,7 +15,7 @@ type PipelineEditorStore = {
   toggleCategory: (categoryId: string, defaultCategoryId?: string) => void;
 
   editingNodeId: string | null;
-  configText: string;
+  config: NodeConfig;
   uploadedDatasourceId: string;
   selectedFile: File | null;
   inputPreview: PreviewResponse | null;
@@ -24,9 +24,9 @@ type PipelineEditorStore = {
   activePreviewTab: 'input' | 'result';
   previewInfo?: string;
   modalError?: string;
-  openNodeModal: (nodeId: string, configText: string, datasourceId: string) => void;
+  openNodeModal: (nodeId: string, config: NodeConfig, datasourceId: string) => void;
   closeNodeModal: () => void;
-  setConfigText: (value: string) => void;
+  setConfig: (value: NodeConfig) => void;
   setUploadedDatasourceId: (value: string) => void;
   setSelectedFile: (file: File | null) => void;
   setInputPreview: (preview: PreviewResponse | null) => void;
@@ -43,7 +43,7 @@ const getDefaultState = () => ({
   flowInstance: null as ReactFlowInstance | null,
   openCategories: {} as Record<string, boolean>,
   editingNodeId: null as string | null,
-  configText: '{}',
+  config: {} as NodeConfig,
   uploadedDatasourceId: '',
   selectedFile: null as File | null,
   inputPreview: null as PreviewResponse | null,
@@ -70,10 +70,10 @@ export const usePipelineEditorStore = create<PipelineEditorStore>((set) => ({
       },
     })),
 
-  openNodeModal: (nodeId, configText, datasourceId) =>
+  openNodeModal: (nodeId, config, datasourceId) =>
     set({
       editingNodeId: nodeId,
-      configText,
+      config,
       uploadedDatasourceId: datasourceId,
       selectedFile: null,
       inputPreview: null,
@@ -96,7 +96,7 @@ export const usePipelineEditorStore = create<PipelineEditorStore>((set) => ({
       modalError: undefined,
     }),
 
-  setConfigText: (configText) => set({ configText }),
+  setConfig: (config) => set({ config }),
   setUploadedDatasourceId: (uploadedDatasourceId) => set({ uploadedDatasourceId }),
   setSelectedFile: (selectedFile) => set({ selectedFile }),
   setInputPreview: (inputPreview) => set({ inputPreview }),

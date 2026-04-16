@@ -1,5 +1,6 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
+  getNodeInputColumns,
   getPipelineRun,
   getDatasourceDetail,
   listPipelineRuns,
@@ -11,14 +12,6 @@ import {
 import type { Edge, Node as ApiNode, NodeConfig, NodeRun } from '../../../api/types';
 import { extractError } from '../../../lib/extractError';
 import { usePipelineEditorStore } from '../../../store/pipelineEditorStore';
-
-function parseConfigText(configText: string): NodeConfig {
-  const parsed = JSON.parse(configText) as unknown;
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new Error('Конфиг должен быть JSON-объектом');
-  }
-  return parsed as NodeConfig;
-}
 
 type UseNodeConfigModalStateParams = {
   pipelineId: string;
@@ -50,8 +43,10 @@ export function useNodeConfigModalState({
   nodeRuns,
   saveNodeConfig,
 }: UseNodeConfigModalStateParams) {
+  const [availableColumns, setAvailableColumns] = useState<string[]>([]);
+
   const editingNodeId = usePipelineEditorStore((state) => state.editingNodeId);
-  const configText = usePipelineEditorStore((state) => state.configText);
+  const config = usePipelineEditorStore((state) => state.config);
   const selectedFile = usePipelineEditorStore((state) => state.selectedFile);
   const uploadedDatasourceId = usePipelineEditorStore((state) => state.uploadedDatasourceId);
   const inputPreview = usePipelineEditorStore((state) => state.inputPreview);
@@ -62,7 +57,7 @@ export function useNodeConfigModalState({
   const modalError = usePipelineEditorStore((state) => state.modalError);
   const openModalState = usePipelineEditorStore((state) => state.openNodeModal);
   const closeModalState = usePipelineEditorStore((state) => state.closeNodeModal);
-  const setConfigText = usePipelineEditorStore((state) => state.setConfigText);
+  const setConfig = usePipelineEditorStore((state) => state.setConfig);
   const setSelectedFile = usePipelineEditorStore((state) => state.setSelectedFile);
   const setUploadedDatasourceId = usePipelineEditorStore((state) => state.setUploadedDatasourceId);
   const setInputPreview = usePipelineEditorStore((state) => state.setInputPreview);
@@ -133,6 +128,23 @@ export function useNodeConfigModalState({
     const runDetail = await getPipelineRun(latestCompletedRun.id);
     return runDetail.node_runs;
   }, [nodeRuns, pipelineId, setRunId]);
+
+  const loadAvailableColumns = useCallback(
+    async (nodeId: string) => {
+      try {
+        const response = await getNodeInputColumns(pipelineId, nodeId);
+        const names = Object.values(response.columns)
+          .flatMap((items) => items)
+          .map((item) => item.name)
+          .filter((name): name is string => typeof name === 'string' && name.length > 0);
+
+        setAvailableColumns(Array.from(new Set(names)));
+      } catch {
+        setAvailableColumns([]);
+      }
+    },
+    [pipelineId]
+  );
 
   const fetchSourcePreview = useCallback(
     async (datasourceId: string) => {
@@ -236,7 +248,8 @@ export function useNodeConfigModalState({
 
       const cfg = node.config ?? {};
       const currentDatasourceId = typeof cfg.datasource_id === 'string' ? cfg.datasource_id : '';
-      openModalState(node.id, JSON.stringify(node.config ?? {}, null, 2), currentDatasourceId);
+      openModalState(node.id, { ...(node.config ?? {}) }, currentDatasourceId);
+      await loadAvailableColumns(node.id);
 
       const kind = getNodeKind(node.operation_type);
       if (kind === 'source' && currentDatasourceId) {
@@ -251,6 +264,7 @@ export function useNodeConfigModalState({
     [
       fetchNodePreviewsFromRuns,
       fetchSourcePreview,
+      loadAvailableColumns,
       nodes,
       openModalState,
       resolveNodeRunsForPreview,
@@ -258,6 +272,7 @@ export function useNodeConfigModalState({
   );
 
   const closeModal = useCallback(() => {
+    setAvailableColumns([]);
     closeModalState();
   }, [closeModalState]);
 
@@ -269,17 +284,15 @@ export function useNodeConfigModalState({
     setModalError(undefined);
 
     try {
-      const parsedConfig = parseConfigText(configText);
-      if (uploadedDatasourceId) {
-        parsedConfig.datasource_id = uploadedDatasourceId;
-      }
-
-      await saveNodeConfig(editingNode.id, parsedConfig);
+      const nextConfig = uploadedDatasourceId
+        ? { ...config, datasource_id: uploadedDatasourceId }
+        : config;
+      await saveNodeConfig(editingNode.id, nextConfig);
       closeModal();
     } catch (error) {
       setModalError(extractError(error, 'Не удалось сохранить конфигурацию ноды'));
     }
-  }, [closeModal, configText, editingNode, saveNodeConfig, setModalError, uploadedDatasourceId]);
+  }, [closeModal, config, editingNode, saveNodeConfig, setModalError, uploadedDatasourceId]);
 
   const onUploadFile = useCallback(async () => {
     if (!selectedFile || !editingNode) {
@@ -294,25 +307,26 @@ export function useNodeConfigModalState({
       setUploadedDatasourceId(uploaded.id);
       setPreviewInfo('Файл загружен. Загружаем предпросмотр...');
 
-      const parsedConfig = parseConfigText(configText);
-      parsedConfig.datasource_id = uploaded.id;
-      setConfigText(JSON.stringify(parsedConfig, null, 2));
+      const nextConfig = { ...config, datasource_id: uploaded.id };
+      setConfig(nextConfig);
 
-      await saveNodeConfig(editingNode.id, parsedConfig);
+      await saveNodeConfig(editingNode.id, nextConfig);
       await fetchSourcePreview(uploaded.id);
+      await loadAvailableColumns(editingNode.id);
     } catch (error) {
       setModalError(extractError(error, 'Не удалось загрузить файл'));
     }
   }, [
-    configText,
+    config,
     editingNode,
     fetchSourcePreview,
     saveNodeConfig,
     selectedFile,
-    setConfigText,
+    setConfig,
     setModalError,
     setPreviewInfo,
     setUploadedDatasourceId,
+    loadAvailableColumns,
   ]);
 
   const onRefreshSourcePreview = useCallback(async () => {
@@ -334,12 +348,10 @@ export function useNodeConfigModalState({
     setIsPreviewLoading(true);
 
     try {
-      const parsedConfig = parseConfigText(configText);
-      if (uploadedDatasourceId) {
-        parsedConfig.datasource_id = uploadedDatasourceId;
-      }
-
-      await saveNodeConfig(editingNode.id, parsedConfig);
+      const nextConfig = uploadedDatasourceId
+        ? { ...config, datasource_id: uploadedDatasourceId }
+        : config;
+      await saveNodeConfig(editingNode.id, nextConfig);
 
       if (nodeKind === 'transform') {
         setPreviewInfo(
@@ -368,7 +380,7 @@ export function useNodeConfigModalState({
       setIsPreviewLoading(false);
     }
   }, [
-    configText,
+    config,
     editingNode,
     fetchNodePreviewsFromRuns,
     nodeKind,
@@ -387,13 +399,14 @@ export function useNodeConfigModalState({
     editingNode,
     nodeKind,
     hasIncomingData,
-    configText,
+    config,
     modalError,
     inputPreview,
     resultPreview,
     isPreviewLoading,
     activePreviewTab,
     previewInfo,
+    availableColumns,
     selectedFile,
     onApplyPreview,
     onRefreshSourcePreview,
@@ -401,7 +414,7 @@ export function useNodeConfigModalState({
     onUploadFile,
     openNodeModal,
     closeModal,
-    setConfigText,
+    setConfig,
     setActivePreviewTab,
     setSelectedFile,
   };

@@ -5,6 +5,7 @@ import type {
   EdgeCreatePayload,
   Node,
   NodeCreatePayload,
+  NodeInputColumnsResponse,
   NodeUpdatePayload,
   OperationCatalogResponse,
   PaginatedResponse,
@@ -119,5 +120,12 @@ export const previewNodeRun = async (nodeRunId: string, limit = 10) => {
   const response = await apiClient.get<PreviewResponse>(`/node-runs/${nodeRunId}/preview/`, {
     params: { limit },
   });
+  return response.data;
+};
+
+export const getNodeInputColumns = async (pipelineId: string, nodeId: string) => {
+  const response = await apiClient.get<NodeInputColumnsResponse>(
+    `/pipelines/${pipelineId}/nodes/${nodeId}/input-columns/`
+  );
   return response.data;
 };

@@ -1,0 +1,12 @@
+@use '../../../../../styles/_vars.scss' as *;
+
+.configLabel {
+  color: $labelColor;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.muted {
+  color: $labelColor;
+}

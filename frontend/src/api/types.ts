@@ -188,6 +188,16 @@ export interface PreviewResponse {
   data: Array<Record<string, unknown>>;
 }
 
+export interface ColumnMeta {
+  name: string;
+  dtype?: string;
+  [key: string]: unknown;
+}
+
+export interface NodeInputColumnsResponse {
+  columns: Record<string, ColumnMeta[]>;
+}
+
 export interface DataSourceDetail {
   id: string;
   name: string;

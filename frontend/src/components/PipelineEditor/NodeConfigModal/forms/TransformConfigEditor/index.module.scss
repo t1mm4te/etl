@@ -1,0 +1,11 @@
+@use '../../../../../styles/_vars.scss' as *;
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.muted {
+  color: $labelColor;
+}

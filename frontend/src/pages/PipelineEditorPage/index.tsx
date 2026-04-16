@@ -65,7 +65,7 @@ export function PipelineEditorPage() {
     editingNode,
     nodeKind,
     hasIncomingData,
-    configText,
+    config,
     modalError,
     onApplyPreview,
     onRefreshSourcePreview,
@@ -78,8 +78,9 @@ export function PipelineEditorPage() {
     isPreviewLoading,
     activePreviewTab,
     previewInfo,
+    availableColumns,
     selectedFile,
-    setConfigText,
+    setConfig,
     setActivePreviewTab,
     setSelectedFile,
   } = useNodeConfigModalState({
@@ -175,7 +176,8 @@ export function PipelineEditorPage() {
       {editingNode ? (
         <NodeConfigModal
           activePreviewTab={activePreviewTab}
-          configText={configText}
+          config={config}
+          availableColumns={availableColumns}
           hasIncomingData={hasIncomingData}
           inputPreview={inputPreview}
           isPreviewLoading={isPreviewLoading}
@@ -187,7 +189,7 @@ export function PipelineEditorPage() {
             void onApplyPreview();
           }}
           onClose={closeModal}
-          onConfigTextChange={setConfigText}
+          onConfigChange={setConfig}
           onRefreshSourcePreview={() => {
             void onRefreshSourcePreview();
           }}

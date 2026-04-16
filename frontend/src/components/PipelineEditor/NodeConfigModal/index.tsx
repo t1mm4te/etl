@@ -1,6 +1,6 @@
-import type { ChangeEvent } from 'react';
-import type { Node as ApiNode, PreviewResponse } from '../../../api/types';
+import type { Node as ApiNode, NodeConfig, PreviewResponse } from '../../../api/types';
 import { Button } from '../../Button';
+import { SourceDbConfigEditor, SourceFileConfigEditor, TransformConfigEditor } from './forms';
 import styles from './index.module.scss';
 
 type NodeKind = 'source' | 'transform' | 'sink';
@@ -9,8 +9,9 @@ type NodeConfigModalProps = {
   node: ApiNode;
   nodeKind: NodeKind;
   hasIncomingData: boolean;
-  configText: string;
+  config: NodeConfig;
   selectedFile: File | null;
+  availableColumns: string[];
   inputPreview: PreviewResponse | null;
   resultPreview: PreviewResponse | null;
   isPreviewLoading: boolean;
@@ -18,7 +19,7 @@ type NodeConfigModalProps = {
   previewInfo?: string;
   modalError?: string;
   onClose: () => void;
-  onConfigTextChange: (value: string) => void;
+  onConfigChange: (value: NodeConfig) => void;
   onActivePreviewTabChange: (value: 'input' | 'result') => void;
   onFileChange: (file: File | null) => void;
   onUploadFile: () => void;
@@ -56,8 +57,9 @@ export function NodeConfigModal({
   node,
   nodeKind,
   hasIncomingData,
-  configText,
+  config,
   selectedFile,
+  availableColumns,
   inputPreview,
   resultPreview,
   isPreviewLoading,
@@ -65,7 +67,7 @@ export function NodeConfigModal({
   previewInfo,
   modalError,
   onClose,
-  onConfigTextChange,
+  onConfigChange,
   onActivePreviewTabChange,
   onFileChange,
   onUploadFile,
@@ -73,7 +75,8 @@ export function NodeConfigModal({
   onApplyPreview,
   onSaveConfig,
 }: NodeConfigModalProps) {
-  const fileName = selectedFile?.name;
+  const datasourceId = typeof config.datasource_id === 'string' ? config.datasource_id : undefined;
+
   const isSourceFile = node.operation_type === 'source_file';
   const isSourceDb = node.operation_type === 'source_db';
 
@@ -91,38 +94,20 @@ export function NodeConfigModal({
             <div className={styles.transformLayout}>
               <aside className={styles.configPanel}>
                 {isSourceFile ? (
-                  <>
-                    <label className={styles.configLabel}>
-                      Файл CSV/XLSX
-                      <input
-                        type="file"
-                        accept=".csv,.xlsx,.xls"
-                        onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                          onFileChange(event.target.files?.[0] ?? null)
-                        }
-                      />
-                    </label>
-
-                    {fileName ? <p className={styles.muted}>Выбран файл: {fileName}</p> : null}
-
-                    <Button type="button" color="white" onClick={onUploadFile}>
-                      Загрузить файл
-                    </Button>
-                    <Button type="button" color="white" onClick={onRefreshSourcePreview}>
-                      Обновить предпросмотр
-                    </Button>
-                  </>
+                  <SourceFileConfigEditor
+                    selectedFile={selectedFile}
+                    datasourceId={datasourceId}
+                    onFileChange={onFileChange}
+                    onUploadFile={onUploadFile}
+                    onRefreshSourcePreview={onRefreshSourcePreview}
+                  />
                 ) : null}
 
                 {isSourceDb ? (
-                  <>
-                    <Button type="button" color="white" disabled>
-                      Подключить БД (скоро)
-                    </Button>
-                    <Button type="button" color="white" onClick={onRefreshSourcePreview}>
-                      Обновить предпросмотр
-                    </Button>
-                  </>
+                  <SourceDbConfigEditor
+                    datasourceId={datasourceId}
+                    onRefreshSourcePreview={onRefreshSourcePreview}
+                  />
                 ) : null}
               </aside>
 
@@ -148,17 +133,14 @@ export function NodeConfigModal({
           {nodeKind === 'transform' ? (
             <div className={styles.transformLayout}>
               <aside className={styles.configPanel}>
-                <label className={styles.configLabel}>
-                  Настройки узла (JSON)
-                  <textarea
-                    rows={10}
-                    value={configText}
-                    onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
-                      onConfigTextChange(event.target.value)
-                    }
-                  />
-                </label>
-                <Button type="button" color="white" onClick={onApplyPreview}>
+                <TransformConfigEditor
+                  operationType={node.operation_type}
+                  config={config}
+                  availableColumns={availableColumns}
+                  onConfigChange={onConfigChange}
+                />
+
+                <Button type="button" onClick={onApplyPreview}>
                   Применить / обновить результат
                 </Button>
               </aside>
@@ -213,16 +195,13 @@ export function NodeConfigModal({
           {nodeKind === 'sink' ? (
             <div className={styles.transformLayout}>
               <aside className={styles.configPanel}>
-                <label className={styles.configLabel}>
-                  Дополнительные настройки (JSON)
-                  <textarea
-                    rows={10}
-                    value={configText}
-                    onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
-                      onConfigTextChange(event.target.value)
-                    }
-                  />
-                </label>
+                <TransformConfigEditor
+                  operationType={node.operation_type}
+                  config={config}
+                  availableColumns={availableColumns}
+                  onConfigChange={onConfigChange}
+                />
+
                 <Button type="button" color="white" onClick={onApplyPreview}>
                   Обновить финальный результат
                 </Button>

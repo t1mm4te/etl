@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '../../../../Button';
 import styles from './index.module.scss';
 import type { OperationConfigEditorProps } from '../types';
@@ -39,12 +39,7 @@ export function RenameColumnsConfigEditor({
   onChange,
 }: OperationConfigEditorProps) {
   const typedConfig = config as Record<string, unknown>;
-  const initialRows = useMemo(() => rowsFromConfig(typedConfig), [typedConfig]);
-  const [rows, setRows] = useState<RenameRow[]>(initialRows);
-
-  useEffect(() => {
-    setRows(initialRows);
-  }, [initialRows]);
+  const [rows, setRows] = useState<RenameRow[]>(() => rowsFromConfig(typedConfig));
 
   const updateRows = (nextRows: RenameRow[]) => {
     setRows(nextRows);

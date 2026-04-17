@@ -22,7 +22,8 @@ export function SelectColumnsConfigEditor({
   const availableSet = new Set(uniqueAvailableColumns);
   const selectedSet = new Set(selectedColumns);
   const allSelected =
-    uniqueAvailableColumns.length > 0 && uniqueAvailableColumns.every((column) => selectedSet.has(column));
+    uniqueAvailableColumns.length > 0 &&
+    uniqueAvailableColumns.every((column) => selectedSet.has(column));
   const extraSelectedColumns = selectedColumns.filter((column) => !availableSet.has(column));
 
   const updateColumns = (nextColumns: string[]) => {

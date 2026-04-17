@@ -1,0 +1,25 @@
+@use '../../../../../styles/_vars.scss' as *;
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.title {
+  margin: 0;
+  color: $white;
+  font-size: 16px;
+}
+
+.configLabel {
+  color: $labelColor;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.muted {
+  color: $labelColor;
+  margin: 0;
+}

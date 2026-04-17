@@ -1,0 +1,69 @@
+@use '../../../../../styles/_vars.scss' as *;
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.title {
+  margin: 0;
+  color: $white;
+  font-size: 16px;
+}
+
+.configLabel {
+  color: $labelColor;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.checkboxAll,
+.checkboxItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: $labelColor;
+  width: 100%;
+  line-height: 1.3;
+
+  &:hover {
+    color: $white;
+  }
+}
+
+.checkboxAll {
+  color: $white;
+  font-weight: 600;
+}
+
+.checkboxList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid $borderColor;
+  border-radius: $borderRadiusSmall;
+  padding: 10px;
+  background: $darkGrayLighter;
+}
+
+.checkboxInput {
+  flex: 0 0 auto;
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  max-width: 16px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 4px;
+  accent-color: $primaryColor;
+  align-self: center;
+}
+
+.muted {
+  color: $labelColor;
+  margin: 0;
+}

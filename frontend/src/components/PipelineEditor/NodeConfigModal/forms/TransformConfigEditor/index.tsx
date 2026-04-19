@@ -1,6 +1,10 @@
 import type { NodeConfig } from '../../../../../api/types';
 import styles from './index.module.scss';
+import { AggregateConfigEditor } from '../AggregateConfigEditor/index';
+import { CastTypesConfigEditor } from '../CastTypesConfigEditor/index';
+import { ComputedColumnConfigEditor } from '../ComputedColumnConfigEditor/index';
 import { DeduplicateConfigEditor } from '../DeduplicateConfigEditor/index';
+import { ExportFileConfigEditor } from '../ExportFileConfigEditor/index';
 import { FilterRowsConfigEditor } from '../FilterRowsConfigEditor/index';
 import { MergeColumnsConfigEditor } from '../MergeColumnsConfigEditor/index';
 import { RenameColumnsConfigEditor } from '../RenameColumnsConfigEditor/index';
@@ -79,13 +83,49 @@ export function TransformConfigEditor({
         />
       ) : null}
 
+      {operationType === 'aggregate' ? (
+        <AggregateConfigEditor
+          config={config}
+          availableColumns={availableColumns}
+          onChange={onConfigChange}
+        />
+      ) : null}
+
+      {operationType === 'cast_types' ? (
+        <CastTypesConfigEditor
+          config={config}
+          availableColumns={availableColumns}
+          onChange={onConfigChange}
+        />
+      ) : null}
+
+      {operationType === 'computed_column' ? (
+        <ComputedColumnConfigEditor
+          config={config}
+          availableColumns={availableColumns}
+          onChange={onConfigChange}
+        />
+      ) : null}
+
+      {operationType === 'export_file' ? (
+        <ExportFileConfigEditor
+          config={config}
+          availableColumns={availableColumns}
+          onChange={onConfigChange}
+        />
+      ) : null}
+
       {operationType !== 'sort' &&
       operationType !== 'filter_rows' &&
       operationType !== 'deduplicate' &&
       operationType !== 'select_columns' &&
       operationType !== 'rename_columns' &&
       operationType !== 'split_column' &&
-      operationType !== 'merge_columns' ? (
+      operationType !== 'merge_columns' &&
+      operationType !== 'aggregate' &&
+      operationType !== 'cast_types' &&
+      operationType !== 'computed_column' &&
+      operationType !== 'export_file' ? (
         <p className={styles.muted}>Форма для этой операции пока не реализована.</p>
       ) : null}
     </div>

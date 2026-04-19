@@ -1,4 +1,8 @@
+export { AggregateConfigEditor } from './AggregateConfigEditor/index';
+export { CastTypesConfigEditor } from './CastTypesConfigEditor/index';
+export { ComputedColumnConfigEditor } from './ComputedColumnConfigEditor/index';
 export { DeduplicateConfigEditor } from './DeduplicateConfigEditor/index';
+export { ExportFileConfigEditor } from './ExportFileConfigEditor/index';
 export { FilterRowsConfigEditor } from './FilterRowsConfigEditor/index';
 export { MergeColumnsConfigEditor } from './MergeColumnsConfigEditor/index';
 export { RenameColumnsConfigEditor } from './RenameColumnsConfigEditor/index';

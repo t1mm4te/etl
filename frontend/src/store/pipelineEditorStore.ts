@@ -19,9 +19,11 @@ type PipelineEditorStore = {
   uploadedDatasourceId: string;
   selectedFile: File | null;
   inputPreview: PreviewResponse | null;
+  leftInputPreview: PreviewResponse | null;
+  rightInputPreview: PreviewResponse | null;
   resultPreview: PreviewResponse | null;
   isPreviewLoading: boolean;
-  activePreviewTab: 'input' | 'result';
+  activePreviewTab: 'input' | 'left_input' | 'right_input' | 'result';
   previewInfo?: string;
   modalError?: string;
   openNodeModal: (nodeId: string, config: NodeConfig, datasourceId: string) => void;
@@ -30,9 +32,11 @@ type PipelineEditorStore = {
   setUploadedDatasourceId: (value: string) => void;
   setSelectedFile: (file: File | null) => void;
   setInputPreview: (preview: PreviewResponse | null) => void;
+  setLeftInputPreview: (preview: PreviewResponse | null) => void;
+  setRightInputPreview: (preview: PreviewResponse | null) => void;
   setResultPreview: (preview: PreviewResponse | null) => void;
   setIsPreviewLoading: (value: boolean) => void;
-  setActivePreviewTab: (value: 'input' | 'result') => void;
+  setActivePreviewTab: (value: 'input' | 'left_input' | 'right_input' | 'result') => void;
   setPreviewInfo: (value?: string) => void;
   setModalError: (value?: string) => void;
 };
@@ -47,6 +51,8 @@ const getDefaultState = () => ({
   uploadedDatasourceId: '',
   selectedFile: null as File | null,
   inputPreview: null as PreviewResponse | null,
+  leftInputPreview: null as PreviewResponse | null,
+  rightInputPreview: null as PreviewResponse | null,
   resultPreview: null as PreviewResponse | null,
   isPreviewLoading: false,
   activePreviewTab: 'input' as const,
@@ -77,6 +83,8 @@ export const usePipelineEditorStore = create<PipelineEditorStore>((set) => ({
       uploadedDatasourceId: datasourceId,
       selectedFile: null,
       inputPreview: null,
+      leftInputPreview: null,
+      rightInputPreview: null,
       resultPreview: null,
       isPreviewLoading: false,
       activePreviewTab: 'input',
@@ -89,6 +97,8 @@ export const usePipelineEditorStore = create<PipelineEditorStore>((set) => ({
       editingNodeId: null,
       selectedFile: null,
       inputPreview: null,
+      leftInputPreview: null,
+      rightInputPreview: null,
       resultPreview: null,
       isPreviewLoading: false,
       activePreviewTab: 'input',
@@ -100,6 +110,8 @@ export const usePipelineEditorStore = create<PipelineEditorStore>((set) => ({
   setUploadedDatasourceId: (uploadedDatasourceId) => set({ uploadedDatasourceId }),
   setSelectedFile: (selectedFile) => set({ selectedFile }),
   setInputPreview: (inputPreview) => set({ inputPreview }),
+  setLeftInputPreview: (leftInputPreview) => set({ leftInputPreview }),
+  setRightInputPreview: (rightInputPreview) => set({ rightInputPreview }),
   setResultPreview: (resultPreview) => set({ resultPreview }),
   setIsPreviewLoading: (isPreviewLoading) => set({ isPreviewLoading }),
   setActivePreviewTab: (activePreviewTab) => set({ activePreviewTab }),

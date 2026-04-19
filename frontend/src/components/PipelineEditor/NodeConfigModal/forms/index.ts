@@ -4,6 +4,8 @@ export { ComputedColumnConfigEditor } from './ComputedColumnConfigEditor/index';
 export { DeduplicateConfigEditor } from './DeduplicateConfigEditor/index';
 export { ExportFileConfigEditor } from './ExportFileConfigEditor/index';
 export { FilterRowsConfigEditor } from './FilterRowsConfigEditor/index';
+export { FillMissingConfigEditor } from './FillMissingConfigEditor/index';
+export { JoinConfigEditor } from './JoinConfigEditor/index';
 export { MergeColumnsConfigEditor } from './MergeColumnsConfigEditor/index';
 export { RenameColumnsConfigEditor } from './RenameColumnsConfigEditor/index';
 export { SelectColumnsConfigEditor } from './SelectColumnsConfigEditor/index';

@@ -44,12 +44,17 @@ export function useNodeConfigModalState({
   saveNodeConfig,
 }: UseNodeConfigModalStateParams) {
   const [availableColumns, setAvailableColumns] = useState<string[]>([]);
+  const [availableColumnsByPort, setAvailableColumnsByPort] = useState<Record<string, string[]>>(
+    {}
+  );
 
   const editingNodeId = usePipelineEditorStore((state) => state.editingNodeId);
   const config = usePipelineEditorStore((state) => state.config);
   const selectedFile = usePipelineEditorStore((state) => state.selectedFile);
   const uploadedDatasourceId = usePipelineEditorStore((state) => state.uploadedDatasourceId);
   const inputPreview = usePipelineEditorStore((state) => state.inputPreview);
+  const leftInputPreview = usePipelineEditorStore((state) => state.leftInputPreview);
+  const rightInputPreview = usePipelineEditorStore((state) => state.rightInputPreview);
   const resultPreview = usePipelineEditorStore((state) => state.resultPreview);
   const isPreviewLoading = usePipelineEditorStore((state) => state.isPreviewLoading);
   const activePreviewTab = usePipelineEditorStore((state) => state.activePreviewTab);
@@ -61,6 +66,8 @@ export function useNodeConfigModalState({
   const setSelectedFile = usePipelineEditorStore((state) => state.setSelectedFile);
   const setUploadedDatasourceId = usePipelineEditorStore((state) => state.setUploadedDatasourceId);
   const setInputPreview = usePipelineEditorStore((state) => state.setInputPreview);
+  const setLeftInputPreview = usePipelineEditorStore((state) => state.setLeftInputPreview);
+  const setRightInputPreview = usePipelineEditorStore((state) => state.setRightInputPreview);
   const setResultPreview = usePipelineEditorStore((state) => state.setResultPreview);
   const setIsPreviewLoading = usePipelineEditorStore((state) => state.setIsPreviewLoading);
   const setActivePreviewTab = usePipelineEditorStore((state) => state.setActivePreviewTab);
@@ -86,6 +93,28 @@ export function useNodeConfigModalState({
     }
     return edges.some((edge) => edge.target_node === editingNode.id);
   }, [editingNode, edges]);
+
+  const inputNodeLabelsByPort = useMemo(() => {
+    if (!editingNode || !edges || !nodes) {
+      return {};
+    }
+
+    const incoming = edges.filter((edge) => edge.target_node === editingNode.id);
+    const labels: Record<string, string> = {};
+
+    incoming.forEach((edge, index) => {
+      const sourceNode = nodes.find((node) => node.id === edge.source_node);
+      const label = sourceNode?.label ?? `Вход ${index + 1}`;
+      const port = edge.target_port || 'main';
+      labels[port] = label;
+    });
+
+    if (!labels.left && labels.main) {
+      labels.left = labels.main;
+    }
+
+    return labels;
+  }, [editingNode, edges, nodes]);
 
   const getSuccessfulNodeRun = useCallback(
     (nodeId: string, runs: NodeRun[] | undefined = nodeRuns) =>
@@ -133,13 +162,25 @@ export function useNodeConfigModalState({
     async (nodeId: string) => {
       try {
         const response = await getNodeInputColumns(pipelineId, nodeId);
-        const names = Object.values(response.columns)
+        const byPort = Object.entries(response.columns).reduce<Record<string, string[]>>(
+          (acc, [port, items]) => {
+            const names = items
+              .map((item) => item.name)
+              .filter((name): name is string => typeof name === 'string' && name.length > 0);
+            acc[port] = Array.from(new Set(names));
+            return acc;
+          },
+          {}
+        );
+
+        const names = Object.values(byPort)
           .flatMap((items) => items)
-          .map((item) => item.name)
           .filter((name): name is string => typeof name === 'string' && name.length > 0);
 
+        setAvailableColumnsByPort(byPort);
         setAvailableColumns(Array.from(new Set(names)));
       } catch {
+        setAvailableColumnsByPort({});
         setAvailableColumns([]);
       }
     },
@@ -152,6 +193,8 @@ export function useNodeConfigModalState({
       setPreviewInfo(undefined);
       setModalError(undefined);
       setInputPreview(null);
+      setLeftInputPreview(null);
+      setRightInputPreview(null);
 
       try {
         const datasource = await getDatasourceDetail(datasourceId);
@@ -169,7 +212,15 @@ export function useNodeConfigModalState({
         setIsPreviewLoading(false);
       }
     },
-    [setInputPreview, setIsPreviewLoading, setModalError, setPreviewInfo, setResultPreview]
+    [
+      setInputPreview,
+      setIsPreviewLoading,
+      setLeftInputPreview,
+      setModalError,
+      setPreviewInfo,
+      setResultPreview,
+      setRightInputPreview,
+    ]
   );
 
   const fetchNodePreviewsFromRuns = useCallback(
@@ -180,30 +231,39 @@ export function useNodeConfigModalState({
 
       try {
         if (getNodeKind(node.operation_type) !== 'source') {
-          const incomingEdge = edges?.find((edge) => edge.target_node === node.id);
+          const incomingEdges = (edges ?? []).filter((edge) => edge.target_node === node.id);
 
-          if (incomingEdge) {
-            const upstreamRun = getSuccessfulNodeRun(incomingEdge.source_node, runsOverride);
-            if (upstreamRun) {
-              const upstreamPreview = await previewNodeRun(upstreamRun.id, 10);
-              setInputPreview(upstreamPreview);
-            } else {
-              const upstreamNode = nodes?.find((item) => item.id === incomingEdge.source_node);
-              const upstreamDatasourceId = upstreamNode?.config?.datasource_id;
-              if (typeof upstreamDatasourceId === 'string' && upstreamDatasourceId) {
-                const upstreamDatasource = await getDatasourceDetail(upstreamDatasourceId);
-                if (upstreamDatasource.status === 'ready') {
-                  const upstreamPreview = await previewDatasource(upstreamDatasourceId, 10);
-                  setInputPreview(upstreamPreview);
-                } else {
-                  setInputPreview(null);
-                }
-              } else {
-                setInputPreview(null);
-              }
-            }
-          } else {
+          if (incomingEdges.length === 0) {
             setInputPreview(null);
+            setLeftInputPreview(null);
+            setRightInputPreview(null);
+          } else {
+            const previewsByPort: Record<string, typeof inputPreview> = {};
+
+            for (const incomingEdge of incomingEdges) {
+              let preview = null;
+              const upstreamRun = getSuccessfulNodeRun(incomingEdge.source_node, runsOverride);
+
+              if (upstreamRun) {
+                preview = await previewNodeRun(upstreamRun.id, 10);
+              } else {
+                const upstreamNode = nodes?.find((item) => item.id === incomingEdge.source_node);
+                const upstreamDatasourceId = upstreamNode?.config?.datasource_id;
+                if (typeof upstreamDatasourceId === 'string' && upstreamDatasourceId) {
+                  const upstreamDatasource = await getDatasourceDetail(upstreamDatasourceId);
+                  if (upstreamDatasource.status === 'ready') {
+                    preview = await previewDatasource(upstreamDatasourceId, 10);
+                  }
+                }
+              }
+
+              const port = incomingEdge.target_port || 'main';
+              previewsByPort[port] = preview;
+            }
+
+            setInputPreview(previewsByPort.main ?? null);
+            setLeftInputPreview(previewsByPort.left ?? previewsByPort.main ?? null);
+            setRightInputPreview(previewsByPort.right ?? null);
           }
         }
 
@@ -215,9 +275,15 @@ export function useNodeConfigModalState({
           setResultPreview(null);
         }
 
-        setActivePreviewTab(getNodeKind(node.operation_type) === 'source' ? 'result' : 'input');
+        if (node.operation_type === 'join') {
+          setActivePreviewTab('left_input');
+        } else {
+          setActivePreviewTab(getNodeKind(node.operation_type) === 'source' ? 'result' : 'input');
+        }
       } catch (error) {
         setInputPreview(null);
+        setLeftInputPreview(null);
+        setRightInputPreview(null);
         setResultPreview(null);
         setModalError(
           extractError(error, 'Не удалось получить предпросмотр по последнему запуску')
@@ -233,9 +299,11 @@ export function useNodeConfigModalState({
       setActivePreviewTab,
       setInputPreview,
       setIsPreviewLoading,
+      setLeftInputPreview,
       setModalError,
       setPreviewInfo,
       setResultPreview,
+      setRightInputPreview,
     ]
   );
 
@@ -273,6 +341,7 @@ export function useNodeConfigModalState({
 
   const closeModal = useCallback(() => {
     setAvailableColumns([]);
+    setAvailableColumnsByPort({});
     closeModalState();
   }, [closeModalState]);
 
@@ -402,11 +471,15 @@ export function useNodeConfigModalState({
     config,
     modalError,
     inputPreview,
+    leftInputPreview,
+    rightInputPreview,
     resultPreview,
     isPreviewLoading,
     activePreviewTab,
     previewInfo,
     availableColumns,
+    availableColumnsByPort,
+    inputNodeLabelsByPort,
     selectedFile,
     onApplyPreview,
     onRefreshSourcePreview,

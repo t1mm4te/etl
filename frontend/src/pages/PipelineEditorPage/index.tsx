@@ -74,11 +74,15 @@ export function PipelineEditorPage() {
     openNodeModal,
     closeModal,
     inputPreview,
+    leftInputPreview,
+    rightInputPreview,
     resultPreview,
     isPreviewLoading,
     activePreviewTab,
     previewInfo,
     availableColumns,
+    availableColumnsByPort,
+    inputNodeLabelsByPort,
     selectedFile,
     setConfig,
     setActivePreviewTab,
@@ -178,8 +182,12 @@ export function PipelineEditorPage() {
           activePreviewTab={activePreviewTab}
           config={config}
           availableColumns={availableColumns}
+          availableColumnsByPort={availableColumnsByPort}
           hasIncomingData={hasIncomingData}
           inputPreview={inputPreview}
+          leftInputPreview={leftInputPreview}
+          rightInputPreview={rightInputPreview}
+          inputNodeLabelsByPort={inputNodeLabelsByPort}
           isPreviewLoading={isPreviewLoading}
           modalError={modalError}
           node={editingNode}

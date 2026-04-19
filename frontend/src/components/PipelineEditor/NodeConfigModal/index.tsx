@@ -12,15 +12,19 @@ type NodeConfigModalProps = {
   config: NodeConfig;
   selectedFile: File | null;
   availableColumns: string[];
+  availableColumnsByPort?: Record<string, string[]>;
+  inputNodeLabelsByPort?: Record<string, string>;
   inputPreview: PreviewResponse | null;
+  leftInputPreview: PreviewResponse | null;
+  rightInputPreview: PreviewResponse | null;
   resultPreview: PreviewResponse | null;
   isPreviewLoading: boolean;
-  activePreviewTab: 'input' | 'result';
+  activePreviewTab: 'input' | 'left_input' | 'right_input' | 'result';
   previewInfo?: string;
   modalError?: string;
   onClose: () => void;
   onConfigChange: (value: NodeConfig) => void;
-  onActivePreviewTabChange: (value: 'input' | 'result') => void;
+  onActivePreviewTabChange: (value: 'input' | 'left_input' | 'right_input' | 'result') => void;
   onFileChange: (file: File | null) => void;
   onUploadFile: () => void;
   onRefreshSourcePreview: () => void;
@@ -60,7 +64,11 @@ export function NodeConfigModal({
   config,
   selectedFile,
   availableColumns,
+  availableColumnsByPort,
+  inputNodeLabelsByPort,
   inputPreview,
+  leftInputPreview,
+  rightInputPreview,
   resultPreview,
   isPreviewLoading,
   activePreviewTab,
@@ -79,6 +87,7 @@ export function NodeConfigModal({
 
   const isSourceFile = node.operation_type === 'source_file';
   const isSourceDb = node.operation_type === 'source_db';
+  const isJoin = node.operation_type === 'join';
 
   return (
     <div className={styles.modalOverlay}>
@@ -137,6 +146,8 @@ export function NodeConfigModal({
                   operationType={node.operation_type}
                   config={config}
                   availableColumns={availableColumns}
+                  availableColumnsByPort={availableColumnsByPort}
+                  inputNodeLabelsByPort={inputNodeLabelsByPort}
                   onConfigChange={onConfigChange}
                 />
 
@@ -160,13 +171,37 @@ export function NodeConfigModal({
                       >
                         Результат узла
                       </button>
-                      <button
-                        type="button"
-                        className={activePreviewTab === 'input' ? styles.tabActive : styles.tab}
-                        onClick={() => onActivePreviewTabChange('input')}
-                      >
-                        Входные данные
-                      </button>
+
+                      {isJoin ? (
+                        <>
+                          <button
+                            type="button"
+                            className={
+                              activePreviewTab === 'left_input' ? styles.tabActive : styles.tab
+                            }
+                            onClick={() => onActivePreviewTabChange('left_input')}
+                          >
+                            {inputNodeLabelsByPort?.left ?? inputNodeLabelsByPort?.main ?? 'Вход 1'}
+                          </button>
+                          <button
+                            type="button"
+                            className={
+                              activePreviewTab === 'right_input' ? styles.tabActive : styles.tab
+                            }
+                            onClick={() => onActivePreviewTabChange('right_input')}
+                          >
+                            {inputNodeLabelsByPort?.right ?? 'Вход 2'}
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          className={activePreviewTab === 'input' ? styles.tabActive : styles.tab}
+                          onClick={() => onActivePreviewTabChange('input')}
+                        >
+                          Входные данные
+                        </button>
+                      )}
                     </div>
 
                     {isPreviewLoading ? (
@@ -178,6 +213,18 @@ export function NodeConfigModal({
                         <PreviewTable preview={inputPreview} />
                       ) : (
                         <p className={styles.muted}>Входной предпросмотр недоступен.</p>
+                      )
+                    ) : activePreviewTab === 'left_input' ? (
+                      leftInputPreview ? (
+                        <PreviewTable preview={leftInputPreview} />
+                      ) : (
+                        <p className={styles.muted}>Предпросмотр первого входа недоступен.</p>
+                      )
+                    ) : activePreviewTab === 'right_input' ? (
+                      rightInputPreview ? (
+                        <PreviewTable preview={rightInputPreview} />
+                      ) : (
+                        <p className={styles.muted}>Предпросмотр второго входа недоступен.</p>
                       )
                     ) : resultPreview ? (
                       <PreviewTable preview={resultPreview} />
@@ -199,6 +246,8 @@ export function NodeConfigModal({
                   operationType={node.operation_type}
                   config={config}
                   availableColumns={availableColumns}
+                  availableColumnsByPort={availableColumnsByPort}
+                  inputNodeLabelsByPort={inputNodeLabelsByPort}
                   onConfigChange={onConfigChange}
                 />
 

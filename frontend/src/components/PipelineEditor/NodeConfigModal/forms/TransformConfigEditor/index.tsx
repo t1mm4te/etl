@@ -6,6 +6,8 @@ import { ComputedColumnConfigEditor } from '../ComputedColumnConfigEditor/index'
 import { DeduplicateConfigEditor } from '../DeduplicateConfigEditor/index';
 import { ExportFileConfigEditor } from '../ExportFileConfigEditor/index';
 import { FilterRowsConfigEditor } from '../FilterRowsConfigEditor/index';
+import { FillMissingConfigEditor } from '../FillMissingConfigEditor/index';
+import { JoinConfigEditor } from '../JoinConfigEditor/index';
 import { MergeColumnsConfigEditor } from '../MergeColumnsConfigEditor/index';
 import { RenameColumnsConfigEditor } from '../RenameColumnsConfigEditor/index';
 import { SelectColumnsConfigEditor } from '../SelectColumnsConfigEditor/index';
@@ -16,6 +18,8 @@ type TransformConfigEditorProps = {
   operationType: string;
   config: NodeConfig;
   availableColumns: string[];
+  availableColumnsByPort?: Record<string, string[]>;
+  inputNodeLabelsByPort?: Record<string, string>;
   onConfigChange: (config: NodeConfig) => void;
 };
 
@@ -23,6 +27,8 @@ export function TransformConfigEditor({
   operationType,
   config,
   availableColumns,
+  availableColumnsByPort,
+  inputNodeLabelsByPort,
   onConfigChange,
 }: TransformConfigEditorProps) {
   return (
@@ -83,6 +89,16 @@ export function TransformConfigEditor({
         />
       ) : null}
 
+      {operationType === 'join' ? (
+        <JoinConfigEditor
+          config={config}
+          availableColumns={availableColumns}
+          availableColumnsByPort={availableColumnsByPort}
+          inputNodeLabelsByPort={inputNodeLabelsByPort}
+          onChange={onConfigChange}
+        />
+      ) : null}
+
       {operationType === 'aggregate' ? (
         <AggregateConfigEditor
           config={config}
@@ -107,6 +123,14 @@ export function TransformConfigEditor({
         />
       ) : null}
 
+      {operationType === 'fill_missing' ? (
+        <FillMissingConfigEditor
+          config={config}
+          availableColumns={availableColumns}
+          onChange={onConfigChange}
+        />
+      ) : null}
+
       {operationType === 'export_file' ? (
         <ExportFileConfigEditor
           config={config}
@@ -122,9 +146,11 @@ export function TransformConfigEditor({
       operationType !== 'rename_columns' &&
       operationType !== 'split_column' &&
       operationType !== 'merge_columns' &&
+      operationType !== 'join' &&
       operationType !== 'aggregate' &&
       operationType !== 'cast_types' &&
       operationType !== 'computed_column' &&
+      operationType !== 'fill_missing' &&
       operationType !== 'export_file' ? (
         <p className={styles.muted}>Форма для этой операции пока не реализована.</p>
       ) : null}

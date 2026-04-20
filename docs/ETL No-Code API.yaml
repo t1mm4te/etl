@@ -16,9 +16,10 @@ info:
     2. **Создать пайплайн** — `POST /pipelines/`
     3. **Добавить узлы** — `POST /pipelines/{id}/nodes/`
     4. **Связать узлы рёбрами** — `POST /pipelines/{id}/edges/`
-    5. **Запустить** — `POST /pipelines/{id}/run/`
-    6. **Отслеживать статус** — `GET /pipeline-runs/{id}/`
-    7. **Посмотреть результат** — `GET /node-runs/{id}/preview/`
+    5. **Локальный preview узла** — `POST /pipelines/{pipeline_pk}/nodes/{id}/preview-run/`
+    6. **Полный запуск** — `POST /pipelines/{id}/run/`
+    7. **Отслеживать статус** — `GET /pipeline-runs/{id}/`
+    8. **Посмотреть результат** — `GET /node-runs/{id}/preview/`
 paths:
   /api/v1/auth/token/login/:
     post:
@@ -206,7 +207,7 @@ paths:
       description: |-
         Загружает файл формата CSV или XLSX и ставит его в очередь на обработку (Celery). После обработки источник переходит в статус `ready`, а данные конвертируются в Parquet.
 
-        **Ограничения:** макс. размер файла — 100 МБ, макс. число строк — 5 000.
+        **Ограничения:** макс. размер файла — 100 МБ (MAX_FILE_SIZE), макс. число строк — 5 000 (DATASOURCE_MAX_ROWS).
       summary: Загрузка файла (CSV / XLSX)
       tags:
       - Источники данных
@@ -705,6 +706,37 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InputColumns'
+          description: ''
+  /api/v1/pipelines/{pipeline_pk}/nodes/{id}/preview-run/:
+    post:
+      operationId: v1_pipelines_nodes_preview_run_create
+      description: Создаёт новый PipelineRun в режиме preview и запускает выполнение
+        только подграфа `ancestors + target` для указанного узла. Downstream-узлы
+        не исполняются.
+      summary: Запуск preview для узла
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: pipeline_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Узлы пайплайна
+      security:
+      - tokenAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PipelineRunList'
           description: ''
   /api/v1/pipelines/{id}/:
     get:
@@ -1393,7 +1425,7 @@ components:
           type: string
           title: Движок БД
           description: postgresql, mysql, ...
-          maxLength: 50
+          maxLength: 255
         db_host:
           type: string
           title: Хост
@@ -2282,6 +2314,23 @@ components:
           x-spec-enum-id: d7d53b4114438c31
           readOnly: true
           title: Статус
+        run_mode:
+          enum:
+          - full
+          - preview
+          type: string
+          description: |-
+            * `full` - Полный запуск
+            * `preview` - Предпросмотр узла
+          x-spec-enum-id: 48cc17316ebe59ca
+          readOnly: true
+          title: Режим запуска
+        target_node:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+          title: Целевой узел
         created_at:
           type: string
           format: date-time
@@ -2319,8 +2368,10 @@ components:
       - id
       - node_runs
       - pipeline
+      - run_mode
       - started_at
       - status
+      - target_node
     PipelineRunList:
       type: object
       properties:
@@ -2350,6 +2401,23 @@ components:
           x-spec-enum-id: d7d53b4114438c31
           readOnly: true
           title: Статус
+        run_mode:
+          enum:
+          - full
+          - preview
+          type: string
+          description: |-
+            * `full` - Полный запуск
+            * `preview` - Предпросмотр узла
+          x-spec-enum-id: 48cc17316ebe59ca
+          readOnly: true
+          title: Режим запуска
+        target_node:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+          title: Целевой узел
         created_at:
           type: string
           format: date-time
@@ -2377,8 +2445,10 @@ components:
       - finished_at
       - id
       - pipeline
+      - run_mode
       - started_at
       - status
+      - target_node
     PreviewResponse:
       type: object
       properties:

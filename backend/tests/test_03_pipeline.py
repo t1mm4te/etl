@@ -2,8 +2,12 @@ from http import HTTPStatus
 
 import pytest
 
+from api.services.pipeline_executor import (
+    execute_pipeline,
+    execute_pipeline_preview,
+)
 from tests.utils import get_results
-from core.models import Edge, Node, Pipeline, PipelineRun
+from core.models import Edge, Node, NodeRun, Pipeline, PipelineRun
 
 
 @pytest.mark.django_db(transaction=True)
@@ -171,6 +175,9 @@ class Test03PipelineNodesAPI:
     URL_NODE_DETAIL = '/api/v1/pipelines/{pipeline_id}/nodes/{node_id}/'
     URL_NODE_INPUT_COLUMNS = (
         '/api/v1/pipelines/{pipeline_id}/nodes/{node_id}/input-columns/'
+    )
+    URL_NODE_PREVIEW_RUN = (
+        '/api/v1/pipelines/{pipeline_id}/nodes/{node_id}/preview-run/'
     )
 
     def test_03_nodes_list_returns_nodes_for_pipeline(
@@ -377,6 +384,66 @@ class Test03PipelineNodesAPI:
             'main': ready_datasource.columns_meta,
         }
 
+    def test_03_nodes_preview_run_creates_pending_run_and_queues_task(
+        self,
+        user_client,
+        owner_pipeline,
+        owner_transform_node,
+        monkeypatch,
+    ):
+        called_run_ids = []
+
+        def _delay_mock(pipeline_run_id):
+            called_run_ids.append(pipeline_run_id)
+
+        monkeypatch.setattr(
+            'api.views.run_pipeline_preview.delay',
+            _delay_mock,
+        )
+
+        response = user_client.post(
+            self.URL_NODE_PREVIEW_RUN.format(
+                pipeline_id=owner_pipeline.id,
+                node_id=owner_transform_node.id,
+            ),
+            data={},
+            format='json',
+        )
+
+        assert response.status_code == HTTPStatus.CREATED
+        pipeline_run_id = response.json()['id']
+        pipeline_run = PipelineRun.objects.get(id=pipeline_run_id)
+
+        assert pipeline_run.pipeline.pk == owner_pipeline.pk
+        assert pipeline_run.status == PipelineRun.Status.PENDING
+        assert pipeline_run.run_mode == PipelineRun.RunMode.PREVIEW
+        assert pipeline_run.target_node_id == owner_transform_node.id
+        assert called_run_ids == [str(pipeline_run.id)]
+
+    def test_03_nodes_preview_run_foreign_record_returns_404(
+        self,
+        user_client,
+        foreign_pipeline,
+    ):
+        foreign_node = Node.objects.create(
+            pipeline=foreign_pipeline,
+            operation_type=Node.OperationType.SOURCE_FILE,
+            label='Foreign source',
+            config={},
+        )
+
+        response = user_client.post(
+            self.URL_NODE_PREVIEW_RUN.format(
+                pipeline_id=foreign_pipeline.id,
+                node_id=foreign_node.id,
+            ),
+            data={},
+            format='json',
+        )
+
+        assert response.status_code == HTTPStatus.NOT_FOUND
+        assert isinstance(response.json(), dict)
+
 
 @pytest.mark.django_db(transaction=True)
 class Test03PipelineEdgesAPI:
@@ -516,3 +583,244 @@ class Test03PipelineEdgesAPI:
 
         assert response.status_code == HTTPStatus.NOT_FOUND
         assert isinstance(response.json(), dict)
+
+
+@pytest.mark.django_db(transaction=True)
+class Test03PipelineExecutionPreviewRun:
+    def test_03_preview_run_ignores_invalid_downstream(
+        self,
+        owner_pipeline,
+        ready_datasource,
+    ):
+        source_node = Node.objects.create(
+            pipeline=owner_pipeline,
+            operation_type=Node.OperationType.SOURCE_FILE,
+            label='Source A',
+            config={'datasource_id': str(ready_datasource.id)},
+        )
+        preview_target = Node.objects.create(
+            pipeline=owner_pipeline,
+            operation_type=Node.OperationType.SELECT_COLUMNS,
+            label='Transform B',
+            config={'columns': ['id', 'name']},
+        )
+        downstream_node = Node.objects.create(
+            pipeline=owner_pipeline,
+            operation_type=Node.OperationType.FILTER_ROWS,
+            label='Broken C',
+            config={},
+        )
+        Edge.objects.create(
+            pipeline=owner_pipeline,
+            source_node=source_node,
+            target_node=preview_target,
+            source_port='main',
+            target_port='main',
+        )
+        Edge.objects.create(
+            pipeline=owner_pipeline,
+            source_node=preview_target,
+            target_node=downstream_node,
+            source_port='main',
+            target_port='main',
+        )
+
+        pipeline_run = PipelineRun.objects.create(
+            pipeline=owner_pipeline,
+            run_mode=PipelineRun.RunMode.PREVIEW,
+            target_node=preview_target,
+            status=PipelineRun.Status.PENDING,
+        )
+
+        execute_pipeline_preview(pipeline_run)
+
+        pipeline_run.refresh_from_db()
+        assert pipeline_run.status == PipelineRun.Status.SUCCESS
+
+        node_runs = NodeRun.objects.filter(pipeline_run=pipeline_run)
+        assert node_runs.count() == 2
+        assert set(node_runs.values_list('node_id', flat=True)) == {
+            source_node.id,
+            preview_target.id,
+        }
+        assert not node_runs.filter(node_id=downstream_node.id).exists()
+
+    def test_03_full_run_remains_strict_with_same_graph(
+        self,
+        owner_pipeline,
+        ready_datasource,
+    ):
+        source_node = Node.objects.create(
+            pipeline=owner_pipeline,
+            operation_type=Node.OperationType.SOURCE_FILE,
+            label='Source A',
+            config={'datasource_id': str(ready_datasource.id)},
+        )
+        transform_node = Node.objects.create(
+            pipeline=owner_pipeline,
+            operation_type=Node.OperationType.SELECT_COLUMNS,
+            label='Transform B',
+            config={'columns': ['id', 'name']},
+        )
+        broken_node = Node.objects.create(
+            pipeline=owner_pipeline,
+            operation_type=Node.OperationType.FILTER_ROWS,
+            label='Broken C',
+            config={},
+        )
+        Edge.objects.create(
+            pipeline=owner_pipeline,
+            source_node=source_node,
+            target_node=transform_node,
+        )
+        Edge.objects.create(
+            pipeline=owner_pipeline,
+            source_node=transform_node,
+            target_node=broken_node,
+        )
+
+        pipeline_run = PipelineRun.objects.create(
+            pipeline=owner_pipeline,
+            run_mode=PipelineRun.RunMode.FULL,
+            status=PipelineRun.Status.PENDING,
+        )
+
+        execute_pipeline(pipeline_run)
+
+        pipeline_run.refresh_from_db()
+        assert pipeline_run.status == PipelineRun.Status.FAILED
+        assert 'Broken C' in pipeline_run.error_message
+
+        broken_node_run = NodeRun.objects.get(
+            pipeline_run=pipeline_run,
+            node=broken_node,
+        )
+        assert broken_node_run.status == NodeRun.Status.FAILED
+
+    def test_03_preview_run_join_with_two_inputs_ignores_downstream(
+        self,
+        owner_pipeline,
+        ready_datasource,
+    ):
+        left_source = Node.objects.create(
+            pipeline=owner_pipeline,
+            operation_type=Node.OperationType.SOURCE_FILE,
+            label='Left source',
+            config={'datasource_id': str(ready_datasource.id)},
+        )
+        right_source = Node.objects.create(
+            pipeline=owner_pipeline,
+            operation_type=Node.OperationType.SOURCE_FILE,
+            label='Right source',
+            config={'datasource_id': str(ready_datasource.id)},
+        )
+        join_node = Node.objects.create(
+            pipeline=owner_pipeline,
+            operation_type=Node.OperationType.JOIN,
+            label='Join target',
+            config={
+                'how': 'inner',
+                'left_on': 'id',
+                'right_on': 'id',
+            },
+        )
+        broken_downstream = Node.objects.create(
+            pipeline=owner_pipeline,
+            operation_type=Node.OperationType.SELECT_COLUMNS,
+            label='Broken downstream',
+            config={},
+        )
+
+        Edge.objects.create(
+            pipeline=owner_pipeline,
+            source_node=left_source,
+            target_node=join_node,
+            target_port='left',
+        )
+        Edge.objects.create(
+            pipeline=owner_pipeline,
+            source_node=right_source,
+            target_node=join_node,
+            target_port='right',
+        )
+        Edge.objects.create(
+            pipeline=owner_pipeline,
+            source_node=join_node,
+            target_node=broken_downstream,
+            target_port='main',
+        )
+
+        pipeline_run = PipelineRun.objects.create(
+            pipeline=owner_pipeline,
+            run_mode=PipelineRun.RunMode.PREVIEW,
+            target_node=join_node,
+            status=PipelineRun.Status.PENDING,
+        )
+
+        execute_pipeline_preview(pipeline_run)
+
+        pipeline_run.refresh_from_db()
+        assert pipeline_run.status == PipelineRun.Status.SUCCESS
+
+        node_runs = NodeRun.objects.filter(pipeline_run=pipeline_run)
+        assert node_runs.count() == 3
+        assert set(node_runs.values_list('node_id', flat=True)) == {
+            left_source.id,
+            right_source.id,
+            join_node.id,
+        }
+
+        join_run = node_runs.get(node_id=join_node.id)
+        assert join_run.status == NodeRun.Status.SUCCESS
+        assert join_run.output_row_count is not None
+
+    def test_03_preview_run_error_scoped_to_preview_subgraph(
+        self,
+        owner_pipeline,
+        ready_datasource,
+    ):
+        source_node = Node.objects.create(
+            pipeline=owner_pipeline,
+            operation_type=Node.OperationType.SOURCE_FILE,
+            label='Source A',
+            config={'datasource_id': str(ready_datasource.id)},
+        )
+        preview_target = Node.objects.create(
+            pipeline=owner_pipeline,
+            operation_type=Node.OperationType.SELECT_COLUMNS,
+            label='Broken B',
+            config={},
+        )
+        downstream_node = Node.objects.create(
+            pipeline=owner_pipeline,
+            operation_type=Node.OperationType.FILTER_ROWS,
+            label='Broken C',
+            config={},
+        )
+        Edge.objects.create(
+            pipeline=owner_pipeline,
+            source_node=source_node,
+            target_node=preview_target,
+        )
+        Edge.objects.create(
+            pipeline=owner_pipeline,
+            source_node=preview_target,
+            target_node=downstream_node,
+        )
+
+        pipeline_run = PipelineRun.objects.create(
+            pipeline=owner_pipeline,
+            run_mode=PipelineRun.RunMode.PREVIEW,
+            target_node=preview_target,
+            status=PipelineRun.Status.PENDING,
+        )
+
+        execute_pipeline_preview(pipeline_run)
+
+        pipeline_run.refresh_from_db()
+        assert pipeline_run.status == PipelineRun.Status.FAILED
+        assert 'Broken B' in pipeline_run.error_message
+        assert 'Broken C' not in pipeline_run.error_message
+
+        node_runs = NodeRun.objects.filter(pipeline_run=pipeline_run)
+        assert node_runs.count() == 2

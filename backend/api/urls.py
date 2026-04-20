@@ -36,6 +36,13 @@ pipeline_nested = [
         name='pipeline-node-input-columns',
     ),
     path(
+        '<uuid:pipeline_pk>/nodes/<uuid:pk>/preview-run/',
+        views.NodeViewSet.as_view({
+            'post': 'preview_run',
+        }),
+        name='pipeline-node-preview-run',
+    ),
+    path(
         '<uuid:pipeline_pk>/edges/',
         views.EdgeViewSet.as_view({
             'get': 'list',

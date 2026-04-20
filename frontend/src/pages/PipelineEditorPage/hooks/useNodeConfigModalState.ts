@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
 import type { Edge, Node as ApiNode, NodeConfig, NodeRun } from '../../../api/types';
-import { usePipelineEditorStore } from '../../../store/pipelineEditorStore';
 import { getNodeKind, useNodeConfigState } from './useNodeConfigState';
 import { useNodeColumns } from './useNodeColumns';
 import { useSourceNodePreviewActions } from './useSourceNodePreviewActions';
@@ -21,8 +20,6 @@ export function useNodeConfigModalState({
   nodeRuns,
   saveNodeConfig,
 }: UseNodeConfigModalStateParams) {
-  const setRunId = usePipelineEditorStore((state) => state.setRunId);
-
   const {
     editingNode,
     nodeKind,
@@ -39,15 +36,7 @@ export function useNodeConfigModalState({
     uploadedDatasourceId,
     setConfig,
     setSelectedFile,
-    setUploadedDatasourceId,
-    setInputPreview,
-    setLeftInputPreview,
-    setRightInputPreview,
-    setResultPreview,
-    setIsPreviewLoading,
     setActivePreviewTab,
-    setPreviewInfo,
-    setModalError,
     openNodeModalState,
     closeNodeModalState,
   } = useNodeConfigState({ nodes });
@@ -80,16 +69,6 @@ export function useNodeConfigModalState({
     config,
     uploadedDatasourceId,
     saveNodeConfig,
-    setConfig,
-    setSelectedFile,
-    setUploadedDatasourceId,
-    setInputPreview,
-    setLeftInputPreview,
-    setRightInputPreview,
-    setResultPreview,
-    setIsPreviewLoading,
-    setPreviewInfo,
-    setModalError,
     loadAvailableColumns,
     closeModal,
   });
@@ -109,15 +88,6 @@ export function useNodeConfigModalState({
     config,
     uploadedDatasourceId,
     saveNodeConfig,
-    setRunId,
-    setInputPreview,
-    setLeftInputPreview,
-    setRightInputPreview,
-    setResultPreview,
-    setIsPreviewLoading,
-    setActivePreviewTab,
-    setPreviewInfo,
-    setModalError,
   });
 
   const openNodeModal = useCallback(

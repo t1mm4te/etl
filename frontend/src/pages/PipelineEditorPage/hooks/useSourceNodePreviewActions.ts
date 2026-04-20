@@ -1,7 +1,8 @@
 import { useCallback } from 'react';
 import { getDatasourceDetail, previewDatasource, uploadDatasource } from '../../../api/pipelines';
-import type { Node as ApiNode, NodeConfig, PreviewResponse } from '../../../api/types';
+import type { Node as ApiNode, NodeConfig } from '../../../api/types';
 import { extractError } from '../../../lib/extractError';
+import { useNodeConfigModalStore } from '../../../store/nodeConfigModalStore';
 import { buildNextNodeConfig } from './nodePreviewUtils';
 
 type UseSourceNodePreviewActionsParams = {
@@ -9,16 +10,6 @@ type UseSourceNodePreviewActionsParams = {
   config: NodeConfig;
   uploadedDatasourceId: string;
   saveNodeConfig: (nodeId: string, config: NodeConfig) => Promise<void>;
-  setConfig: (value: NodeConfig) => void;
-  setSelectedFile: (value: File | null) => void;
-  setUploadedDatasourceId: (value: string) => void;
-  setInputPreview: (value: PreviewResponse | null) => void;
-  setLeftInputPreview: (value: PreviewResponse | null) => void;
-  setRightInputPreview: (value: PreviewResponse | null) => void;
-  setResultPreview: (value: PreviewResponse | null) => void;
-  setIsPreviewLoading: (value: boolean) => void;
-  setPreviewInfo: (value?: string) => void;
-  setModalError: (value?: string) => void;
   loadAvailableColumns: (nodeId: string) => Promise<void>;
   closeModal: () => void;
 };
@@ -28,19 +19,20 @@ export function useSourceNodePreviewActions({
   config,
   uploadedDatasourceId,
   saveNodeConfig,
-  setConfig,
-  setSelectedFile,
-  setUploadedDatasourceId,
-  setInputPreview,
-  setLeftInputPreview,
-  setRightInputPreview,
-  setResultPreview,
-  setIsPreviewLoading,
-  setPreviewInfo,
-  setModalError,
   loadAvailableColumns,
   closeModal,
 }: UseSourceNodePreviewActionsParams) {
+  const setConfig = useNodeConfigModalStore((state) => state.setConfig);
+  const setSelectedFile = useNodeConfigModalStore((state) => state.setSelectedFile);
+  const setUploadedDatasourceId = useNodeConfigModalStore((state) => state.setUploadedDatasourceId);
+  const setInputPreview = useNodeConfigModalStore((state) => state.setInputPreview);
+  const setLeftInputPreview = useNodeConfigModalStore((state) => state.setLeftInputPreview);
+  const setRightInputPreview = useNodeConfigModalStore((state) => state.setRightInputPreview);
+  const setResultPreview = useNodeConfigModalStore((state) => state.setResultPreview);
+  const setIsPreviewLoading = useNodeConfigModalStore((state) => state.setIsPreviewLoading);
+  const setPreviewInfo = useNodeConfigModalStore((state) => state.setPreviewInfo);
+  const setModalError = useNodeConfigModalStore((state) => state.setModalError);
+
   const clearSourcePreviews = useCallback(() => {
     setInputPreview(null);
     setLeftInputPreview(null);

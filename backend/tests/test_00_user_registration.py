@@ -4,9 +4,9 @@ import pytest
 
 from tests.utils import (
     invalid_data_for_user_fields,
+    invalid_data_for_user_login,
     valid_data_for_user_fields,
     valid_data_for_user_login,
-    invalid_data_for_user_login,
 )
 
 

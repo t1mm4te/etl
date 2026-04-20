@@ -2,8 +2,8 @@ from http import HTTPStatus
 
 import pytest
 
-from core.models import Edge, Node, Pipeline, PipelineRun
 from tests.utils import get_results
+from core.models import Edge, Node, Pipeline, PipelineRun
 
 
 @pytest.mark.django_db(transaction=True)

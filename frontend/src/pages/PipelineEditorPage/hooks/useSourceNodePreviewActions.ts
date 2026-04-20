@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { getDatasourceDetail, previewDatasource, uploadDatasource } from '../../../api/pipelines';
 import type { Node as ApiNode, NodeConfig } from '../../../api/types';
 import { extractError } from '../../../lib/extractError';
-import { useNodeConfigModalStore } from '../../../store/nodeConfigModalStore';
+import { useNodeConfigModalActions } from '../../../store/nodeConfigModalStore';
 import { buildNextNodeConfig } from './nodePreviewUtils';
 
 type UseSourceNodePreviewActionsParams = {
@@ -22,16 +22,18 @@ export function useSourceNodePreviewActions({
   loadAvailableColumns,
   closeModal,
 }: UseSourceNodePreviewActionsParams) {
-  const setConfig = useNodeConfigModalStore((state) => state.setConfig);
-  const setSelectedFile = useNodeConfigModalStore((state) => state.setSelectedFile);
-  const setUploadedDatasourceId = useNodeConfigModalStore((state) => state.setUploadedDatasourceId);
-  const setInputPreview = useNodeConfigModalStore((state) => state.setInputPreview);
-  const setLeftInputPreview = useNodeConfigModalStore((state) => state.setLeftInputPreview);
-  const setRightInputPreview = useNodeConfigModalStore((state) => state.setRightInputPreview);
-  const setResultPreview = useNodeConfigModalStore((state) => state.setResultPreview);
-  const setIsPreviewLoading = useNodeConfigModalStore((state) => state.setIsPreviewLoading);
-  const setPreviewInfo = useNodeConfigModalStore((state) => state.setPreviewInfo);
-  const setModalError = useNodeConfigModalStore((state) => state.setModalError);
+  const {
+    setConfig,
+    setSelectedFile,
+    setUploadedDatasourceId,
+    setInputPreview,
+    setLeftInputPreview,
+    setRightInputPreview,
+    setResultPreview,
+    setIsPreviewLoading,
+    setPreviewInfo,
+    setModalError,
+  } = useNodeConfigModalActions();
 
   const clearSourcePreviews = useCallback(() => {
     setInputPreview(null);

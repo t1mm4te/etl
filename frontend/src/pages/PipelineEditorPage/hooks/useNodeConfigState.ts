@@ -1,6 +1,9 @@
 import { useMemo } from 'react';
 import type { Node as ApiNode } from '../../../api/types';
-import { useNodeConfigModalStore } from '../../../store/nodeConfigModalStore';
+import {
+  useNodeConfigModalActions,
+  useNodeConfigModalStateSlice,
+} from '../../../store/nodeConfigModalStore';
 export type { PreviewTab } from '../../../store/nodeConfigModalStore';
 
 export type NodeKind = 'source' | 'transform' | 'sink';
@@ -36,6 +39,9 @@ export function useNodeConfigState({ nodes }: UseNodeConfigStateParams) {
     activePreviewTab,
     previewInfo,
     modalError,
+  } = useNodeConfigModalStateSlice();
+
+  const {
     setConfig,
     setSelectedFile,
     setUploadedDatasourceId,
@@ -49,7 +55,7 @@ export function useNodeConfigState({ nodes }: UseNodeConfigStateParams) {
     setModalError,
     openNodeModalState,
     closeNodeModalState,
-  } = useNodeConfigModalStore((state) => state);
+  } = useNodeConfigModalActions();
 
   const editingNode = useMemo(
     () => nodes?.find((node) => node.id === editingNodeId) ?? null,
@@ -66,29 +72,33 @@ export function useNodeConfigState({ nodes }: UseNodeConfigStateParams) {
   return {
     editingNode,
     nodeKind,
-    config,
-    modalError,
-    inputPreview,
-    leftInputPreview,
-    rightInputPreview,
-    resultPreview,
-    isPreviewLoading,
-    activePreviewTab,
-    previewInfo,
-    selectedFile,
-    uploadedDatasourceId,
-    setConfig,
-    setSelectedFile,
-    setUploadedDatasourceId,
-    setInputPreview,
-    setLeftInputPreview,
-    setRightInputPreview,
-    setResultPreview,
-    setIsPreviewLoading,
-    setActivePreviewTab,
-    setPreviewInfo,
-    setModalError,
-    openNodeModalState,
-    closeNodeModalState,
+    modalState: {
+      config,
+      modalError,
+      inputPreview,
+      leftInputPreview,
+      rightInputPreview,
+      resultPreview,
+      isPreviewLoading,
+      activePreviewTab,
+      previewInfo,
+      selectedFile,
+      uploadedDatasourceId,
+    },
+    modalActions: {
+      setConfig,
+      setSelectedFile,
+      setUploadedDatasourceId,
+      setInputPreview,
+      setLeftInputPreview,
+      setRightInputPreview,
+      setResultPreview,
+      setIsPreviewLoading,
+      setActivePreviewTab,
+      setPreviewInfo,
+      setModalError,
+      openNodeModalState,
+      closeNodeModalState,
+    },
   };
 }

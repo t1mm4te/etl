@@ -15,7 +15,7 @@ import type {
   PreviewResponse,
 } from '../../../api/types';
 import { extractError } from '../../../lib/extractError';
-import { useNodeConfigModalStore } from '../../../store/nodeConfigModalStore';
+import { useNodeConfigModalActions } from '../../../store/nodeConfigModalStore';
 import { usePipelineEditorStore } from '../../../store/pipelineEditorStore';
 import type { NodeKind } from './useNodeConfigState';
 import { buildNextNodeConfig } from './nodePreviewUtils';
@@ -45,14 +45,16 @@ export function useTransformNodePreviewActions({
   saveNodeConfig,
 }: UseTransformNodePreviewActionsParams) {
   const setRunId = usePipelineEditorStore((state) => state.setRunId);
-  const setInputPreview = useNodeConfigModalStore((state) => state.setInputPreview);
-  const setLeftInputPreview = useNodeConfigModalStore((state) => state.setLeftInputPreview);
-  const setRightInputPreview = useNodeConfigModalStore((state) => state.setRightInputPreview);
-  const setResultPreview = useNodeConfigModalStore((state) => state.setResultPreview);
-  const setIsPreviewLoading = useNodeConfigModalStore((state) => state.setIsPreviewLoading);
-  const setActivePreviewTab = useNodeConfigModalStore((state) => state.setActivePreviewTab);
-  const setPreviewInfo = useNodeConfigModalStore((state) => state.setPreviewInfo);
-  const setModalError = useNodeConfigModalStore((state) => state.setModalError);
+  const {
+    setInputPreview,
+    setLeftInputPreview,
+    setRightInputPreview,
+    setResultPreview,
+    setIsPreviewLoading,
+    setActivePreviewTab,
+    setPreviewInfo,
+    setModalError,
+  } = useNodeConfigModalActions();
 
   const clearTransformPreviews = useCallback(() => {
     setInputPreview(null);

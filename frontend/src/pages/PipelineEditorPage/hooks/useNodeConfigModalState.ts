@@ -20,9 +20,9 @@ export function useNodeConfigModalState({
   nodeRuns,
   saveNodeConfig,
 }: UseNodeConfigModalStateParams) {
+  const { editingNode, nodeKind, modalState, modalActions } = useNodeConfigState({ nodes });
+
   const {
-    editingNode,
-    nodeKind,
     config,
     modalError,
     inputPreview,
@@ -34,12 +34,15 @@ export function useNodeConfigModalState({
     previewInfo,
     selectedFile,
     uploadedDatasourceId,
+  } = modalState;
+
+  const {
     setConfig,
     setSelectedFile,
     setActivePreviewTab,
     openNodeModalState,
     closeNodeModalState,
-  } = useNodeConfigState({ nodes });
+  } = modalActions;
 
   const {
     availableColumns,

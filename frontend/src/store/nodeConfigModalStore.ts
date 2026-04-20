@@ -1,9 +1,10 @@
 import { create } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 import type { Node as ApiNode, NodeConfig, PreviewResponse } from '../api/types';
 
 export type PreviewTab = 'input' | 'left_input' | 'right_input' | 'result';
 
-type NodeConfigModalState = {
+export type NodeConfigModalState = {
   editingNodeId: string | null;
   config: NodeConfig;
   uploadedDatasourceId: string;
@@ -55,47 +56,47 @@ export const useNodeConfigModalStore = create<NodeConfigModalStore>((set) => ({
   ...getDefaultModalState(),
 
   setConfig: (value) => {
-    set((state) => ({ ...state, config: value }));
+    set({ config: value });
   },
 
   setSelectedFile: (value) => {
-    set((state) => ({ ...state, selectedFile: value }));
+    set({ selectedFile: value });
   },
 
   setUploadedDatasourceId: (value) => {
-    set((state) => ({ ...state, uploadedDatasourceId: value }));
+    set({ uploadedDatasourceId: value });
   },
 
   setInputPreview: (value) => {
-    set((state) => ({ ...state, inputPreview: value }));
+    set({ inputPreview: value });
   },
 
   setLeftInputPreview: (value) => {
-    set((state) => ({ ...state, leftInputPreview: value }));
+    set({ leftInputPreview: value });
   },
 
   setRightInputPreview: (value) => {
-    set((state) => ({ ...state, rightInputPreview: value }));
+    set({ rightInputPreview: value });
   },
 
   setResultPreview: (value) => {
-    set((state) => ({ ...state, resultPreview: value }));
+    set({ resultPreview: value });
   },
 
   setIsPreviewLoading: (value) => {
-    set((state) => ({ ...state, isPreviewLoading: value }));
+    set({ isPreviewLoading: value });
   },
 
   setActivePreviewTab: (value) => {
-    set((state) => ({ ...state, activePreviewTab: value }));
+    set({ activePreviewTab: value });
   },
 
   setPreviewInfo: (value) => {
-    set((state) => ({ ...state, previewInfo: value }));
+    set({ previewInfo: value });
   },
 
   setModalError: (value) => {
-    set((state) => ({ ...state, modalError: value }));
+    set({ modalError: value });
   },
 
   openNodeModalState: (node) => {
@@ -114,3 +115,42 @@ export const useNodeConfigModalStore = create<NodeConfigModalStore>((set) => ({
     set(getDefaultModalState());
   },
 }));
+
+export function useNodeConfigModalStateSlice() {
+  return useNodeConfigModalStore(
+    useShallow((state) => ({
+      editingNodeId: state.editingNodeId,
+      config: state.config,
+      selectedFile: state.selectedFile,
+      uploadedDatasourceId: state.uploadedDatasourceId,
+      inputPreview: state.inputPreview,
+      leftInputPreview: state.leftInputPreview,
+      rightInputPreview: state.rightInputPreview,
+      resultPreview: state.resultPreview,
+      isPreviewLoading: state.isPreviewLoading,
+      activePreviewTab: state.activePreviewTab,
+      previewInfo: state.previewInfo,
+      modalError: state.modalError,
+    }))
+  );
+}
+
+export function useNodeConfigModalActions() {
+  return useNodeConfigModalStore(
+    useShallow((state) => ({
+      setConfig: state.setConfig,
+      setSelectedFile: state.setSelectedFile,
+      setUploadedDatasourceId: state.setUploadedDatasourceId,
+      setInputPreview: state.setInputPreview,
+      setLeftInputPreview: state.setLeftInputPreview,
+      setRightInputPreview: state.setRightInputPreview,
+      setResultPreview: state.setResultPreview,
+      setIsPreviewLoading: state.setIsPreviewLoading,
+      setActivePreviewTab: state.setActivePreviewTab,
+      setPreviewInfo: state.setPreviewInfo,
+      setModalError: state.setModalError,
+      openNodeModalState: state.openNodeModalState,
+      closeNodeModalState: state.closeNodeModalState,
+    }))
+  );
+}

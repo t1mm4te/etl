@@ -26,8 +26,6 @@ type NodeConfigModalProps = {
   onConfigChange: (value: NodeConfig) => void;
   onActivePreviewTabChange: (value: 'input' | 'left_input' | 'right_input' | 'result') => void;
   onFileChange: (file: File | null) => void;
-  onUploadFile: () => void;
-  onRefreshSourcePreview: () => void;
   onApplyPreview: () => void;
   onSaveConfig: () => void;
 };
@@ -78,8 +76,6 @@ export function NodeConfigModal({
   onConfigChange,
   onActivePreviewTabChange,
   onFileChange,
-  onUploadFile,
-  onRefreshSourcePreview,
   onApplyPreview,
   onSaveConfig,
 }: NodeConfigModalProps) {
@@ -103,21 +99,10 @@ export function NodeConfigModal({
             <div className={styles.transformLayout}>
               <aside className={styles.configPanel}>
                 {isSourceFile ? (
-                  <SourceFileConfigEditor
-                    selectedFile={selectedFile}
-                    datasourceId={datasourceId}
-                    onFileChange={onFileChange}
-                    onUploadFile={onUploadFile}
-                    onRefreshSourcePreview={onRefreshSourcePreview}
-                  />
+                  <SourceFileConfigEditor selectedFile={selectedFile} onFileChange={onFileChange} />
                 ) : null}
 
-                {isSourceDb ? (
-                  <SourceDbConfigEditor
-                    datasourceId={datasourceId}
-                    onRefreshSourcePreview={onRefreshSourcePreview}
-                  />
-                ) : null}
+                {isSourceDb ? <SourceDbConfigEditor datasourceId={datasourceId} /> : null}
               </aside>
 
               <section className={styles.previewPanel}>

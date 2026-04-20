@@ -3,7 +3,8 @@ import type { Edge, Node as ApiNode, NodeConfig, NodeRun } from '../../../api/ty
 import { usePipelineEditorStore } from '../../../store/pipelineEditorStore';
 import { getNodeKind, useNodeConfigState } from './useNodeConfigState';
 import { useNodeColumns } from './useNodeColumns';
-import { useNodePreviewActions } from './useNodePreviewActions';
+import { useSourceNodePreviewActions } from './useSourceNodePreviewActions';
+import { useTransformNodePreviewActions } from './useTransformNodePreviewActions';
 
 type UseNodeConfigModalStateParams = {
   pipelineId: string;
@@ -71,14 +72,34 @@ export function useNodeConfigModalState({
   }, [closeNodeModalState, resetAvailableColumns]);
 
   const {
-    resolveNodeRunsForPreview,
     fetchSourcePreview,
+    onSaveNodeConfig: onSaveSourceNodeConfig,
+    onFileChange: onSourceFileChange,
+  } = useSourceNodePreviewActions({
+    editingNode,
+    config,
+    uploadedDatasourceId,
+    saveNodeConfig,
+    setConfig,
+    setSelectedFile,
+    setUploadedDatasourceId,
+    setInputPreview,
+    setLeftInputPreview,
+    setRightInputPreview,
+    setResultPreview,
+    setIsPreviewLoading,
+    setPreviewInfo,
+    setModalError,
+    loadAvailableColumns,
+    closeModal,
+  });
+
+  const {
+    resolveNodeRunsForPreview,
     fetchNodePreviewsFromRuns,
-    onSaveNodeConfig,
-    onUploadFile,
-    onRefreshSourcePreview,
+    onSaveNodeConfig: onSaveTransformNodeConfig,
     onApplyPreview,
-  } = useNodePreviewActions({
+  } = useTransformNodePreviewActions({
     pipelineId,
     nodeRuns,
     nodes,
@@ -87,11 +108,8 @@ export function useNodeConfigModalState({
     nodeKind,
     config,
     uploadedDatasourceId,
-    selectedFile,
     saveNodeConfig,
     setRunId,
-    setConfig,
-    setUploadedDatasourceId,
     setInputPreview,
     setLeftInputPreview,
     setRightInputPreview,
@@ -100,8 +118,6 @@ export function useNodeConfigModalState({
     setActivePreviewTab,
     setPreviewInfo,
     setModalError,
-    loadAvailableColumns,
-    closeModal,
   });
 
   const openNodeModal = useCallback(
@@ -154,13 +170,12 @@ export function useNodeConfigModalState({
     inputNodeLabelsByPort,
     selectedFile,
     onApplyPreview,
-    onRefreshSourcePreview,
-    onSaveNodeConfig,
-    onUploadFile,
+    onSaveNodeConfig: nodeKind === 'source' ? onSaveSourceNodeConfig : onSaveTransformNodeConfig,
     openNodeModal,
     closeModal,
     setConfig,
     setActivePreviewTab,
     setSelectedFile,
+    onSourceFileChange,
   };
 }

@@ -68,9 +68,7 @@ export function PipelineEditorPage() {
     config,
     modalError,
     onApplyPreview,
-    onRefreshSourcePreview,
     onSaveNodeConfig,
-    onUploadFile,
     openNodeModal,
     closeModal,
     inputPreview,
@@ -86,7 +84,7 @@ export function PipelineEditorPage() {
     selectedFile,
     setConfig,
     setActivePreviewTab,
-    setSelectedFile,
+    onSourceFileChange,
   } = useNodeConfigModalState({
     pipelineId,
     nodes: pipelineQuery.data?.nodes,
@@ -198,15 +196,9 @@ export function PipelineEditorPage() {
           }}
           onClose={closeModal}
           onConfigChange={setConfig}
-          onRefreshSourcePreview={() => {
-            void onRefreshSourcePreview();
-          }}
-          onFileChange={setSelectedFile}
+          onFileChange={onSourceFileChange}
           onSaveConfig={() => {
             void onSaveNodeConfig();
-          }}
-          onUploadFile={() => {
-            void onUploadFile();
           }}
           resultPreview={resultPreview}
           previewInfo={previewInfo}

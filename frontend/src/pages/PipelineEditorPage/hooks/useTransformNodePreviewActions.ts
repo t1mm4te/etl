@@ -6,14 +6,20 @@ import {
   previewDatasource,
   previewNodeRun,
   runPipelinePreview,
-  uploadDatasource,
 } from '../../../api/pipelines';
-import type { Edge, Node as ApiNode, NodeConfig, NodeRun, PreviewResponse } from '../../../api/types';
+import type {
+  Edge,
+  Node as ApiNode,
+  NodeConfig,
+  NodeRun,
+  PreviewResponse,
+} from '../../../api/types';
 import { extractError } from '../../../lib/extractError';
 import type { NodeKind, PreviewTab } from './useNodeConfigState';
+import { buildNextNodeConfig } from './nodePreviewUtils';
 import { getNodeKind } from './useNodeConfigState';
 
-type UseNodePreviewActionsParams = {
+type UseTransformNodePreviewActionsParams = {
   pipelineId: string;
   nodeRuns: NodeRun[] | undefined;
   nodes: ApiNode[] | undefined;
@@ -22,11 +28,8 @@ type UseNodePreviewActionsParams = {
   nodeKind: NodeKind;
   config: NodeConfig;
   uploadedDatasourceId: string;
-  selectedFile: File | null;
   saveNodeConfig: (nodeId: string, config: NodeConfig) => Promise<void>;
   setRunId: (runId: string | null) => void;
-  setConfig: (value: NodeConfig) => void;
-  setUploadedDatasourceId: (value: string) => void;
   setInputPreview: (value: PreviewResponse | null) => void;
   setLeftInputPreview: (value: PreviewResponse | null) => void;
   setRightInputPreview: (value: PreviewResponse | null) => void;
@@ -35,11 +38,9 @@ type UseNodePreviewActionsParams = {
   setActivePreviewTab: (value: PreviewTab) => void;
   setPreviewInfo: (value?: string) => void;
   setModalError: (value?: string) => void;
-  loadAvailableColumns: (nodeId: string) => Promise<void>;
-  closeModal: () => void;
 };
 
-export function useNodePreviewActions({
+export function useTransformNodePreviewActions({
   pipelineId,
   nodeRuns,
   nodes,
@@ -48,11 +49,8 @@ export function useNodePreviewActions({
   nodeKind,
   config,
   uploadedDatasourceId,
-  selectedFile,
   saveNodeConfig,
   setRunId,
-  setConfig,
-  setUploadedDatasourceId,
   setInputPreview,
   setLeftInputPreview,
   setRightInputPreview,
@@ -61,10 +59,8 @@ export function useNodePreviewActions({
   setActivePreviewTab,
   setPreviewInfo,
   setModalError,
-  loadAvailableColumns,
-  closeModal,
-}: UseNodePreviewActionsParams) {
-  const clearPreviews = useCallback(() => {
+}: UseTransformNodePreviewActionsParams) {
+  const clearTransformPreviews = useCallback(() => {
     setInputPreview(null);
     setLeftInputPreview(null);
     setRightInputPreview(null);
@@ -72,7 +68,7 @@ export function useNodePreviewActions({
   }, [setInputPreview, setLeftInputPreview, setResultPreview, setRightInputPreview]);
 
   const getNextConfig = useCallback(
-    () => (uploadedDatasourceId ? { ...config, datasource_id: uploadedDatasourceId } : config),
+    () => buildNextNodeConfig(config, uploadedDatasourceId),
     [config, uploadedDatasourceId]
   );
 
@@ -121,38 +117,6 @@ export function useNodePreviewActions({
     const runDetail = await getPipelineRun(latestCompletedRun.id);
     return runDetail.node_runs;
   }, [nodeRuns, pipelineId, setRunId]);
-
-  const fetchSourcePreview = useCallback(
-    async (datasourceId: string) => {
-      setIsPreviewLoading(true);
-      setPreviewInfo(undefined);
-      setModalError(undefined);
-      clearPreviews();
-
-      try {
-        const datasource = await getDatasourceDetail(datasourceId);
-        if (datasource.status !== 'ready') {
-          setResultPreview(null);
-          setPreviewInfo(`Источник в статусе ${datasource.status}. Данные ещё обрабатываются.`);
-          return;
-        }
-
-        const previewData = await previewDatasource(datasourceId, 10);
-        setResultPreview(previewData);
-      } catch (error) {
-        setModalError(extractError(error, 'Не удалось получить предпросмотр'));
-      } finally {
-        setIsPreviewLoading(false);
-      }
-    },
-    [
-      setIsPreviewLoading,
-      setModalError,
-      setPreviewInfo,
-      setResultPreview,
-      clearPreviews,
-    ]
-  );
 
   const fetchNodePreviewsFromRuns = useCallback(
     async (node: ApiNode, runsOverride?: NodeRun[]) => {
@@ -212,8 +176,10 @@ export function useNodePreviewActions({
           setActivePreviewTab(getNodeKind(node.operation_type) === 'source' ? 'result' : 'input');
         }
       } catch (error) {
-        clearPreviews();
-        setModalError(extractError(error, 'Не удалось получить предпросмотр по последнему запуску'));
+        clearTransformPreviews();
+        setModalError(
+          extractError(error, 'Не удалось получить предпросмотр по последнему запуску')
+        );
       } finally {
         setIsPreviewLoading(false);
       }
@@ -230,7 +196,7 @@ export function useNodePreviewActions({
       setPreviewInfo,
       setResultPreview,
       setRightInputPreview,
-      clearPreviews,
+      clearTransformPreviews,
     ]
   );
 
@@ -244,55 +210,10 @@ export function useNodePreviewActions({
     try {
       const nextConfig = getNextConfig();
       await saveNodeConfig(editingNode.id, nextConfig);
-      closeModal();
     } catch (error) {
       setModalError(extractError(error, 'Не удалось сохранить конфигурацию ноды'));
     }
-  }, [closeModal, editingNode, getNextConfig, saveNodeConfig, setModalError]);
-
-  const onUploadFile = useCallback(async () => {
-    if (!selectedFile || !editingNode) {
-      return;
-    }
-
-    setPreviewInfo(undefined);
-    setModalError(undefined);
-
-    try {
-      const uploaded = await uploadDatasource(selectedFile, selectedFile.name);
-      setUploadedDatasourceId(uploaded.id);
-      setPreviewInfo('Файл загружен. Загружаем предпросмотр...');
-
-      const nextConfig = { ...config, datasource_id: uploaded.id };
-      setConfig(nextConfig);
-
-      await saveNodeConfig(editingNode.id, nextConfig);
-      await fetchSourcePreview(uploaded.id);
-      await loadAvailableColumns(editingNode.id);
-    } catch (error) {
-      setModalError(extractError(error, 'Не удалось загрузить файл'));
-    }
-  }, [
-    config,
-    editingNode,
-    fetchSourcePreview,
-    loadAvailableColumns,
-    saveNodeConfig,
-    selectedFile,
-    setConfig,
-    setModalError,
-    setPreviewInfo,
-    setUploadedDatasourceId,
-  ]);
-
-  const onRefreshSourcePreview = useCallback(async () => {
-    if (!uploadedDatasourceId) {
-      setModalError('Сначала загрузите файл');
-      return;
-    }
-
-    await fetchSourcePreview(uploadedDatasourceId);
-  }, [fetchSourcePreview, setModalError, uploadedDatasourceId]);
+  }, [editingNode, getNextConfig, saveNodeConfig, setModalError]);
 
   const onApplyPreview = useCallback(async () => {
     if (!editingNode || nodeKind === 'source') {
@@ -307,30 +228,25 @@ export function useNodePreviewActions({
       const nextConfig = getNextConfig();
       await saveNodeConfig(editingNode.id, nextConfig);
 
-      if (nodeKind === 'transform') {
-        setPreviewInfo('Конфигурация сохранена. Запускаем локальный предпросмотр для узла...');
-        const startedRun = await runPipelinePreview(pipelineId, editingNode.id);
-        setRunId(startedRun.id);
-        const completedRun = await waitForRunCompletion(startedRun.id);
+      setPreviewInfo('Конфигурация сохранена. Запускаем локальный предпросмотр для узла...');
+      const startedRun = await runPipelinePreview(pipelineId, editingNode.id);
+      setRunId(startedRun.id);
+      const completedRun = await waitForRunCompletion(startedRun.id);
 
-        if (completedRun.status === 'failed') {
-          throw new Error(
-            completedRun.error_message || 'Локальный запуск предпросмотра завершился с ошибкой'
-          );
-        }
-
-        if (completedRun.status === 'cancelled') {
-          throw new Error('Локальный запуск предпросмотра был отменен');
-        }
-
-        setPreviewInfo('Локальный запуск завершен. Загружаем свежий предпросмотр...');
-        await fetchNodePreviewsFromRuns(editingNode, completedRun.node_runs);
-        setActivePreviewTab('result');
-        setPreviewInfo('Предпросмотр обновлен.');
-        return;
+      if (completedRun.status === 'failed') {
+        throw new Error(
+          completedRun.error_message || 'Локальный запуск предпросмотра завершился с ошибкой'
+        );
       }
 
-      await fetchNodePreviewsFromRuns(editingNode);
+      if (completedRun.status === 'cancelled') {
+        throw new Error('Локальный запуск предпросмотра был отменен');
+      }
+
+      setPreviewInfo('Локальный запуск завершен. Загружаем свежий предпросмотр...');
+      await fetchNodePreviewsFromRuns(editingNode, completedRun.node_runs);
+      setActivePreviewTab('result');
+      setPreviewInfo('Предпросмотр обновлен.');
     } catch (error) {
       setModalError(extractError(error, 'Не удалось применить настройки для предпросмотра'));
       setIsPreviewLoading(false);
@@ -352,11 +268,8 @@ export function useNodePreviewActions({
 
   return {
     resolveNodeRunsForPreview,
-    fetchSourcePreview,
     fetchNodePreviewsFromRuns,
     onSaveNodeConfig,
-    onUploadFile,
-    onRefreshSourcePreview,
     onApplyPreview,
   };
 }

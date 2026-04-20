@@ -179,9 +179,11 @@ SPECTACULAR_SETTINGS = {
         '2. **Создать пайплайн** — `POST /pipelines/`\n'
         '3. **Добавить узлы** — `POST /pipelines/{id}/nodes/`\n'
         '4. **Связать узлы рёбрами** — `POST /pipelines/{id}/edges/`\n'
-        '5. **Запустить** — `POST /pipelines/{id}/run/`\n'
-        '6. **Отслеживать статус** — `GET /pipeline-runs/{id}/`\n'
-        '7. **Посмотреть результат** — `GET /node-runs/{id}/preview/`'
+        '5. **Локальный preview узла** — '
+        '`POST /pipelines/{pipeline_pk}/nodes/{id}/preview-run/`\n'
+        '6. **Полный запуск** — `POST /pipelines/{id}/run/`\n'
+        '7. **Отслеживать статус** — `GET /pipeline-runs/{id}/`\n'
+        '8. **Посмотреть результат** — `GET /node-runs/{id}/preview/`'
     ),
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,

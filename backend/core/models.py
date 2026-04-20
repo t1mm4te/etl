@@ -319,6 +319,10 @@ class PipelineRun(UUIDPrimaryKeyModelMixin, CreatedAtModelMixin):
         FAILED = 'failed', 'Ошибка'
         CANCELLED = 'cancelled', 'Отменён'
 
+    class RunMode(models.TextChoices):
+        FULL = 'full', 'Полный запуск'
+        PREVIEW = 'preview', 'Предпросмотр узла'
+
     pipeline = models.ForeignKey(
         Pipeline,
         on_delete=models.CASCADE,
@@ -330,6 +334,20 @@ class PipelineRun(UUIDPrimaryKeyModelMixin, CreatedAtModelMixin):
         max_length=settings.PIPELINE_RUN_STATUS_MAX_LENGTH,
         choices=Status.choices,
         default=Status.PENDING,
+    )
+    run_mode = models.CharField(
+        'Режим запуска',
+        max_length=20,
+        choices=RunMode.choices,
+        default=RunMode.FULL,
+    )
+    target_node = models.ForeignKey(
+        Node,
+        on_delete=models.SET_NULL,
+        related_name='targeted_runs',
+        verbose_name='Целевой узел',
+        null=True,
+        blank=True,
     )
     started_at = models.DateTimeField('Начало', null=True, blank=True)
     finished_at = models.DateTimeField('Завершение', null=True, blank=True)

@@ -226,7 +226,7 @@ class PipelineRunListSerializer(serializers.ModelSerializer):
     class Meta:
         model = PipelineRun
         fields = (
-            'id', 'pipeline', 'status',
+            'id', 'pipeline', 'status', 'run_mode', 'target_node',
             'created_at', 'started_at', 'finished_at',
             'error_message',
         )
@@ -239,7 +239,7 @@ class PipelineRunDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = PipelineRun
         fields = (
-            'id', 'pipeline', 'status',
+            'id', 'pipeline', 'status', 'run_mode', 'target_node',
             'created_at', 'started_at', 'finished_at',
             'error_message', 'celery_task_id',
             'node_runs',

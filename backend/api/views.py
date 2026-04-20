@@ -34,7 +34,7 @@ from .serializers import (
     UserAvatarSerializer,
 )
 from .services.operation_catalog import get_catalog, get_categories
-from .tasks import process_datasource, run_pipeline
+from .tasks import process_datasource, run_pipeline, run_pipeline_preview
 from core.models import DataSource, Edge, Node, NodeRun, Pipeline, PipelineRun
 
 
@@ -337,6 +337,7 @@ class PipelineViewSet(viewsets.ModelViewSet):
         pr = PipelineRun.objects.create(
             pipeline=pipeline,
             status=PipelineRun.Status.PENDING,
+            run_mode=PipelineRun.RunMode.FULL,
         )
         run_pipeline.delay(str(pr.pk))
         return Response(
@@ -412,6 +413,30 @@ class NodeViewSet(viewsets.ModelViewSet):
             owner=self.request.user,
         )
         serializer.save(pipeline=pipeline)
+
+    @extend_schema(
+        summary='Запуск preview для узла',
+        description=(
+            'Создаёт новый PipelineRun в режиме preview и запускает '
+            'выполнение только подграфа `ancestors + target` для указанного '
+            'узла. Downstream-узлы не исполняются.'
+        ),
+        request=None,
+        responses={status.HTTP_201_CREATED: PipelineRunListSerializer},
+    )
+    def preview_run(self, request, pipeline_pk=None, pk=None):
+        node = self.get_object()
+        pipeline_run = PipelineRun.objects.create(
+            pipeline=node.pipeline,
+            status=PipelineRun.Status.PENDING,
+            run_mode=PipelineRun.RunMode.PREVIEW,
+            target_node=node,
+        )
+        run_pipeline_preview.delay(str(pipeline_run.pk))
+        return Response(
+            PipelineRunListSerializer(pipeline_run).data,
+            status=status.HTTP_201_CREATED,
+        )
 
     @extend_schema(
         summary='Доступные столбцы входных данных узла',

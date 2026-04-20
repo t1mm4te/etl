@@ -155,7 +155,9 @@ export interface OperationCatalogResponse {
 export interface PipelineRun {
   id: string;
   pipeline: string;
-  status: 'pending' | 'running' | 'success' | 'failed';
+  status: 'pending' | 'running' | 'success' | 'failed' | 'cancelled';
+  run_mode: 'full' | 'preview';
+  target_node: string | null;
   created_at: string;
   started_at: string | null;
   finished_at: string | null;
@@ -167,7 +169,7 @@ export interface NodeRun {
   node: string;
   node_label: string;
   node_operation: string;
-  status: 'pending' | 'running' | 'success' | 'failed';
+  status: 'pending' | 'running' | 'success' | 'failed' | 'skipped';
   output_row_count: number | null;
   output_columns_meta: Array<Record<string, unknown>>;
   error_message: string;

@@ -10,6 +10,7 @@ export type OperationConfigEditorProps = {
 
 export type SourceFileConfigEditorProps = {
   selectedFile: File | null;
+  selectedFileName?: string;
   onFileChange: (file: File | null) => void;
 };
 

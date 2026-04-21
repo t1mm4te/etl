@@ -5,8 +5,11 @@ import type { SourceFileConfigEditorProps } from '../types';
 
 export function SourceFileConfigEditor({
   selectedFile,
+  selectedFileName,
   onFileChange,
 }: SourceFileConfigEditorProps) {
+  const currentFileName = selectedFile?.name ?? selectedFileName;
+
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       onFileChange(acceptedFiles[0] ?? null);
@@ -35,19 +38,11 @@ export function SourceFileConfigEditor({
       >
         <input {...getInputProps()} />
         <p className={styles.dropzoneText}>
-          {isDragActive
-            ? 'Отпустите файл здесь'
-            : 'Перетащите файл сюда или нажмите для выбора'}
+          {isDragActive ? 'Отпустите файл здесь' : 'Перетащите файл сюда или нажмите для выбора'}
         </p>
       </div>
 
-      {selectedFile ? <p className={styles.muted}>Выбран файл: {selectedFile.name}</p> : null}
-
-      {selectedFile ? (
-        <button type="button" className={styles.clearButton} onClick={() => onFileChange(null)}>
-          Убрать файл
-        </button>
-      ) : null}
+      {currentFileName ? <p className={styles.muted}>Выбран файл: {currentFileName}</p> : null}
     </div>
   );
 }

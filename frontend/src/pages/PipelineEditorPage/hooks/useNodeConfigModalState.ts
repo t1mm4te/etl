@@ -10,7 +10,11 @@ type UseNodeConfigModalStateParams = {
   nodes: ApiNode[] | undefined;
   edges: Edge[] | undefined;
   nodeRuns: NodeRun[] | undefined;
-  saveNodeConfig: (nodeId: string, config: NodeConfig) => Promise<void>;
+  saveNodeConfig: (
+    nodeId: string,
+    config: NodeConfig,
+    options?: { label?: string }
+  ) => Promise<void>;
 };
 
 export function useNodeConfigModalState({
@@ -33,6 +37,7 @@ export function useNodeConfigModalState({
     activePreviewTab,
     previewInfo,
     selectedFile,
+    selectedFileName,
     uploadedDatasourceId,
   } = modalState;
 
@@ -142,6 +147,7 @@ export function useNodeConfigModalState({
     availableColumnsByPort,
     inputNodeLabelsByPort,
     selectedFile,
+    selectedFileName,
     onApplyPreview,
     onSaveNodeConfig: nodeKind === 'source' ? onSaveSourceNodeConfig : onSaveTransformNodeConfig,
     openNodeModal,

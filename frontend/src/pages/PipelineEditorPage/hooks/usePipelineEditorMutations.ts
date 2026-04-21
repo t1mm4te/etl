@@ -60,11 +60,16 @@ export function usePipelineEditorMutations({ pipelineId }: UsePipelineEditorMuta
     },
   });
 
-  const saveNodeConfig = async (nodeId: string, config: NodeConfig) => {
+  const saveNodeConfig = async (
+    nodeId: string,
+    config: NodeConfig,
+    options?: { label?: string }
+  ) => {
     await patchNodeMutation.mutateAsync({
       nodeId,
       payload: {
         config,
+        ...(options?.label ? { label: options.label } : {}),
       },
     });
   };

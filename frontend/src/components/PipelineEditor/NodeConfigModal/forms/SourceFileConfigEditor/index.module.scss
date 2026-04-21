@@ -17,7 +17,9 @@
   padding: 14px;
   background: $darkGrayLighter;
   cursor: pointer;
-  transition: border-color $transitionFast, background $transitionFast;
+  transition:
+    border-color $transitionFast,
+    background $transitionFast;
 
   &:hover {
     border-color: $white;
@@ -37,21 +39,4 @@
 .muted {
   margin: 0;
   color: $labelColor;
-}
-
-.clearButton {
-  width: fit-content;
-  border: 1px solid $borderColor;
-  background: transparent;
-  color: $labelColor;
-  border-radius: $borderRadiusSmall;
-  padding: 6px 10px;
-  font-size: 13px;
-  cursor: pointer;
-  transition: border-color $transitionFast, color $transitionFast;
-
-  &:hover {
-    border-color: $white;
-    color: $white;
-  }
 }

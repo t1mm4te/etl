@@ -33,8 +33,15 @@ type SortableSelectedColumnItemProps = {
 };
 
 function SortableSelectedColumnItem({ column, onToggle }: SortableSelectedColumnItemProps) {
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
-    useSortable({ id: column });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: column });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -88,7 +95,9 @@ export function SelectColumnsConfigEditor({
     uniqueAvailableColumns.length > 0 &&
     uniqueAvailableColumns.every((column) => selectedSet.has(column));
   const extraSelectedColumns = selectedColumns.filter((column) => !availableSet.has(column));
-  const unselectedAvailableColumns = uniqueAvailableColumns.filter((column) => !selectedSet.has(column));
+  const unselectedAvailableColumns = uniqueAvailableColumns.filter(
+    (column) => !selectedSet.has(column)
+  );
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
@@ -161,15 +170,26 @@ export function SelectColumnsConfigEditor({
               Отметить все
             </label>
 
-            <button type="button" className={styles.controlButton} onClick={() => updateColumns([])}>
+            <button
+              type="button"
+              className={styles.controlButton}
+              onClick={() => updateColumns([])}
+            >
               Очистить
             </button>
           </div>
 
           <p className={styles.sectionTitle}>Выбранные (можно перетаскивать)</p>
 
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onSelectedColumnDragEnd}>
-            <SortableContext items={selectedAvailableColumns} strategy={verticalListSortingStrategy}>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={onSelectedColumnDragEnd}
+          >
+            <SortableContext
+              items={selectedAvailableColumns}
+              strategy={verticalListSortingStrategy}
+            >
               <div className={styles.checkboxList}>
                 {selectedAvailableColumns.length > 0 ? (
                   selectedAvailableColumns.map((column) => (

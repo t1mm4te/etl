@@ -30,7 +30,11 @@ type UseTransformNodePreviewActionsParams = {
   nodeKind: NodeKind;
   config: NodeConfig;
   uploadedDatasourceId: string;
-  saveNodeConfig: (nodeId: string, config: NodeConfig) => Promise<void>;
+  saveNodeConfig: (
+    nodeId: string,
+    config: NodeConfig,
+    options?: { label?: string }
+  ) => Promise<void>;
 };
 
 export function useTransformNodePreviewActions({

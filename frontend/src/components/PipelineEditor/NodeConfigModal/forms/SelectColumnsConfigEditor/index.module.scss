@@ -51,7 +51,9 @@
   padding: 6px 10px;
   font-size: 13px;
   cursor: pointer;
-  transition: border-color $transitionFast, color $transitionFast;
+  transition:
+    border-color $transitionFast,
+    color $transitionFast;
 
   &:hover {
     color: $white;

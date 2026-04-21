@@ -9,10 +9,18 @@ type UseSourceNodePreviewActionsParams = {
   editingNode: ApiNode | null;
   config: NodeConfig;
   uploadedDatasourceId: string;
-  saveNodeConfig: (nodeId: string, config: NodeConfig) => Promise<void>;
+  saveNodeConfig: (
+    nodeId: string,
+    config: NodeConfig,
+    options?: { label?: string }
+  ) => Promise<void>;
   loadAvailableColumns: (nodeId: string) => Promise<void>;
   closeModal: () => void;
 };
+
+function buildSourceFileLabel(fileName: string) {
+  return `Загрузка файла: ${fileName}`;
+}
 
 export function useSourceNodePreviewActions({
   editingNode,
@@ -25,6 +33,7 @@ export function useSourceNodePreviewActions({
   const {
     setConfig,
     setSelectedFile,
+    setSelectedFileName,
     setUploadedDatasourceId,
     setInputPreview,
     setLeftInputPreview,
@@ -52,11 +61,13 @@ export function useSourceNodePreviewActions({
       try {
         const datasource = await getDatasourceDetail(datasourceId);
         if (datasource.status !== 'ready') {
+          setSelectedFileName(datasource.original_filename || undefined);
           setResultPreview(null);
           setPreviewInfo(`Источник в статусе ${datasource.status}. Данные ещё обрабатываются.`);
           return;
         }
 
+        setSelectedFileName(datasource.original_filename || undefined);
         const previewData = await previewDatasource(datasourceId, 10);
         setResultPreview(previewData);
       } catch (error) {
@@ -65,7 +76,14 @@ export function useSourceNodePreviewActions({
         setIsPreviewLoading(false);
       }
     },
-    [clearSourcePreviews, setIsPreviewLoading, setModalError, setPreviewInfo, setResultPreview]
+    [
+      clearSourcePreviews,
+      setIsPreviewLoading,
+      setModalError,
+      setPreviewInfo,
+      setResultPreview,
+      setSelectedFileName,
+    ]
   );
 
   const onSaveNodeConfig = useCallback(async () => {
@@ -100,6 +118,7 @@ export function useSourceNodePreviewActions({
       }
 
       setSelectedFile(file);
+      setSelectedFileName(file.name);
       setPreviewInfo(undefined);
       setModalError(undefined);
 
@@ -109,12 +128,12 @@ export function useSourceNodePreviewActions({
         setPreviewInfo('Файл загружен. Загружаем предпросмотр...');
 
         const nextConfig = buildNextNodeConfig(config, uploaded.id);
+        const nextLabel = buildSourceFileLabel(file.name);
         setConfig(nextConfig);
 
-        await saveNodeConfig(editingNode.id, nextConfig);
+        await saveNodeConfig(editingNode.id, nextConfig, { label: nextLabel });
         await fetchSourcePreview(uploaded.id);
         await loadAvailableColumns(editingNode.id);
-        setSelectedFile(null);
       } catch (error) {
         setModalError(extractError(error, 'Не удалось загрузить файл'));
       }
@@ -129,6 +148,7 @@ export function useSourceNodePreviewActions({
       setModalError,
       setPreviewInfo,
       setSelectedFile,
+      setSelectedFileName,
       setUploadedDatasourceId,
     ]
   );

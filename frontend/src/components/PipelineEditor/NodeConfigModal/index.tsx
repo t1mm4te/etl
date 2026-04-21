@@ -11,6 +11,7 @@ type NodeConfigModalProps = {
   hasIncomingData: boolean;
   config: NodeConfig;
   selectedFile: File | null;
+  selectedFileName?: string;
   availableColumns: string[];
   availableColumnsByPort?: Record<string, string[]>;
   inputNodeLabelsByPort?: Record<string, string>;
@@ -61,6 +62,7 @@ export function NodeConfigModal({
   hasIncomingData,
   config,
   selectedFile,
+  selectedFileName,
   availableColumns,
   availableColumnsByPort,
   inputNodeLabelsByPort,
@@ -99,7 +101,11 @@ export function NodeConfigModal({
             <div className={styles.transformLayout}>
               <aside className={styles.configPanel}>
                 {isSourceFile ? (
-                  <SourceFileConfigEditor selectedFile={selectedFile} onFileChange={onFileChange} />
+                  <SourceFileConfigEditor
+                    selectedFile={selectedFile}
+                    selectedFileName={selectedFileName}
+                    onFileChange={onFileChange}
+                  />
                 ) : null}
 
                 {isSourceDb ? <SourceDbConfigEditor datasourceId={datasourceId} /> : null}

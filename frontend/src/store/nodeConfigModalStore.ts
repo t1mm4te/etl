@@ -9,6 +9,7 @@ export type NodeConfigModalState = {
   config: NodeConfig;
   uploadedDatasourceId: string;
   selectedFile: File | null;
+  selectedFileName?: string;
   inputPreview: PreviewResponse | null;
   leftInputPreview: PreviewResponse | null;
   rightInputPreview: PreviewResponse | null;
@@ -22,6 +23,7 @@ export type NodeConfigModalState = {
 export type NodeConfigModalActions = {
   setConfig: (value: NodeConfig) => void;
   setSelectedFile: (value: File | null) => void;
+  setSelectedFileName: (value?: string) => void;
   setUploadedDatasourceId: (value: string) => void;
   setInputPreview: (value: PreviewResponse | null) => void;
   setLeftInputPreview: (value: PreviewResponse | null) => void;
@@ -37,11 +39,27 @@ export type NodeConfigModalActions = {
 
 export type NodeConfigModalStore = NodeConfigModalState & NodeConfigModalActions;
 
+const SOURCE_FILE_LABEL_PREFIX = 'Загрузка файла: ';
+
+function getSourceFileNameFromNodeLabel(operationType: string, label: string) {
+  if (operationType !== 'source_file') {
+    return undefined;
+  }
+
+  if (!label.startsWith(SOURCE_FILE_LABEL_PREFIX)) {
+    return undefined;
+  }
+
+  const parsed = label.slice(SOURCE_FILE_LABEL_PREFIX.length).trim();
+  return parsed.length > 0 ? parsed : undefined;
+}
+
 const getDefaultModalState = (): NodeConfigModalState => ({
   editingNodeId: null,
   config: {},
   uploadedDatasourceId: '',
   selectedFile: null,
+  selectedFileName: undefined,
   inputPreview: null,
   leftInputPreview: null,
   rightInputPreview: null,
@@ -61,6 +79,10 @@ export const useNodeConfigModalStore = create<NodeConfigModalStore>((set) => ({
 
   setSelectedFile: (value) => {
     set({ selectedFile: value });
+  },
+
+  setSelectedFileName: (value) => {
+    set({ selectedFileName: value });
   },
 
   setUploadedDatasourceId: (value) => {
@@ -102,12 +124,14 @@ export const useNodeConfigModalStore = create<NodeConfigModalStore>((set) => ({
   openNodeModalState: (node) => {
     const cfg = node.config ?? {};
     const currentDatasourceId = typeof cfg.datasource_id === 'string' ? cfg.datasource_id : '';
+    const initialSelectedFileName = getSourceFileNameFromNodeLabel(node.operation_type, node.label);
 
     set({
       ...getDefaultModalState(),
       editingNodeId: node.id,
       config: { ...cfg },
       uploadedDatasourceId: currentDatasourceId,
+      selectedFileName: initialSelectedFileName,
     });
   },
 
@@ -122,6 +146,7 @@ export function useNodeConfigModalStateSlice() {
       editingNodeId: state.editingNodeId,
       config: state.config,
       selectedFile: state.selectedFile,
+      selectedFileName: state.selectedFileName,
       uploadedDatasourceId: state.uploadedDatasourceId,
       inputPreview: state.inputPreview,
       leftInputPreview: state.leftInputPreview,
@@ -140,6 +165,7 @@ export function useNodeConfigModalActions() {
     useShallow((state) => ({
       setConfig: state.setConfig,
       setSelectedFile: state.setSelectedFile,
+      setSelectedFileName: state.setSelectedFileName,
       setUploadedDatasourceId: state.setUploadedDatasourceId,
       setInputPreview: state.setInputPreview,
       setLeftInputPreview: state.setLeftInputPreview,

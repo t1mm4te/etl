@@ -82,6 +82,7 @@ export function PipelineEditorPage() {
     availableColumnsByPort,
     inputNodeLabelsByPort,
     selectedFile,
+    selectedFileName,
     setConfig,
     setActivePreviewTab,
     onSourceFileChange,
@@ -203,6 +204,7 @@ export function PipelineEditorPage() {
           resultPreview={resultPreview}
           previewInfo={previewInfo}
           selectedFile={selectedFile}
+          selectedFileName={selectedFileName}
         />
       ) : null}
     </main>

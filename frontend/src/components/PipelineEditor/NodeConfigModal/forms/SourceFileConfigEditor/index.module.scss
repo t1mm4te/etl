@@ -1,12 +1,57 @@
 @use '../../../../../styles/_vars.scss' as *;
 
-.configLabel {
-  color: $labelColor;
+.root {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+}
+
+.configLabel {
+  color: $labelColor;
+  margin: 0;
+}
+
+.dropzone {
+  border: 1px dashed $borderColor;
+  border-radius: $borderRadiusSmall;
+  padding: 14px;
+  background: $darkGrayLighter;
+  cursor: pointer;
+  transition: border-color $transitionFast, background $transitionFast;
+
+  &:hover {
+    border-color: $white;
+  }
+
+  &[data-active='true'] {
+    border-color: $primaryColor;
+    background: $solidMutedColor2;
+  }
+}
+
+.dropzoneText {
+  margin: 0;
+  color: $labelColor;
 }
 
 .muted {
+  margin: 0;
   color: $labelColor;
+}
+
+.clearButton {
+  width: fit-content;
+  border: 1px solid $borderColor;
+  background: transparent;
+  color: $labelColor;
+  border-radius: $borderRadiusSmall;
+  padding: 6px 10px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color $transitionFast, color $transitionFast;
+
+  &:hover {
+    border-color: $white;
+    color: $white;
+  }
 }

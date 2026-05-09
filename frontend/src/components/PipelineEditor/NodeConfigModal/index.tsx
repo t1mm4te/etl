@@ -6,29 +6,37 @@ import styles from './index.module.scss';
 type NodeKind = 'source' | 'transform' | 'sink';
 
 type NodeConfigModalProps = {
-  node: ApiNode;
-  nodeKind: NodeKind;
-  hasIncomingData: boolean;
-  config: NodeConfig;
-  selectedFile: File | null;
-  selectedFileName?: string;
-  availableColumns: string[];
-  availableColumnsByPort?: Record<string, string[]>;
-  inputNodeLabelsByPort?: Record<string, string>;
-  inputPreview: PreviewResponse | null;
-  leftInputPreview: PreviewResponse | null;
-  rightInputPreview: PreviewResponse | null;
-  resultPreview: PreviewResponse | null;
-  isPreviewLoading: boolean;
-  activePreviewTab: 'input' | 'left_input' | 'right_input' | 'result';
-  previewInfo?: string;
-  modalError?: string;
-  onClose: () => void;
-  onConfigChange: (value: NodeConfig) => void;
-  onActivePreviewTabChange: (value: 'input' | 'left_input' | 'right_input' | 'result') => void;
-  onFileChange: (file: File | null) => void;
-  onApplyPreview: () => void;
-  onSaveConfig: () => void;
+  modalState: {
+    node: ApiNode;
+    nodeKind: NodeKind;
+    hasIncomingData: boolean;
+    config: NodeConfig;
+    selectedFile: File | null;
+    selectedFileName?: string;
+    availableColumns: string[];
+    availableColumnsByPort?: Record<string, string[]>;
+    inputNodeLabelsByPort?: Record<string, string>;
+    previewInfo?: string;
+    modalError?: string;
+  };
+  previewState: {
+    inputPreview: PreviewResponse | null;
+    leftInputPreview: PreviewResponse | null;
+    rightInputPreview: PreviewResponse | null;
+    resultPreview: PreviewResponse | null;
+    isPreviewLoading: boolean;
+    activePreviewTab: 'input' | 'left_input' | 'right_input' | 'result';
+  };
+  modalActions: {
+    onClose: () => void;
+    onConfigChange: (value: NodeConfig) => void;
+    onFileChange: (file: File | null) => void;
+    onSaveConfig: () => void;
+  };
+  previewActions: {
+    onActivePreviewTabChange: (value: 'input' | 'left_input' | 'right_input' | 'result') => void;
+    onApplyPreview: () => void;
+  };
 };
 
 function PreviewTable({ preview }: { preview: PreviewResponse }) {
@@ -57,30 +65,34 @@ function PreviewTable({ preview }: { preview: PreviewResponse }) {
 }
 
 export function NodeConfigModal({
-  node,
-  nodeKind,
-  hasIncomingData,
-  config,
-  selectedFile,
-  selectedFileName,
-  availableColumns,
-  availableColumnsByPort,
-  inputNodeLabelsByPort,
-  inputPreview,
-  leftInputPreview,
-  rightInputPreview,
-  resultPreview,
-  isPreviewLoading,
-  activePreviewTab,
-  previewInfo,
-  modalError,
-  onClose,
-  onConfigChange,
-  onActivePreviewTabChange,
-  onFileChange,
-  onApplyPreview,
-  onSaveConfig,
+  modalState,
+  previewState,
+  modalActions,
+  previewActions,
 }: NodeConfigModalProps) {
+  const {
+    node,
+    nodeKind,
+    hasIncomingData,
+    config,
+    selectedFile,
+    selectedFileName,
+    availableColumns,
+    availableColumnsByPort,
+    inputNodeLabelsByPort,
+    previewInfo,
+    modalError,
+  } = modalState;
+  const {
+    inputPreview,
+    leftInputPreview,
+    rightInputPreview,
+    resultPreview,
+    isPreviewLoading,
+    activePreviewTab,
+  } = previewState;
+  const { onClose, onConfigChange, onFileChange, onSaveConfig } = modalActions;
+  const { onActivePreviewTabChange, onApplyPreview } = previewActions;
   const datasourceId = typeof config.datasource_id === 'string' ? config.datasource_id : undefined;
 
   const isSourceFile = node.operation_type === 'source_file';

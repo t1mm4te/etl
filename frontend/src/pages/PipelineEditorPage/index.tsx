@@ -178,33 +178,41 @@ export function PipelineEditorPage() {
 
       {editingNode ? (
         <NodeConfigModal
-          activePreviewTab={activePreviewTab}
-          config={config}
-          availableColumns={availableColumns}
-          availableColumnsByPort={availableColumnsByPort}
-          hasIncomingData={hasIncomingData}
-          inputPreview={inputPreview}
-          leftInputPreview={leftInputPreview}
-          rightInputPreview={rightInputPreview}
-          inputNodeLabelsByPort={inputNodeLabelsByPort}
-          isPreviewLoading={isPreviewLoading}
-          modalError={modalError}
-          node={editingNode}
-          nodeKind={nodeKind}
-          onActivePreviewTabChange={setActivePreviewTab}
-          onApplyPreview={() => {
-            void onApplyPreview();
+          modalActions={{
+            onClose: closeModal,
+            onConfigChange: setConfig,
+            onFileChange: onSourceFileChange,
+            onSaveConfig: () => {
+              void onSaveNodeConfig();
+            },
           }}
-          onClose={closeModal}
-          onConfigChange={setConfig}
-          onFileChange={onSourceFileChange}
-          onSaveConfig={() => {
-            void onSaveNodeConfig();
+          modalState={{
+            node: editingNode,
+            nodeKind,
+            hasIncomingData,
+            config,
+            selectedFile,
+            selectedFileName,
+            availableColumns,
+            availableColumnsByPort,
+            inputNodeLabelsByPort,
+            previewInfo,
+            modalError,
           }}
-          resultPreview={resultPreview}
-          previewInfo={previewInfo}
-          selectedFile={selectedFile}
-          selectedFileName={selectedFileName}
+          previewActions={{
+            onActivePreviewTabChange: setActivePreviewTab,
+            onApplyPreview: () => {
+              void onApplyPreview();
+            },
+          }}
+          previewState={{
+            inputPreview,
+            leftInputPreview,
+            rightInputPreview,
+            resultPreview,
+            isPreviewLoading,
+            activePreviewTab,
+          }}
         />
       ) : null}
     </main>

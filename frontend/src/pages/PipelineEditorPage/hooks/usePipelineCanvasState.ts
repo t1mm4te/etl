@@ -15,7 +15,7 @@ import type { Edge, Node, OperationItem, PipelineDetail } from '../../../api/typ
 import { type PipelineOperationNodeData } from '../../../components/PipelineOperationNode';
 import { extractError } from '../../../lib/extractError';
 import { usePipelineEditorStore } from '../../../store/pipelineEditorStore';
-import { pipelineQueryKey } from './usePipelineEditorQueries';
+import { pipelineDetailKey } from '../../../api/queryKeys';
 
 type SortedCategories = Array<[string, { order: number }]>;
 
@@ -87,7 +87,7 @@ export function usePipelineCanvasState({
       setCanvasError(undefined);
       try {
         await deleteNode(pipelineId, nodeId);
-        await queryClient.invalidateQueries({ queryKey: pipelineQueryKey(pipelineId) });
+        await queryClient.invalidateQueries({ queryKey: pipelineDetailKey(pipelineId) });
       } catch (error) {
         setCanvasError(extractError(error, 'Не удалось удалить ноду'));
       }
@@ -159,7 +159,7 @@ export function usePipelineCanvasState({
       })
     );
 
-    await queryClient.invalidateQueries({ queryKey: pipelineQueryKey(pipelineId) });
+    await queryClient.invalidateQueries({ queryKey: pipelineDetailKey(pipelineId) });
   };
 
   const onDeleteNodes = async (nodesToDelete: FlowNode<PipelineOperationNodeData>[]) => {
@@ -168,7 +168,7 @@ export function usePipelineCanvasState({
     }
 
     await Promise.all(nodesToDelete.map(async (node) => onDeleteNode(node.id)));
-    await queryClient.invalidateQueries({ queryKey: pipelineQueryKey(pipelineId) });
+    await queryClient.invalidateQueries({ queryKey: pipelineDetailKey(pipelineId) });
   };
 
   const onNodeDragStop = async (

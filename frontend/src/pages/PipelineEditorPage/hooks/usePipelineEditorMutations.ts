@@ -3,7 +3,7 @@ import type { Connection } from 'reactflow';
 import { createEdge, createNode, patchNode, runPipeline } from '../../../api/pipelines';
 import type { NodeConfig, NodeUpdatePayload, OperationItem } from '../../../api/types';
 import { usePipelineEditorStore } from '../../../store/pipelineEditorStore';
-import { pipelineQueryKey } from './usePipelineEditorQueries';
+import { pipelineDetailKey } from '../../../api/queryKeys';
 
 type UsePipelineEditorMutationsParams = {
   pipelineId: string;
@@ -22,7 +22,7 @@ export function usePipelineEditorMutations({ pipelineId }: UsePipelineEditorMuta
     mutationFn: ({ nodeId, payload }: { nodeId: string; payload: NodeUpdatePayload }) =>
       patchNode(pipelineId, nodeId, payload),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: pipelineQueryKey(pipelineId) });
+      await queryClient.invalidateQueries({ queryKey: pipelineDetailKey(pipelineId) });
     },
   });
 
@@ -36,7 +36,7 @@ export function usePipelineEditorMutations({ pipelineId }: UsePipelineEditorMuta
         position_y: position.y,
       }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: pipelineQueryKey(pipelineId) });
+      await queryClient.invalidateQueries({ queryKey: pipelineDetailKey(pipelineId) });
     },
   });
 
@@ -49,7 +49,7 @@ export function usePipelineEditorMutations({ pipelineId }: UsePipelineEditorMuta
         target_port: payload.connection.targetHandle ?? 'main',
       }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: pipelineQueryKey(pipelineId) });
+      await queryClient.invalidateQueries({ queryKey: pipelineDetailKey(pipelineId) });
     },
   });
 

@@ -6,7 +6,8 @@ import { z } from 'zod';
 import { patchMe, setEmail, setPassword } from '../../api/auth';
 import { Button } from '../../components/Button';
 import { PasswordInput } from '../../components/PasswordInput';
-import { useCurrentUser, AUTH_ME_QUERY_KEY } from '../../hooks/useCurrentUser';
+import { useCurrentUser } from '../../hooks/useCurrentUser';
+import { authMeKey } from '../../api/queryKeys';
 import { extractError } from '../../lib/extractError';
 import styles from './index.module.scss';
 
@@ -115,7 +116,7 @@ export function ProfilePage() {
     onSuccess: async () => {
       setProfileErrorText(undefined);
       setProfileSuccessText('Профиль обновлен');
-      await queryClient.invalidateQueries({ queryKey: AUTH_ME_QUERY_KEY });
+      await queryClient.invalidateQueries({ queryKey: authMeKey });
     },
     onError: (mutationError) => {
       setProfileSuccessText(undefined);
@@ -149,7 +150,7 @@ export function ProfilePage() {
         new_email: '',
         current_password: '',
       });
-      await queryClient.invalidateQueries({ queryKey: AUTH_ME_QUERY_KEY });
+      await queryClient.invalidateQueries({ queryKey: authMeKey });
     },
     onError: (mutationError) => {
       setEmailSuccessText(undefined);

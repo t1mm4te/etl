@@ -3,26 +3,24 @@ import { useQuery } from '@tanstack/react-query';
 import { getOperationsCatalog, getPipelineDetail, getPipelineRun } from '../../../api/pipelines';
 import type { OperationItem } from '../../../api/types';
 import { usePipelineEditorStore } from '../../../store/pipelineEditorStore';
-
-export const pipelineQueryKey = (pipelineId: string) => ['pipeline-detail', pipelineId] as const;
-// export const operationsQueryKey = ['operations-catalog'] as const;
+import { pipelineDetailKey, operationsCatalogKey, pipelineRunKey } from '../../../api/queryKeys';
 
 export function usePipelineEditorQueries(pipelineId: string) {
   const runId = usePipelineEditorStore((state) => state.runId);
 
   const pipelineQuery = useQuery({
-    queryKey: pipelineQueryKey(pipelineId),
+    queryKey: pipelineDetailKey(pipelineId),
     queryFn: () => getPipelineDetail(pipelineId),
     enabled: Boolean(pipelineId),
   });
 
   const operationsQuery = useQuery({
-    queryKey: ['operations-catalog'],
+    queryKey: operationsCatalogKey,
     queryFn: getOperationsCatalog,
   });
 
   const runQuery = useQuery({
-    queryKey: ['pipeline-run', runId],
+    queryKey: pipelineRunKey(runId),
     queryFn: () => getPipelineRun(runId ?? ''),
     enabled: Boolean(runId),
     refetchInterval: (query) => {

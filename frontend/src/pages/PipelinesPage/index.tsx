@@ -10,7 +10,8 @@ import trashIcon from '../../assets/node-icons/trash.svg';
 import editIcon from '../../assets/node-icons/edit.svg';
 import styles from './index.module.scss';
 
-const PIPELINES_QUERY_KEY = ['pipelines'];
+import { pipelinesListKey } from '../../api/queryKeys';
+const PIPELINES_QUERY_KEY = pipelinesListKey;
 const UPDATED_AT_FORMATTER = new Intl.DateTimeFormat('ru-RU', {
   day: 'numeric',
   month: 'long',

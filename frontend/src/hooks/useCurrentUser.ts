@@ -4,15 +4,14 @@ import axios from 'axios';
 import { getMe } from '../api/auth';
 import type { User } from '../api/types';
 import { useAuthStore } from '../store/authStore';
-
-export const AUTH_ME_QUERY_KEY = ['auth', 'me'] as const;
+import { authMeKey } from '../api/queryKeys';
 
 export function useCurrentUser() {
   const token = useAuthStore((state) => state.token);
   const clearAuth = useAuthStore((state) => state.clearAuth);
 
   const query = useQuery<User>({
-    queryKey: [...AUTH_ME_QUERY_KEY, token],
+    queryKey: [...authMeKey, token],
     queryFn: getMe,
     enabled: Boolean(token),
     retry: false,

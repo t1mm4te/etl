@@ -1,13 +1,17 @@
 from django.conf import settings
+from django.db import transaction
+import random
 from djoser.serializers import (
     UserCreateSerializer as UserCreateSerializerBase,
     UserSerializer as UserSerializerBase,
 )
 from rest_framework import serializers
 
+from .tasks import send_verification_email
 from .utils import Base64ImageField
 from core.models import (
     DataSource,
+    EmailVerificationCode,
     Edge,
     Node,
     NodeRun,
@@ -34,6 +38,19 @@ class UserCreateSerializer(UserCreateSerializerBase):
                 'Имя пользователя не может быть `me`.')
 
         return value
+
+    @transaction.atomic
+    def create(self, validated_data):
+        super_create = super().create
+        validated_data['is_active'] = False
+        user = super_create(validated_data)
+        
+        code = str(random.randint(100000, 999999))
+        EmailVerificationCode.objects.create(user=user, code=code)
+        
+        send_verification_email.delay(user.email, code)
+        
+        return user
 
 
 class UserSerializer(UserSerializerBase):

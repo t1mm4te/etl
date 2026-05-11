@@ -1,6 +1,8 @@
 import logging
 
 from celery import shared_task
+from django.core.mail import send_mail
+from django.conf import settings
 
 from .services.file_processing import process_uploaded_file
 from .services.pipeline_executor import (
@@ -11,6 +13,27 @@ from core.models import DataSource, PipelineRun
 
 
 logger = logging.getLogger(__name__)
+
+
+@shared_task(bind=True, max_retries=3)
+def send_verification_email(self, email: str, code: str) -> dict:
+    """Асинхронная отправка письма с кодом подтверждения."""
+    subject = 'Код подтверждения регистрации'
+    message = f'Ваш код подтверждения: {code}\nКод действителен в течение {settings.EMAIL_VERIFICATION_CODE_LIFETIME_MINUTES} минут.'
+    
+    try:
+        send_mail(
+            subject,
+            message,
+            settings.EMAIL_HOST_USER,
+            [email],
+            fail_silently=False,
+        )
+        return {'status': 'ok', 'email': email}
+    except Exception as exc:
+        logger.exception('Ошибка при отправке письма: %s', exc)
+        self.retry(exc=exc, countdown=60)
+        return {'status': 'error', 'error': str(exc)}
 
 
 @shared_task(bind=True, max_retries=0)

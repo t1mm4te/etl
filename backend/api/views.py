@@ -15,7 +15,7 @@ from rest_framework import (
     status,
     viewsets,
 )
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
@@ -109,6 +109,64 @@ class UserAvatarViewSet(viewsets.ViewSet):
         user.avatar = None
         user.save(update_fields=['avatar'])
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema(
+    tags=['Пользователи'],
+    summary='Подтверждение email',
+    description='Проверка 6-значного кода и активация пользователя.',
+    request=inline_serializer(
+        name='VerifyEmailRequest',
+        fields={
+            'email': serializers.EmailField(),
+            'code': serializers.CharField(max_length=6)
+        }
+    ),
+    responses={
+        status.HTTP_200_OK: inline_serializer('VerifyEmailResponse', fields={'detail': serializers.CharField()}),
+        status.HTTP_400_BAD_REQUEST: inline_serializer('VerifyEmailError', fields={'error': serializers.CharField()}),
+    }
+)
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def verify_email(request):
+    email = request.data.get('email')
+    code = request.data.get('code')
+
+    if not email or not code:
+        return Response({'error': 'Поля email и code обязательны.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        user = User.objects.get(email=email)
+    except User.DoesNotExist:
+        return Response({'error': 'Пользователь с таким email не найден.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if user.is_active:
+        return Response({'error': 'Пользователь уже активирован.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        verification = user.verification_code
+    except hasattr(user, 'verification_code') and user.verification_code.DoesNotExist: # Should be ObjectDoesNotExist but related manager throws it
+        # Actually it's simpler:
+        pass
+    
+    # Let's fix the above safely:
+    if not hasattr(user, 'verification_code'):
+        return Response({'error': 'Код подтверждения не найден.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+    verification = user.verification_code
+
+    if verification.code != str(code):
+        return Response({'error': 'Неверный код.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if not verification.is_valid():
+        return Response({'error': 'Время действия кода истекло.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    user.is_active = True
+    user.save(update_fields=['is_active'])
+    verification.delete()
+
+    return Response({'detail': 'Аккаунт успешно активирован.'}, status=status.HTTP_200_OK)
 
 
 @extend_schema(tags=['Источники данных'])

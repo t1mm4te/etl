@@ -1,6 +1,8 @@
+from datetime import timedelta
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
 
 from .models_mixins import (
     CreatedAtModelMixin,
@@ -38,6 +40,36 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.username
+
+
+class EmailVerificationCode(models.Model):
+    """Код подтверждения для регистрации."""
+
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='verification_code',
+        verbose_name='Пользователь',
+    )
+    code = models.CharField(
+        'Код',
+        max_length=settings.EMAIL_VERIFICATION_CODE_LENGTH,
+    )
+    created_at = models.DateTimeField(
+        'Время создания',
+        auto_now_add=True,
+    )
+
+    class Meta:
+        verbose_name = 'Код подтверждения email'
+        verbose_name_plural = 'Коды подтверждения email'
+
+    def is_valid(self):
+        expiration_time = self.created_at + timedelta(minutes=settings.EMAIL_VERIFICATION_CODE_LIFETIME_MINUTES)
+        return timezone.now() <= expiration_time
+
+    def __str__(self):
+        return f"Code for {self.user.email}"
 
 
 class DataSource(UUIDPrimaryKeyModelMixin, TimestampedModelMixin):

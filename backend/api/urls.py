@@ -69,6 +69,7 @@ user_avatar = views.UserAvatarViewSet.as_view(
 
 
 urlpatterns = [
+    path('auth/verify-email/', views.verify_email, name='verify-email'),
     path('users/me/avatar/', user_avatar, name='user-avatar'),
     path('auth/', include('djoser.urls.authtoken')),
     path('', include(router.urls)),

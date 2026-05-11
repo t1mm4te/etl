@@ -69,6 +69,8 @@ user_avatar = views.UserAvatarViewSet.as_view(
 
 
 urlpatterns = [
+    path('auth/verify-email/', views.verify_email, name='verify-email'),
+    path('auth/resend-code/', views.resend_verification_code, name='resend-code'),
     path('users/me/avatar/', user_avatar, name='user-avatar'),
     path('auth/', include('djoser.urls.authtoken')),
     path('', include(router.urls)),

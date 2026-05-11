@@ -1,3 +1,4 @@
+import random
 from django.conf import settings
 from django.db.models import Count, OuterRef, Subquery
 from djoser.views import UserViewSet as UserViewSetBase
@@ -15,7 +16,7 @@ from rest_framework import (
     status,
     viewsets,
 )
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
@@ -35,7 +36,7 @@ from .serializers import (
 )
 from .services.operation_catalog import get_catalog, get_categories
 from .tasks import process_datasource, run_pipeline, run_pipeline_preview
-from core.models import DataSource, Edge, Node, NodeRun, Pipeline, PipelineRun
+from core.models import DataSource, Edge, Node, NodeRun, Pipeline, PipelineRun, User, EmailVerificationCode
 
 
 # Общие inline-сериализаторы для preview-ответов
@@ -109,6 +110,96 @@ class UserAvatarViewSet(viewsets.ViewSet):
         user.avatar = None
         user.save(update_fields=['avatar'])
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema(
+    tags=['Пользователи'],
+    summary='Подтверждение email',
+    description='Проверка 6-значного кода и активация пользователя.',
+    request=inline_serializer(
+        name='VerifyEmailRequest',
+        fields={
+            'email': serializers.EmailField(),
+            'code': serializers.CharField(max_length=6)
+        }
+    ),
+    responses={
+        status.HTTP_200_OK: inline_serializer('VerifyEmailResponse', fields={'detail': serializers.CharField()}),
+        status.HTTP_400_BAD_REQUEST: inline_serializer('VerifyEmailError', fields={'error': serializers.CharField()}),
+    }
+)
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def verify_email(request):
+    email = request.data.get('email')
+    code = request.data.get('code')
+
+    if not email or not code:
+        return Response({'error': 'Поля email и code обязательны.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        user = User.objects.get(email=email)
+    except User.DoesNotExist:
+        return Response({'error': 'Пользователь с таким email не найден.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if user.is_active:
+        return Response({'error': 'Пользователь уже активирован.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        verification = user.verification_code
+    except EmailVerificationCode.DoesNotExist:
+        return Response({'error': 'Код подтверждения не найден.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if verification.code != str(code):
+        return Response({'error': 'Неверный код.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if not verification.is_valid():
+        return Response({'error': 'Время действия кода истекло.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    user.is_active = True
+    user.save(update_fields=['is_active'])
+    verification.delete()
+
+    return Response({'detail': 'Аккаунт успешно активирован.'}, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    tags=['Пользователи'],
+    summary='Повторная отправка кода',
+    description='Генерирует и отправляет новый 6-значный код подтверждения.',
+    request=inline_serializer(
+        name='ResendEmailRequest',
+        fields={'email': serializers.EmailField()}
+    ),
+    responses={
+        200: inline_serializer('ResendEmailResponse', fields={'detail': serializers.CharField()}),
+        400: inline_serializer('ResendEmailError', fields={'error': serializers.CharField()}),
+    }
+)
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def resend_verification_code(request):
+    email = request.data.get('email')
+
+    if not email:
+        return Response({'error': 'Поле email обязательно.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        user = User.objects.get(email=email)
+    except User.DoesNotExist:
+        return Response({'error': 'Пользователь с таким email не найден.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if user.is_active:
+        return Response({'error': 'Пользователь уже активирован.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    code = str(random.randint(100000, 999999))
+    EmailVerificationCode.objects.filter(user=user).delete()
+    EmailVerificationCode.objects.create(user=user, code=code)
+
+    from .tasks import send_verification_email
+    send_verification_email.delay(user.email, code)
+
+    return Response({'detail': 'Новый код отправлен на почту.'}, status=status.HTTP_200_OK)
 
 
 @extend_schema(tags=['Источники данных'])

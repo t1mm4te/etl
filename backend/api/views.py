@@ -1,3 +1,4 @@
+import random
 from django.conf import settings
 from django.db.models import Count, OuterRef, Subquery
 from djoser.views import UserViewSet as UserViewSetBase
@@ -35,7 +36,7 @@ from .serializers import (
 )
 from .services.operation_catalog import get_catalog, get_categories
 from .tasks import process_datasource, run_pipeline, run_pipeline_preview
-from core.models import DataSource, Edge, Node, NodeRun, Pipeline, PipelineRun
+from core.models import DataSource, Edge, Node, NodeRun, Pipeline, PipelineRun, User, EmailVerificationCode
 
 
 # Общие inline-сериализаторы для preview-ответов
@@ -146,15 +147,8 @@ def verify_email(request):
 
     try:
         verification = user.verification_code
-    except hasattr(user, 'verification_code') and user.verification_code.DoesNotExist: # Should be ObjectDoesNotExist but related manager throws it
-        # Actually it's simpler:
-        pass
-    
-    # Let's fix the above safely:
-    if not hasattr(user, 'verification_code'):
+    except EmailVerificationCode.DoesNotExist:
         return Response({'error': 'Код подтверждения не найден.'}, status=status.HTTP_400_BAD_REQUEST)
-        
-    verification = user.verification_code
 
     if verification.code != str(code):
         return Response({'error': 'Неверный код.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -167,6 +161,45 @@ def verify_email(request):
     verification.delete()
 
     return Response({'detail': 'Аккаунт успешно активирован.'}, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    tags=['Пользователи'],
+    summary='Повторная отправка кода',
+    description='Генерирует и отправляет новый 6-значный код подтверждения.',
+    request=inline_serializer(
+        name='ResendEmailRequest',
+        fields={'email': serializers.EmailField()}
+    ),
+    responses={
+        200: inline_serializer('ResendEmailResponse', fields={'detail': serializers.CharField()}),
+        400: inline_serializer('ResendEmailError', fields={'error': serializers.CharField()}),
+    }
+)
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def resend_verification_code(request):
+    email = request.data.get('email')
+
+    if not email:
+        return Response({'error': 'Поле email обязательно.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        user = User.objects.get(email=email)
+    except User.DoesNotExist:
+        return Response({'error': 'Пользователь с таким email не найден.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if user.is_active:
+        return Response({'error': 'Пользователь уже активирован.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    code = str(random.randint(100000, 999999))
+    EmailVerificationCode.objects.filter(user=user).delete()
+    EmailVerificationCode.objects.create(user=user, code=code)
+
+    from .tasks import send_verification_email
+    send_verification_email.delay(user.email, code)
+
+    return Response({'detail': 'Новый код отправлен на почту.'}, status=status.HTTP_200_OK)
 
 
 @extend_schema(tags=['Источники данных'])

@@ -20,6 +20,19 @@ export interface LoginPayload {
   password: string;
 }
 
+export interface VerifyEmailPayload {
+  email: string;
+  code: string;
+}
+
+export interface ResendCodePayload {
+  email: string;
+}
+
+export interface DetailResponse {
+  detail: string;
+}
+
 export interface ProfileUpdatePayload {
   username: string;
   first_name: string;

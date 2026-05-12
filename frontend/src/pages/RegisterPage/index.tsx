@@ -48,8 +48,8 @@ export function RegisterPage() {
         first_name: values.first_name,
         last_name: values.last_name,
       }),
-    onSuccess: () => {
-      navigate('/login', { state: { registrationSuccess: true } });
+    onSuccess: (_data, variables) => {
+      navigate('/verify-email', { state: { email: variables.email } });
     },
     onError: (error) => {
       setErrorText(extractError(error, 'Не удалось зарегистрироваться'));

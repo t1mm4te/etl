@@ -11,7 +11,7 @@ import { extractError } from '../../lib/extractError';
 import styles from './index.module.scss';
 
 const loginSchema = z.object({
-  email: z.string().min(1, 'Введите username'),
+  email: z.string().min(1, 'Введите email').email('Введите корректный email'),
   password: z.string().min(1, 'Введите пароль'),
 });
 
@@ -21,10 +21,18 @@ export function LoginPage() {
   const [errorText, setErrorText] = useState<string>();
   const location = useLocation();
   const loginMutation = useLoginAction();
-  const state = location.state as { registrationSuccess?: boolean } | null;
-  const successText = state?.registrationSuccess
-    ? 'Регистрация успешна. Теперь можно войти.'
-    : undefined;
+
+  const state = location.state as {
+    registrationSuccess?: boolean;
+    emailVerified?: boolean;
+    email?: string;
+  } | null;
+
+  const successText = state?.emailVerified
+    ? 'Почта подтверждена. Теперь можно войти.'
+    : state?.registrationSuccess
+      ? 'Регистрация успешна. Теперь можно войти.'
+      : undefined;
 
   const {
     register,
@@ -32,6 +40,10 @@ export function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: state?.email ?? '',
+      password: '',
+    },
   });
 
   const onSubmit = handleSubmit(async (values) => {
@@ -53,14 +65,14 @@ export function LoginPage() {
       footerTo="/register"
     >
       <form className={styles.form} onSubmit={onSubmit}>
-        <label className={styles.label} htmlFor="username">
-          Username
+        <label className={styles.label} htmlFor="email">
+          Почта
           <input
             {...register('email')}
-            autoComplete="username"
+            autoComplete="email"
             className={`${styles.input} ${errors.email ? styles.invalid : ''}`}
             id="email"
-            type="text"
+            type="email"
           />
           {errors.email?.message ? (
             <span className={styles.error}>{errors.email.message}</span>

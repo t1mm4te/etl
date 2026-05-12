@@ -3,9 +3,12 @@ import type {
   LoginPayload,
   ProfileUpdatePayload,
   RegisterPayload,
+  ResendCodePayload,
   SetEmailPayload,
   SetPasswordPayload,
+  VerifyEmailPayload,
 } from './types';
+import type { DetailResponse } from './types';
 import type { User } from './types';
 
 export const register = async (payload: RegisterPayload) => {
@@ -38,4 +41,14 @@ export const setPassword = async (payload: SetPasswordPayload) => {
 
 export const setEmail = async (payload: SetEmailPayload) => {
   await apiClient.post('/users/set_username/', payload);
+};
+
+export const verifyEmail = async (payload: VerifyEmailPayload) => {
+  const response = await apiClient.post('/auth/verify-email/', payload);
+  return response.data as DetailResponse;
+};
+
+export const resendVerificationCode = async (payload: ResendCodePayload) => {
+  const response = await apiClient.post('/auth/resend-code/', payload);
+  return response.data as DetailResponse;
 };

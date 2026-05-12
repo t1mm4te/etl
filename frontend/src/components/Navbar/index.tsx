@@ -1,8 +1,11 @@
 import { Link, NavLink } from 'react-router-dom';
+import { useState } from 'react';
 import { Button, LinkButton } from '../Button';
 import { useLogoutAction } from '../../hooks/useAuthActions';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { useAuthStore } from '../../store/authStore';
+import { getUserInitials } from '../../lib/getUserInitials';
+import { resolveMediaUrl } from '../../lib/resolveMediaUrl';
 import logo from '../../assets/logo.svg';
 import styles from './index.module.scss';
 
@@ -10,6 +13,11 @@ export function Navbar() {
   const isAuthorized = useAuthStore((state) => state.isAuthorized);
   const { data: user } = useCurrentUser();
   const logoutMutation = useLogoutAction();
+
+  const avatarSrc = resolveMediaUrl(user?.avatar);
+  const initials = getUserInitials(user);
+  const [erroredAvatarSrc, setErroredAvatarSrc] = useState<string | null>(null);
+  const avatarHasError = Boolean(avatarSrc) && erroredAvatarSrc === avatarSrc;
 
   return (
     <header className={styles.navbar}>
@@ -35,7 +43,21 @@ export function Navbar() {
                 }
                 to="/profile"
               >
-                {user?.username ?? 'Пользователь'}
+                <span className={styles.userLinkContent}>
+                  <span className={styles.userAvatar} aria-hidden="true">
+                    {avatarSrc && !avatarHasError ? (
+                      <img
+                        className={styles.userAvatarImage}
+                        src={avatarSrc}
+                        alt=""
+                        onError={() => setErroredAvatarSrc(avatarSrc)}
+                      />
+                    ) : (
+                      <span className={styles.userAvatarInitials}>{initials}</span>
+                    )}
+                  </span>
+                  <span className={styles.userName}>{user?.username ?? 'Пользователь'}</span>
+                </span>
               </NavLink>
               <Button onClick={() => logoutMutation.mutate()} type="button" color="white">
                 Выйти

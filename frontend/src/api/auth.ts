@@ -1,5 +1,6 @@
 import { apiClient } from './client';
 import type {
+  AvatarResponse,
   LoginPayload,
   ProfileUpdatePayload,
   RegisterPayload,
@@ -33,6 +34,17 @@ export const getMe = async () => {
 export const patchMe = async (payload: ProfileUpdatePayload) => {
   const response = await apiClient.patch('/users/me/', payload);
   return response.data as User;
+};
+
+export const putMyAvatar = async (avatarDataUrl: string) => {
+  const response = await apiClient.put('/users/me/avatar/', {
+    avatar: avatarDataUrl,
+  });
+  return response.data as AvatarResponse;
+};
+
+export const deleteMyAvatar = async () => {
+  await apiClient.delete('/users/me/avatar/');
 };
 
 export const setPassword = async (payload: SetPasswordPayload) => {

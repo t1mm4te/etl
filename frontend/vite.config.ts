@@ -15,6 +15,10 @@ export default defineConfig({
         target: proxyTarget,
         changeOrigin: true,
       },
+      '/media': {
+        target: proxyTarget,
+        changeOrigin: true,
+      },
     },
   },
 });

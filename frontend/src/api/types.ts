@@ -33,6 +33,10 @@ export interface DetailResponse {
   detail: string;
 }
 
+export type AvatarResponse = {
+  avatar: string;
+};
+
 export interface ProfileUpdatePayload {
   username: string;
   first_name: string;

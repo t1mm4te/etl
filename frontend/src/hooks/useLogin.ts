@@ -1,11 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { login, logout } from '../api/auth';
+import { login } from '../api/auth';
 import type { LoginPayload } from '../api/types';
 import { useAuthStore } from '../store/authStore';
 import { authMeKey } from '../api/queryKeys';
 
-export function useLoginAction() {
+export function useLogin() {
   const setToken = useAuthStore((state) => state.setToken);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -16,21 +16,6 @@ export function useLoginAction() {
       setToken(auth_token);
       await queryClient.invalidateQueries({ queryKey: authMeKey });
       navigate('/pipelines');
-    },
-  });
-}
-
-export function useLogoutAction() {
-  const clearAuth = useAuthStore((state) => state.clearAuth);
-  const queryClient = useQueryClient();
-  const navigate = useNavigate();
-
-  return useMutation({
-    mutationFn: logout,
-    onSettled: async () => {
-      clearAuth();
-      queryClient.removeQueries({ queryKey: authMeKey });
-      navigate('/login');
     },
   });
 }

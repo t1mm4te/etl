@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { Button } from '../../components/Button';
 import { AuthShell } from '../../components/AuthShell';
 import { PasswordInput } from '../../components/PasswordInput';
-import { useLoginAction } from '../../hooks/useAuthActions';
+import { useLogin } from '../../hooks/useLogin';
 import { extractError } from '../../lib/extractError';
 import styles from './index.module.scss';
 
@@ -20,7 +20,7 @@ type LoginValues = z.infer<typeof loginSchema>;
 export function LoginPage() {
   const [errorText, setErrorText] = useState<string>();
   const location = useLocation();
-  const loginMutation = useLoginAction();
+  const loginMutation = useLogin();
 
   const state = location.state as {
     registrationSuccess?: boolean;
@@ -64,7 +64,7 @@ export function LoginPage() {
       footerLinkText="Зарегистрироваться"
       footerTo="/register"
     >
-      <form className={styles.form} onSubmit={onSubmit}>
+      <form className={styles.form} onSubmit={onSubmit} noValidate>
         <label className={styles.label} htmlFor="email">
           Почта
           <input

@@ -1,13 +1,13 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { z } from 'zod';
-import { resendVerificationCode, verifyEmail } from '../../api/auth';
 import { AuthShell } from '../../components/AuthShell';
 import { Button } from '../../components/Button';
 import { extractError } from '../../lib/extractError';
+import { useVerifyEmail } from '../../hooks/useVerifyEmail';
+import { useResendCode } from '../../hooks/useResendCode';
 import styles from './index.module.scss';
 
 const verifySchema = z.object({
@@ -24,17 +24,13 @@ type VerifyEmailLocationState = {
   email?: string;
 } | null;
 
-type LoginLocationState = {
-  email?: string;
-  emailVerified?: boolean;
-};
-
 export function VerifyEmailPage() {
   const [errorText, setErrorText] = useState<string>();
   const [successText, setSuccessText] = useState<string>();
 
-  const navigate = useNavigate();
   const location = useLocation();
+  const verifyMutation = useVerifyEmail();
+  const resendMutation = useResendCode();
 
   const initialEmail = useMemo(() => {
     const state = location.state as VerifyEmailLocationState;
@@ -54,42 +50,18 @@ export function VerifyEmailPage() {
     },
   });
 
-  const verifyMutation = useMutation({
-    mutationFn: verifyEmail,
-    onSuccess: (_data, variables) => {
-      const loginState: LoginLocationState = {
-        email: variables.email,
-        emailVerified: true,
-      };
-
-      navigate('/login', { state: loginState });
-    },
-    onError: (error) => {
-      setSuccessText(undefined);
-      setErrorText(extractError(error, 'Не удалось подтвердить email'));
-    },
-  });
-
-  const resendMutation = useMutation({
-    mutationFn: resendVerificationCode,
-    onSuccess: (data) => {
-      setErrorText(undefined);
-      setSuccessText(data.detail || 'Новый код отправлен на почту.');
-    },
-    onError: (error) => {
-      setSuccessText(undefined);
-      setErrorText(extractError(error, 'Не удалось отправить код повторно'));
-    },
-  });
-
   const onSubmit = handleSubmit(async (values) => {
     setErrorText(undefined);
     setSuccessText(undefined);
 
-    await verifyMutation.mutateAsync({
-      email: values.email.trim(),
-      code: values.code.trim(),
-    });
+    try {
+      await verifyMutation.mutateAsync({
+        email: values.email.trim(),
+        code: values.code.trim(),
+      });
+    } catch (error) {
+      setErrorText(extractError(error, 'Не удалось подтвердить email'));
+    }
   });
 
   const onResend = async () => {
@@ -103,7 +75,12 @@ export function VerifyEmailPage() {
       return;
     }
 
-    await resendMutation.mutateAsync({ email });
+    try {
+      const data = await resendMutation.mutateAsync({ email });
+      setSuccessText(data.detail || 'Новый код отправлен на почту.');
+    } catch (error) {
+      setErrorText(extractError(error, 'Не удалось отправить код повторно'));
+    }
   };
 
   return (

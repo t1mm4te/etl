@@ -1,15 +1,13 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { register as registerUser } from '../../api/auth';
 import { AuthShell } from '../../components/AuthShell';
 import { Button } from '../../components/Button';
 import { PasswordInput } from '../../components/PasswordInput';
 import { extractError } from '../../lib/extractError';
 import styles from './index.module.scss';
-import { useNavigate } from 'react-router-dom';
+import { useRegister } from '../../hooks/useRegister';
 
 const registerSchema = z
   .object({
@@ -29,7 +27,7 @@ type RegisterValues = z.infer<typeof registerSchema>;
 
 export function RegisterPage() {
   const [errorText, setErrorText] = useState<string>();
-  const navigate = useNavigate();
+  const registerMutation = useRegister();
 
   const {
     register,
@@ -39,26 +37,19 @@ export function RegisterPage() {
     resolver: zodResolver(registerSchema),
   });
 
-  const registerMutation = useMutation({
-    mutationFn: (values: RegisterValues) =>
-      registerUser({
+  const onSubmit = handleSubmit(async (values) => {
+    setErrorText(undefined);
+    try {
+      await registerMutation.mutateAsync({
         username: values.username,
         email: values.email,
         password: values.password,
         first_name: values.first_name,
         last_name: values.last_name,
-      }),
-    onSuccess: (_data, variables) => {
-      navigate('/verify-email', { state: { email: variables.email } });
-    },
-    onError: (error) => {
+      });
+    } catch (error) {
       setErrorText(extractError(error, 'Не удалось зарегистрироваться'));
-    },
-  });
-
-  const onSubmit = handleSubmit(async (values) => {
-    setErrorText(undefined);
-    await registerMutation.mutateAsync(values);
+    }
   });
 
   return (
@@ -69,7 +60,7 @@ export function RegisterPage() {
       footerLinkText="Войти"
       footerTo="/login"
     >
-      <form className={styles.form} onSubmit={onSubmit}>
+      <form className={styles.form} onSubmit={onSubmit} noValidate>
         <div className={styles.row}>
           <label className={styles.label} htmlFor="first_name">
             Имя

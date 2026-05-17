@@ -1,7 +1,7 @@
 import { Link, NavLink } from 'react-router-dom';
 import { useState } from 'react';
 import { Button, LinkButton } from '../Button';
-import { useLogoutAction } from '../../hooks/useAuthActions';
+import { useLogout } from '../../hooks/useLogout';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { useAuthStore } from '../../store/authStore';
 import { getUserInitials } from '../../lib/getUserInitials';
@@ -12,7 +12,7 @@ import styles from './index.module.scss';
 export function Navbar() {
   const isAuthorized = useAuthStore((state) => state.isAuthorized);
   const { data: user } = useCurrentUser();
-  const logoutMutation = useLogoutAction();
+  const logoutMutation = useLogout();
 
   const avatarSrc = resolveMediaUrl(user?.avatar);
   const initials = getUserInitials(user);

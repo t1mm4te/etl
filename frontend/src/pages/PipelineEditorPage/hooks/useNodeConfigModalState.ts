@@ -38,12 +38,18 @@ export function useNodeConfigModalState({
     previewInfo,
     selectedFile,
     selectedFileName,
+    selectedSheetName,
+    excelSheetNames,
+    previewRowLimit,
     uploadedDatasourceId,
   } = modalState;
 
   const {
     setConfig,
     setSelectedFile,
+    setSelectedSheetName,
+    setExcelSheetNames,
+    setPreviewRowLimit,
     setActivePreviewTab,
     openNodeModalState,
     closeNodeModalState,
@@ -72,10 +78,14 @@ export function useNodeConfigModalState({
     fetchSourcePreview,
     onSaveNodeConfig: onSaveSourceNodeConfig,
     onFileChange: onSourceFileChange,
+    onPreviewRowLimitChange: onSourcePreviewRowLimitChange,
+    onSheetNameChange: onSourceSheetNameChange,
   } = useSourceNodePreviewActions({
     editingNode,
     config,
     uploadedDatasourceId,
+    selectedSheetName,
+    previewRowLimit,
     saveNodeConfig,
     loadAvailableColumns,
     closeModal,
@@ -86,6 +96,7 @@ export function useNodeConfigModalState({
     fetchNodePreviewsFromRuns,
     onSaveNodeConfig: onSaveTransformNodeConfig,
     onApplyPreview,
+    onPreviewRowLimitChange: onTransformPreviewRowLimitChange,
   } = useTransformNodePreviewActions({
     pipelineId,
     nodeRuns,
@@ -95,6 +106,7 @@ export function useNodeConfigModalState({
     nodeKind,
     config,
     uploadedDatasourceId,
+    previewRowLimit,
     saveNodeConfig,
   });
 
@@ -148,13 +160,22 @@ export function useNodeConfigModalState({
     inputNodeLabelsByPort,
     selectedFile,
     selectedFileName,
+    selectedSheetName,
+    excelSheetNames,
+    previewRowLimit,
     onApplyPreview,
     onSaveNodeConfig: nodeKind === 'source' ? onSaveSourceNodeConfig : onSaveTransformNodeConfig,
+    onPreviewRowLimitChange:
+      nodeKind === 'source' ? onSourcePreviewRowLimitChange : onTransformPreviewRowLimitChange,
+    onSheetNameChange: nodeKind === 'source' ? onSourceSheetNameChange : undefined,
     openNodeModal,
     closeModal,
     setConfig,
     setActivePreviewTab,
     setSelectedFile,
+    setSelectedSheetName,
+    setExcelSheetNames,
+    setPreviewRowLimit,
     onSourceFileChange,
   };
 }

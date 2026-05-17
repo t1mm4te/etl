@@ -95,11 +95,14 @@ export const deleteEdge = async (pipelineId: string, edgeId: string) => {
   await apiClient.delete(`/pipelines/${pipelineId}/edges/${edgeId}/`);
 };
 
-export const uploadDatasource = async (file: File, name?: string) => {
+export const uploadDatasource = async (file: File, name?: string, sheetName?: string) => {
   const formData = new FormData();
   formData.append('file', file);
   if (name) {
     formData.append('name', name);
+  }
+  if (sheetName) {
+    formData.append('sheet_name', sheetName);
   }
 
   const response = await apiClient.post<DataSourceDetail>('/datasources/upload/', formData, {
@@ -116,9 +119,17 @@ export const getDatasourceDetail = async (datasourceId: string) => {
   return response.data;
 };
 
-export const previewDatasource = async (datasourceId: string, limit = 10) => {
+export const setDatasourceSheet = async (datasourceId: string, sheetName: string) => {
+  const response = await apiClient.put<DataSourceDetail>(
+    `/datasources/${datasourceId}/set-sheet/`,
+    { sheet_name: sheetName }
+  );
+  return response.data;
+};
+
+export const previewDatasource = async (datasourceId: string, limit?: number) => {
   const response = await apiClient.get<PreviewResponse>(`/datasources/${datasourceId}/preview/`, {
-    params: { limit },
+    params: limit ? { limit } : undefined,
   });
   return response.data;
 };

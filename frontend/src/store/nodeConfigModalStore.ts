@@ -10,6 +10,9 @@ export type NodeConfigModalState = {
   uploadedDatasourceId: string;
   selectedFile: File | null;
   selectedFileName?: string;
+  selectedSheetName?: string;
+  excelSheetNames: string[];
+  previewRowLimit: number;
   inputPreview: PreviewResponse | null;
   leftInputPreview: PreviewResponse | null;
   rightInputPreview: PreviewResponse | null;
@@ -24,6 +27,9 @@ export type NodeConfigModalActions = {
   setConfig: (value: NodeConfig) => void;
   setSelectedFile: (value: File | null) => void;
   setSelectedFileName: (value?: string) => void;
+  setSelectedSheetName: (value?: string) => void;
+  setExcelSheetNames: (value: string[]) => void;
+  setPreviewRowLimit: (value: number) => void;
   setUploadedDatasourceId: (value: string) => void;
   setInputPreview: (value: PreviewResponse | null) => void;
   setLeftInputPreview: (value: PreviewResponse | null) => void;
@@ -40,6 +46,14 @@ export type NodeConfigModalActions = {
 export type NodeConfigModalStore = NodeConfigModalState & NodeConfigModalActions;
 
 const SOURCE_FILE_LABEL_PREFIX = 'Загрузка файла: ';
+
+function getStringArrayConfigValue(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((item): item is string => typeof item === 'string');
+}
 
 function getSourceFileNameFromNodeLabel(operationType: string, label: string) {
   if (operationType !== 'source_file') {
@@ -60,6 +74,9 @@ const getDefaultModalState = (): NodeConfigModalState => ({
   uploadedDatasourceId: '',
   selectedFile: null,
   selectedFileName: undefined,
+  selectedSheetName: undefined,
+  excelSheetNames: [],
+  previewRowLimit: 10,
   inputPreview: null,
   leftInputPreview: null,
   rightInputPreview: null,
@@ -83,6 +100,18 @@ export const useNodeConfigModalStore = create<NodeConfigModalStore>((set) => ({
 
   setSelectedFileName: (value) => {
     set({ selectedFileName: value });
+  },
+
+  setSelectedSheetName: (value) => {
+    set({ selectedSheetName: value });
+  },
+
+  setExcelSheetNames: (value) => {
+    set({ excelSheetNames: value });
+  },
+
+  setPreviewRowLimit: (value) => {
+    set({ previewRowLimit: value });
   },
 
   setUploadedDatasourceId: (value) => {
@@ -125,6 +154,13 @@ export const useNodeConfigModalStore = create<NodeConfigModalStore>((set) => ({
     const cfg = node.config ?? {};
     const currentDatasourceId = typeof cfg.datasource_id === 'string' ? cfg.datasource_id : '';
     const initialSelectedFileName = getSourceFileNameFromNodeLabel(node.operation_type, node.label);
+    const initialSelectedSheetName =
+      typeof cfg.selected_sheet_name === 'string'
+        ? cfg.selected_sheet_name
+        : typeof cfg.sheet_name === 'string'
+          ? cfg.sheet_name
+          : undefined;
+    const initialExcelSheetNames = getStringArrayConfigValue(cfg.excel_sheet_names);
 
     set({
       ...getDefaultModalState(),
@@ -132,6 +168,13 @@ export const useNodeConfigModalStore = create<NodeConfigModalStore>((set) => ({
       config: { ...cfg },
       uploadedDatasourceId: currentDatasourceId,
       selectedFileName: initialSelectedFileName,
+      selectedSheetName: initialSelectedSheetName,
+      excelSheetNames:
+        initialExcelSheetNames.length > 0
+          ? initialExcelSheetNames
+          : initialSelectedSheetName
+            ? [initialSelectedSheetName]
+            : [],
     });
   },
 
@@ -147,6 +190,9 @@ export function useNodeConfigModalStateSlice() {
       config: state.config,
       selectedFile: state.selectedFile,
       selectedFileName: state.selectedFileName,
+      selectedSheetName: state.selectedSheetName,
+      excelSheetNames: state.excelSheetNames,
+      previewRowLimit: state.previewRowLimit,
       uploadedDatasourceId: state.uploadedDatasourceId,
       inputPreview: state.inputPreview,
       leftInputPreview: state.leftInputPreview,
@@ -166,6 +212,9 @@ export function useNodeConfigModalActions() {
       setConfig: state.setConfig,
       setSelectedFile: state.setSelectedFile,
       setSelectedFileName: state.setSelectedFileName,
+      setSelectedSheetName: state.setSelectedSheetName,
+      setExcelSheetNames: state.setExcelSheetNames,
+      setPreviewRowLimit: state.setPreviewRowLimit,
       setUploadedDatasourceId: state.setUploadedDatasourceId,
       setInputPreview: state.setInputPreview,
       setLeftInputPreview: state.setLeftInputPreview,

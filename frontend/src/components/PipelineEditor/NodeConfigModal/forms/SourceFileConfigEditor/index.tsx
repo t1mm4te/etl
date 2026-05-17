@@ -6,13 +6,22 @@ import type { SourceFileConfigEditorProps } from '../types';
 export function SourceFileConfigEditor({
   selectedFile,
   selectedFileName,
+  selectedSheetName,
+  excelSheetNames,
   onFileChange,
+  onSheetNameChange,
 }: SourceFileConfigEditorProps) {
   const currentFileName = selectedFile?.name ?? selectedFileName;
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
-      onFileChange(acceptedFiles[0] ?? null);
+      const file = acceptedFiles[0];
+      if (!file) {
+        return;
+      }
+
+      // File is uploaded as-is; sheet detection and selection is handled by backend.
+      onFileChange(file, undefined);
     },
     [onFileChange]
   );
@@ -43,6 +52,26 @@ export function SourceFileConfigEditor({
       </div>
 
       {currentFileName ? <p className={styles.muted}>Выбран файл: {currentFileName}</p> : null}
+
+      {excelSheetNames.length > 0 ? (
+        <div className={styles.sheetSelector}>
+          <label htmlFor="sheet-select" className={styles.configLabel}>
+            Лист Excel
+          </label>
+          <select
+            id="sheet-select"
+            value={selectedSheetName || ''}
+            onChange={(e) => onSheetNameChange(e.target.value)}
+            className={styles.select}
+          >
+            {excelSheetNames.map((sheetName) => (
+              <option key={sheetName} value={sheetName}>
+                {sheetName}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : null}
     </div>
   );
 }

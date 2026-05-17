@@ -1,14 +1,24 @@
 import { useCallback } from 'react';
-import { getDatasourceDetail, previewDatasource, uploadDatasource } from '../../../api/pipelines';
+import {
+  getDatasourceDetail,
+  previewDatasource,
+  setDatasourceSheet,
+  uploadDatasource,
+} from '../../../api/pipelines';
 import type { Node as ApiNode, NodeConfig } from '../../../api/types';
 import { extractError } from '../../../lib/extractError';
-import { useNodeConfigModalActions } from '../../../store/nodeConfigModalStore';
+import {
+  useNodeConfigModalActions,
+  useNodeConfigModalStateSlice,
+} from '../../../store/nodeConfigModalStore';
 import { buildNextNodeConfig } from './nodePreviewUtils';
 
 type UseSourceNodePreviewActionsParams = {
   editingNode: ApiNode | null;
   config: NodeConfig;
   uploadedDatasourceId: string;
+  selectedSheetName?: string;
+  previewRowLimit: number;
   saveNodeConfig: (
     nodeId: string,
     config: NodeConfig,
@@ -26,6 +36,8 @@ export function useSourceNodePreviewActions({
   editingNode,
   config,
   uploadedDatasourceId,
+  selectedSheetName,
+  previewRowLimit,
   saveNodeConfig,
   loadAvailableColumns,
   closeModal,
@@ -34,6 +46,8 @@ export function useSourceNodePreviewActions({
     setConfig,
     setSelectedFile,
     setSelectedFileName,
+    setSelectedSheetName,
+    setExcelSheetNames,
     setUploadedDatasourceId,
     setInputPreview,
     setLeftInputPreview,
@@ -44,6 +58,8 @@ export function useSourceNodePreviewActions({
     setModalError,
   } = useNodeConfigModalActions();
 
+  const { excelSheetNames } = useNodeConfigModalStateSlice();
+
   const clearSourcePreviews = useCallback(() => {
     setInputPreview(null);
     setLeftInputPreview(null);
@@ -52,7 +68,7 @@ export function useSourceNodePreviewActions({
   }, [setInputPreview, setLeftInputPreview, setResultPreview, setRightInputPreview]);
 
   const fetchSourcePreview = useCallback(
-    async (datasourceId: string) => {
+    async (datasourceId: string, limit?: number) => {
       setIsPreviewLoading(true);
       setPreviewInfo(undefined);
       setModalError(undefined);
@@ -68,7 +84,21 @@ export function useSourceNodePreviewActions({
         }
 
         setSelectedFileName(datasource.original_filename || undefined);
-        const previewData = await previewDatasource(datasourceId, 10);
+        if (datasource.available_sheets && datasource.available_sheets.length > 0) {
+          setExcelSheetNames(datasource.available_sheets);
+        }
+
+        if (datasource.sheet_name) {
+          setSelectedSheetName(datasource.sheet_name);
+          if (
+            (!datasource.available_sheets || datasource.available_sheets.length === 0) &&
+            excelSheetNames.length === 0
+          ) {
+            setExcelSheetNames([datasource.sheet_name]);
+          }
+        }
+
+        const previewData = await previewDatasource(datasourceId, limit ?? previewRowLimit);
         setResultPreview(previewData);
       } catch (error) {
         setModalError(extractError(error, 'Не удалось получить предпросмотр'));
@@ -78,11 +108,15 @@ export function useSourceNodePreviewActions({
     },
     [
       clearSourcePreviews,
+      previewRowLimit,
       setIsPreviewLoading,
       setModalError,
       setPreviewInfo,
       setResultPreview,
       setSelectedFileName,
+      setSelectedSheetName,
+      setExcelSheetNames,
+      excelSheetNames,
     ]
   );
 
@@ -94,13 +128,25 @@ export function useSourceNodePreviewActions({
     setModalError(undefined);
 
     try {
-      const nextConfig = buildNextNodeConfig(config, uploadedDatasourceId);
+      const nextConfig = buildNextNodeConfig(config, uploadedDatasourceId, {
+        selectedSheetName,
+        excelSheetNames,
+      });
       await saveNodeConfig(editingNode.id, nextConfig);
       closeModal();
     } catch (error) {
       setModalError(extractError(error, 'Не удалось сохранить конфигурацию ноды'));
     }
-  }, [closeModal, config, editingNode, saveNodeConfig, setModalError, uploadedDatasourceId]);
+  }, [
+    closeModal,
+    config,
+    editingNode,
+    excelSheetNames,
+    saveNodeConfig,
+    selectedSheetName,
+    setModalError,
+    uploadedDatasourceId,
+  ]);
 
   const onFileChange = useCallback(
     async (file: File | null) => {
@@ -127,7 +173,21 @@ export function useSourceNodePreviewActions({
         setUploadedDatasourceId(uploaded.id);
         setPreviewInfo('Файл загружен. Загружаем предпросмотр...');
 
-        const nextConfig = buildNextNodeConfig(config, uploaded.id);
+        if (uploaded.available_sheets && uploaded.available_sheets.length > 0) {
+          setExcelSheetNames(uploaded.available_sheets);
+        }
+
+        if (uploaded.sheet_name) {
+          setSelectedSheetName(uploaded.sheet_name);
+        }
+
+        const nextConfig = buildNextNodeConfig(config, uploaded.id, {
+          selectedSheetName: uploaded.sheet_name || selectedSheetName,
+          excelSheetNames:
+            uploaded.available_sheets && uploaded.available_sheets.length > 0
+              ? uploaded.available_sheets
+              : excelSheetNames,
+        });
         const nextLabel = buildSourceFileLabel(file.name);
         setConfig(nextConfig);
 
@@ -144,18 +204,93 @@ export function useSourceNodePreviewActions({
       fetchSourcePreview,
       loadAvailableColumns,
       saveNodeConfig,
+      selectedSheetName,
+      setExcelSheetNames,
       setConfig,
       setModalError,
       setPreviewInfo,
       setSelectedFile,
       setSelectedFileName,
+      setSelectedSheetName,
       setUploadedDatasourceId,
+      excelSheetNames,
     ]
+  );
+
+  const onSheetNameChange = useCallback(
+    async (sheetName: string) => {
+      setModalError(undefined);
+      setPreviewInfo(undefined);
+      setSelectedSheetName(sheetName);
+
+      if (!editingNode) {
+        return;
+      }
+
+      const datasourceId =
+        uploadedDatasourceId ||
+        (typeof config.datasource_id === 'string' ? config.datasource_id : '');
+
+      if (!datasourceId) {
+        setModalError('Сначала загрузите файл, затем выберите лист.');
+        return;
+      }
+
+      try {
+        const updatedDatasource = await setDatasourceSheet(datasourceId, sheetName);
+        setUploadedDatasourceId(updatedDatasource.id);
+
+        const nextConfig = buildNextNodeConfig(config, updatedDatasource.id, {
+          selectedSheetName: updatedDatasource.sheet_name || sheetName,
+          excelSheetNames:
+            updatedDatasource.available_sheets && updatedDatasource.available_sheets.length > 0
+              ? updatedDatasource.available_sheets
+              : excelSheetNames,
+        });
+
+        setConfig(nextConfig);
+        await saveNodeConfig(editingNode.id, nextConfig);
+        await fetchSourcePreview(updatedDatasource.id);
+        await loadAvailableColumns(editingNode.id);
+      } catch (error) {
+        setModalError(
+          extractError(
+            error,
+            'Переключение листа пока недоступно. Функционал будет работать после обновления backend.'
+          )
+        );
+      }
+    },
+    [
+      config,
+      editingNode,
+      fetchSourcePreview,
+      loadAvailableColumns,
+      saveNodeConfig,
+      setConfig,
+      setModalError,
+      setPreviewInfo,
+      setSelectedSheetName,
+      setUploadedDatasourceId,
+      uploadedDatasourceId,
+      excelSheetNames,
+    ]
+  );
+
+  const onPreviewRowLimitChange = useCallback(
+    async (limit?: number) => {
+      if (uploadedDatasourceId) {
+        await fetchSourcePreview(uploadedDatasourceId, limit);
+      }
+    },
+    [fetchSourcePreview, uploadedDatasourceId]
   );
 
   return {
     fetchSourcePreview,
     onSaveNodeConfig,
     onFileChange,
+    onPreviewRowLimitChange,
+    onSheetNameChange,
   };
 }

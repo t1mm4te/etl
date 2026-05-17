@@ -224,6 +224,7 @@ export interface DataSourceDetail {
   status: string;
   original_filename: string;
   sheet_name: string;
+  available_sheets?: string[];
   row_count: number;
   column_count: number;
   columns_meta: Array<Record<string, unknown>>;

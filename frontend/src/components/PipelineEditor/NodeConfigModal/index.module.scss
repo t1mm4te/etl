@@ -97,6 +97,38 @@
     flex-direction: column;
     min-width: 0;
 
+    .metadataRow {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: $spacingMedium;
+      padding: 8px 10px;
+      background: $darkGray;
+
+      .metadata {
+        margin: 0;
+        color: $labelColor;
+        font-size: $defaultFontSize;
+      }
+
+      .rowLimitSelect {
+        width: auto;
+        min-width: 120px;
+        background: $darkGrayLighter;
+        border: 1px solid $borderColor;
+        border-radius: $borderRadiusSmall;
+        color: $white;
+        padding: 6px 8px;
+        font-size: $defaultFontSize;
+        cursor: pointer;
+
+        option {
+          background: $darkGray;
+          color: $white;
+        }
+      }
+    }
+
     .tabRow {
       display: flex;
       gap: 8px;
@@ -109,7 +141,7 @@
         border-radius: $borderRadiusSmall $borderRadiusSmall 0 0;
         padding: 8px 10px;
         cursor: pointer;
-        font-size: 16px;
+        font-size: $defaultFontSize;
         background-color: $darkGray;
         border-bottom: none;
       }

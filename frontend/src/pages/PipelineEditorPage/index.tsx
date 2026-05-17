@@ -83,9 +83,17 @@ export function PipelineEditorPage() {
     inputNodeLabelsByPort,
     selectedFile,
     selectedFileName,
+    selectedSheetName,
+    excelSheetNames,
+    previewRowLimit,
     setConfig,
     setActivePreviewTab,
+    setSelectedSheetName,
+    setExcelSheetNames,
+    setPreviewRowLimit,
     onSourceFileChange,
+    onPreviewRowLimitChange,
+    onSheetNameChange,
   } = useNodeConfigModalState({
     pipelineId,
     nodes: pipelineQuery.data?.nodes,
@@ -193,6 +201,9 @@ export function PipelineEditorPage() {
             config,
             selectedFile,
             selectedFileName,
+            selectedSheetName,
+            excelSheetNames,
+            previewRowLimit,
             availableColumns,
             availableColumnsByPort,
             inputNodeLabelsByPort,
@@ -213,6 +224,13 @@ export function PipelineEditorPage() {
             isPreviewLoading,
             activePreviewTab,
           }}
+          previewCallbacks={{
+            onSetExcelSheetNames: setExcelSheetNames,
+            onSetSelectedSheetName: onSheetNameChange ?? setSelectedSheetName,
+            onSetPreviewRowLimit: setPreviewRowLimit,
+          }}
+          onSheetNameChange={onSheetNameChange}
+          onPreviewRowLimitChange={onPreviewRowLimitChange}
         />
       ) : null}
     </main>

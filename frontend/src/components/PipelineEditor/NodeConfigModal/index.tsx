@@ -13,6 +13,9 @@ type NodeConfigModalProps = {
     config: NodeConfig;
     selectedFile: File | null;
     selectedFileName?: string;
+    selectedSheetName?: string;
+    excelSheetNames: string[];
+    previewRowLimit: number;
     availableColumns: string[];
     availableColumnsByPort?: Record<string, string[]>;
     inputNodeLabelsByPort?: Record<string, string>;
@@ -30,13 +33,20 @@ type NodeConfigModalProps = {
   modalActions: {
     onClose: () => void;
     onConfigChange: (value: NodeConfig) => void;
-    onFileChange: (file: File | null) => void;
+    onFileChange: (file: File | null, sheetName?: string) => void;
     onSaveConfig: () => void;
   };
   previewActions: {
     onActivePreviewTabChange: (value: 'input' | 'left_input' | 'right_input' | 'result') => void;
     onApplyPreview: () => void;
   };
+  previewCallbacks?: {
+    onSetExcelSheetNames: (names: string[]) => void;
+    onSetSelectedSheetName: (name: string) => void;
+    onSetPreviewRowLimit: (limit: number) => void;
+  };
+  onSheetNameChange?: (sheetName: string) => Promise<void> | void;
+  onPreviewRowLimitChange?: (limit?: number) => Promise<void>;
 };
 
 function PreviewTable({ preview }: { preview: PreviewResponse }) {
@@ -69,6 +79,9 @@ export function NodeConfigModal({
   previewState,
   modalActions,
   previewActions,
+  previewCallbacks,
+  onSheetNameChange,
+  onPreviewRowLimitChange,
 }: NodeConfigModalProps) {
   const {
     node,
@@ -77,6 +90,9 @@ export function NodeConfigModal({
     config,
     selectedFile,
     selectedFileName,
+    selectedSheetName,
+    excelSheetNames,
+    previewRowLimit,
     availableColumns,
     availableColumnsByPort,
     inputNodeLabelsByPort,
@@ -116,7 +132,13 @@ export function NodeConfigModal({
                   <SourceFileConfigEditor
                     selectedFile={selectedFile}
                     selectedFileName={selectedFileName}
+                    selectedSheetName={selectedSheetName}
+                    excelSheetNames={excelSheetNames}
                     onFileChange={onFileChange}
+                    onSheetNameChange={(sheetName) => {
+                      previewCallbacks?.onSetSelectedSheetName(sheetName);
+                      void onSheetNameChange?.(sheetName);
+                    }}
                   />
                 ) : null}
 
@@ -127,14 +149,37 @@ export function NodeConfigModal({
                 {isPreviewLoading ? (
                   <p className={styles.muted}>Загружаем предпросмотр...</p>
                 ) : null}
-                <div className={styles.tabRow}>
-                  <button type="button" className={styles.tabActive}>
-                    Результат узла
-                  </button>
-                </div>
 
                 {resultPreview ? (
-                  <PreviewTable preview={resultPreview} />
+                  <>
+                    <div className={styles.metadataRow}>
+                      <p className={styles.metadata}>
+                        Всего строк: {resultPreview.total_rows} | Столбцов:{' '}
+                        {resultPreview.columns.length}
+                      </p>
+                      <select
+                        value={previewRowLimit}
+                        onChange={(e) => {
+                          const limit = Number(e.target.value);
+                          previewCallbacks?.onSetPreviewRowLimit(limit);
+                          void onPreviewRowLimitChange?.(limit);
+                        }}
+                        className={styles.rowLimitSelect}
+                      >
+                        <option value={10}>10 строк</option>
+                        <option value={25}>25 строк</option>
+                        <option value={50}>50 строк</option>
+                        <option value={100}>100 строк</option>
+                        <option value={500}>500 строк</option>
+                      </select>
+                    </div>
+                    <div className={styles.tabRow}>
+                      <button type="button" className={styles.tabActive}>
+                        Результат узла
+                      </button>
+                    </div>
+                    <PreviewTable preview={resultPreview} />
+                  </>
                 ) : (
                   <p className={styles.muted}>Предпросмотр источника пока недоступен.</p>
                 )}
@@ -166,6 +211,35 @@ export function NodeConfigModal({
                   </p>
                 ) : (
                   <>
+                    {(inputPreview || leftInputPreview || rightInputPreview || resultPreview) && (
+                      <div className={styles.metadataRow}>
+                        <p className={styles.metadata}>
+                          {activePreviewTab === 'input'
+                            ? `Всего строк: ${inputPreview?.total_rows ?? 0} | Столбцов: ${inputPreview?.columns.length ?? 0}`
+                            : activePreviewTab === 'left_input'
+                              ? `Всего строк: ${leftInputPreview?.total_rows ?? 0} | Столбцов: ${leftInputPreview?.columns.length ?? 0}`
+                              : activePreviewTab === 'right_input'
+                                ? `Всего строк: ${rightInputPreview?.total_rows ?? 0} | Столбцов: ${rightInputPreview?.columns.length ?? 0}`
+                                : `Всего строк: ${resultPreview?.total_rows ?? 0} | Столбцов: ${resultPreview?.columns.length ?? 0}`}
+                        </p>
+                        <select
+                          value={previewRowLimit}
+                          onChange={(e) => {
+                            const limit = Number(e.target.value);
+                            previewCallbacks?.onSetPreviewRowLimit(limit);
+                            void onPreviewRowLimitChange?.(limit);
+                          }}
+                          className={styles.rowLimitSelect}
+                        >
+                          <option value={10}>10 строк</option>
+                          <option value={25}>25 строк</option>
+                          <option value={50}>50 строк</option>
+                          <option value={100}>100 строк</option>
+                          <option value={500}>500 строк</option>
+                        </select>
+                      </div>
+                    )}
+
                     <div className={styles.tabRow}>
                       <button
                         type="button"
@@ -264,7 +338,30 @@ export function NodeConfigModal({
                   <p className={styles.muted}>Загружаем предпросмотр...</p>
                 ) : null}
                 {resultPreview ? (
-                  <PreviewTable preview={resultPreview} />
+                  <>
+                    <div className={styles.metadataRow}>
+                      <p className={styles.metadata}>
+                        Всего строк: {resultPreview.total_rows} | Столбцов:{' '}
+                        {resultPreview.columns.length}
+                      </p>
+                      <select
+                        value={previewRowLimit}
+                        onChange={(e) => {
+                          const limit = Number(e.target.value);
+                          previewCallbacks?.onSetPreviewRowLimit(limit);
+                          void onPreviewRowLimitChange?.(limit);
+                        }}
+                        className={styles.rowLimitSelect}
+                      >
+                        <option value={10}>10 строк</option>
+                        <option value={25}>25 строк</option>
+                        <option value={50}>50 строк</option>
+                        <option value={100}>100 строк</option>
+                        <option value={500}>500 строк</option>
+                      </select>
+                    </div>
+                    <PreviewTable preview={resultPreview} />
+                  </>
                 ) : (
                   <p className={styles.muted}>Финальный предпросмотр пока недоступен.</p>
                 )}

@@ -11,7 +11,10 @@ export type OperationConfigEditorProps = {
 export type SourceFileConfigEditorProps = {
   selectedFile: File | null;
   selectedFileName?: string;
-  onFileChange: (file: File | null) => void;
+  selectedSheetName?: string;
+  excelSheetNames: string[];
+  onFileChange: (file: File | null, sheetName?: string) => void;
+  onSheetNameChange: (sheetName: string) => void;
 };
 
 export type SourceDbConfigEditorProps = {

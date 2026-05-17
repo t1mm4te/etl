@@ -30,6 +30,7 @@ type UseTransformNodePreviewActionsParams = {
   nodeKind: NodeKind;
   config: NodeConfig;
   uploadedDatasourceId: string;
+  previewRowLimit: number;
   saveNodeConfig: (
     nodeId: string,
     config: NodeConfig,
@@ -46,6 +47,7 @@ export function useTransformNodePreviewActions({
   nodeKind,
   config,
   uploadedDatasourceId,
+  previewRowLimit,
   saveNodeConfig,
 }: UseTransformNodePreviewActionsParams) {
   const setRunId = usePipelineEditorStore((state) => state.setRunId);
@@ -119,7 +121,7 @@ export function useTransformNodePreviewActions({
   }, [nodeRuns, pipelineId, setRunId]);
 
   const fetchNodePreviewsFromRuns = useCallback(
-    async (node: ApiNode, runsOverride?: NodeRun[]) => {
+    async (node: ApiNode, runsOverride?: NodeRun[], limit?: number) => {
       setIsPreviewLoading(true);
       setPreviewInfo(undefined);
       setModalError(undefined);
@@ -140,14 +142,17 @@ export function useTransformNodePreviewActions({
               const upstreamRun = getSuccessfulNodeRun(incomingEdge.source_node, runsOverride);
 
               if (upstreamRun) {
-                preview = await previewNodeRun(upstreamRun.id, 10);
+                preview = await previewNodeRun(upstreamRun.id, limit ?? previewRowLimit);
               } else {
                 const upstreamNode = nodes?.find((item) => item.id === incomingEdge.source_node);
                 const upstreamDatasourceId = upstreamNode?.config?.datasource_id;
                 if (typeof upstreamDatasourceId === 'string' && upstreamDatasourceId) {
                   const upstreamDatasource = await getDatasourceDetail(upstreamDatasourceId);
                   if (upstreamDatasource.status === 'ready') {
-                    preview = await previewDatasource(upstreamDatasourceId, 10);
+                    preview = await previewDatasource(
+                      upstreamDatasourceId,
+                      limit ?? previewRowLimit
+                    );
                   }
                 }
               }
@@ -164,7 +169,7 @@ export function useTransformNodePreviewActions({
 
         const ownRun = getSuccessfulNodeRun(node.id, runsOverride);
         if (ownRun) {
-          const ownPreview = await previewNodeRun(ownRun.id, 10);
+          const ownPreview = await previewNodeRun(ownRun.id, limit ?? previewRowLimit);
           setResultPreview(ownPreview);
         } else {
           setResultPreview(null);
@@ -185,9 +190,11 @@ export function useTransformNodePreviewActions({
       }
     },
     [
+      clearTransformPreviews,
       edges,
       getSuccessfulNodeRun,
       nodes,
+      previewRowLimit,
       setActivePreviewTab,
       setInputPreview,
       setIsPreviewLoading,
@@ -196,7 +203,6 @@ export function useTransformNodePreviewActions({
       setPreviewInfo,
       setResultPreview,
       setRightInputPreview,
-      clearTransformPreviews,
     ]
   );
 
@@ -266,10 +272,22 @@ export function useTransformNodePreviewActions({
     waitForRunCompletion,
   ]);
 
+  const onPreviewRowLimitChange = useCallback(
+    async (limit?: number) => {
+      if (!editingNode) {
+        return;
+      }
+      const runsForPreview = await resolveNodeRunsForPreview();
+      await fetchNodePreviewsFromRuns(editingNode, runsForPreview ?? undefined, limit);
+    },
+    [editingNode, fetchNodePreviewsFromRuns, resolveNodeRunsForPreview]
+  );
+
   return {
     resolveNodeRunsForPreview,
     fetchNodePreviewsFromRuns,
     onSaveNodeConfig,
     onApplyPreview,
+    onPreviewRowLimitChange,
   };
 }

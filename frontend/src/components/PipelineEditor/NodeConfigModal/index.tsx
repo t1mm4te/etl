@@ -1,6 +1,7 @@
 import type { Node as ApiNode, NodeConfig, PreviewResponse } from '../../../api/types';
 import { Button } from '../../Button';
 import { SourceDbConfigEditor, SourceFileConfigEditor, TransformConfigEditor } from './forms';
+import { PreviewTable } from '../PreviewTable';
 import styles from './index.module.scss';
 
 type NodeKind = 'source' | 'transform' | 'sink';
@@ -48,32 +49,6 @@ type NodeConfigModalProps = {
   onSheetNameChange?: (sheetName: string) => Promise<void> | void;
   onPreviewRowLimitChange?: (limit?: number) => Promise<void>;
 };
-
-function PreviewTable({ preview }: { preview: PreviewResponse }) {
-  return (
-    <div className={styles.previewTableWrapper}>
-      <table>
-        <thead>
-          <tr>
-            {preview.columns.map((column) => (
-              <th key={column}>{column}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {preview.data.map((row, index) => (
-            <tr key={index}>
-              {preview.columns.map((column) => (
-                <td key={`${index}-${column}`}>{String(row[column] ?? '')}</td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
 export function NodeConfigModal({
   modalState,
   previewState,

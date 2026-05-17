@@ -46,7 +46,6 @@ export function useNodeConfigModalState({
 
   const {
     setConfig,
-    setSelectedFile,
     setSelectedSheetName,
     setExcelSheetNames,
     setPreviewRowLimit,
@@ -172,7 +171,6 @@ export function useNodeConfigModalState({
     closeModal,
     setConfig,
     setActivePreviewTab,
-    setSelectedFile,
     setSelectedSheetName,
     setExcelSheetNames,
     setPreviewRowLimit,

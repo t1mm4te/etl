@@ -1,23 +1,28 @@
 import { Button } from '../../Button';
 import styles from './index.module.scss';
+import { useNavigate } from 'react-router-dom';
+import { usePipelineEditorQueries } from '../../../pages/PipelineEditorPage/hooks/usePipelineEditorQueries';
+import { usePipelineEditorMutations } from '../../../pages/PipelineEditorPage/hooks/usePipelineEditorMutations';
 
 type EditorToolbarProps = {
-  pipelineName?: string;
-  runStatus?: string;
-  isRunPending: boolean;
-  isPipelineLoaded: boolean;
-  onBack: () => void;
-  onRun: () => void;
+  pipelineId: string;
 };
 
-export function EditorToolbar({
-  pipelineName,
-  runStatus,
-  isRunPending,
-  isPipelineLoaded,
-  onBack,
-  onRun,
-}: EditorToolbarProps) {
+export function EditorToolbar({ pipelineId }: EditorToolbarProps) {
+  const navigate = useNavigate();
+  const { pipelineQuery, runQuery } = usePipelineEditorQueries(pipelineId);
+  const { runPipelineMutation } = usePipelineEditorMutations({ pipelineId });
+
+  const isPipelineLoaded = Boolean(pipelineQuery.data);
+  const isRunPending = runPipelineMutation.isPending;
+  const pipelineName = pipelineQuery.data?.name;
+  const runStatus = runQuery.data?.status;
+
+  const onBack = () => navigate('/pipelines');
+  const onRun = () => {
+    void runPipelineMutation.mutateAsync();
+  };
+
   return (
     <header className={styles.toolbar}>
       <div className={styles.main}>

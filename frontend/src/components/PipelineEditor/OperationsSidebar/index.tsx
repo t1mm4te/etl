@@ -1,5 +1,7 @@
-import type { OperationCategory, OperationItem } from '../../../api/types';
-import styles from './index.module.scss';
+import type { OperationItem } from '../../../api/types';
+import { usePipelineEditorMutations } from '../../../pages/PipelineEditorPage/hooks/usePipelineEditorMutations';
+import { usePipelineEditorQueries } from '../../../pages/PipelineEditorPage/hooks/usePipelineEditorQueries';
+import { usePipelineEditorStore } from '../../../store/pipelineEditorStore';
 import calculateIcon from '../../../assets/node-icons/calculate.svg';
 import columnsIcon from '../../../assets/node-icons/columns.svg';
 import databaseIcon from '../../../assets/node-icons/database.svg';
@@ -8,14 +10,10 @@ import excelIcon from '../../../assets/node-icons/excel.svg';
 import loadIcon from '../../../assets/node-icons/load.svg';
 import rowsIcon from '../../../assets/node-icons/rows.svg';
 import tableIcon from '../../../assets/node-icons/table.svg';
+import styles from './index.module.scss';
 
 type OperationsSidebarProps = {
-  sortedCategories: Array<[string, OperationCategory]>;
-  operations: OperationItem[];
-  openCategories: Record<string, boolean>;
-  isLoading: boolean;
-  onToggleCategory: (categoryId: string) => void;
-  onCreateNode: (operation: OperationItem) => void;
+  pipelineId: string;
 };
 
 const iconByCategory: Record<string, string> = {
@@ -39,15 +37,35 @@ function resolveIcon(operation: OperationItem) {
     defaultIcon
   );
 }
+export function OperationsSidebar({ pipelineId }: OperationsSidebarProps) {
+  const { operationsQuery, sortedCategories } = usePipelineEditorQueries(pipelineId);
+  const { createNodeMutation } = usePipelineEditorMutations({ pipelineId });
 
-export function OperationsSidebar({
-  sortedCategories,
-  operations,
-  openCategories,
-  isLoading,
-  onToggleCategory,
-  onCreateNode,
-}: OperationsSidebarProps) {
+  const openCategories = usePipelineEditorStore((s) => s.openCategories);
+  const toggleCategory = usePipelineEditorStore((s) => s.toggleCategory);
+  const flowInstance = usePipelineEditorStore((s) => s.flowInstance);
+
+  const operations = operationsQuery.data?.operations ?? [];
+  const isLoading = operationsQuery.isLoading;
+
+  const getNewNodePosition = () => {
+    if (!flowInstance) {
+      return { x: 120, y: 120 };
+    }
+    const canvasElement = document.querySelector('[style*="position"][style*="absolute"]');
+    if (!canvasElement) {
+      return { x: 120, y: 120 };
+    }
+    const bounds = canvasElement.getBoundingClientRect();
+    return flowInstance.screenToFlowPosition({
+      x: bounds.left + bounds.width / 2,
+      y: bounds.top + bounds.height / 2,
+    });
+  };
+
+  const onCreateNode = (operation: OperationItem) => {
+    void createNodeMutation.mutateAsync({ operation, position: getNewNodePosition() });
+  };
   return (
     <aside className={styles.sidebar}>
       <h2 className={styles.title}>Операции</h2>
@@ -63,7 +81,7 @@ export function OperationsSidebar({
             <button
               className={styles.groupHeader}
               type="button"
-              onClick={() => onToggleCategory(categoryId)}
+              onClick={() => toggleCategory(categoryId)}
             >
               <div>
                 <h3 className={styles.categoryLabel}>{category.label}</h3>
@@ -86,7 +104,11 @@ export function OperationsSidebar({
                         <strong className={styles.operationLabel}>{operation.label}</strong>
                         <span className={styles.operationDescription}>{operation.description}</span>
                       </div>
-                      <img className={styles.operationIcon} alt={operation.type} src={resolveIcon(operation)} />
+                      <img
+                        className={styles.operationIcon}
+                        alt={operation.type}
+                        src={resolveIcon(operation)}
+                      />
                     </div>
                   </button>
                 ))}

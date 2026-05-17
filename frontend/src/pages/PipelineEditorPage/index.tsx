@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { usePipelineEditorStore } from '../../store/pipelineEditorStore';
-import { EditorToolbarSection } from './sections/EditorToolbarSection';
+import { EditorToolbar } from '../../components/PipelineEditor/EditorToolbar';
 import { PipelineWorkspaceSection } from './sections/PipelineWorkspaceSection';
 import { RunResultsSection } from './sections/RunResultsSection';
 import styles from './index.module.scss';
@@ -16,7 +16,7 @@ export function PipelineEditorPage() {
 
   return (
     <main className={styles.page}>
-      <EditorToolbarSection pipelineId={pipelineId} />
+      <EditorToolbar pipelineId={pipelineId} />
       <PipelineWorkspaceSection pipelineId={pipelineId} />
       <RunResultsSection pipelineId={pipelineId} />
     </main>

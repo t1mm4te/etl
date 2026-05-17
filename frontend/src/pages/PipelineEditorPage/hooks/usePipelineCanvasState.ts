@@ -70,18 +70,6 @@ export function usePipelineCanvasState({
   const setFlowInstance = usePipelineEditorStore((state) => state.setFlowInstance);
   const toggleCategoryState = usePipelineEditorStore((state) => state.toggleCategory);
 
-  const getNewNodePosition = useCallback(() => {
-    if (!flowInstance || !canvasRef.current) {
-      return { x: 120, y: 120 };
-    }
-
-    const bounds = canvasRef.current.getBoundingClientRect();
-    return flowInstance.screenToFlowPosition({
-      x: bounds.left + bounds.width / 2,
-      y: bounds.top + bounds.height / 2,
-    });
-  }, [flowInstance]);
-
   const onDeleteNode = useCallback(
     async (nodeId: string) => {
       setCanvasError(undefined);
@@ -183,7 +171,6 @@ export function usePipelineCanvasState({
     canvasRef,
     edges,
     flowInstance,
-    getNewNodePosition,
     nodes,
     onConnect,
     onDeleteEdges,

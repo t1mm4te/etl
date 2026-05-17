@@ -1,6 +1,7 @@
 import type { OperationItem } from '../../../api/types';
 import { usePipelineEditorMutations } from '../../../pages/PipelineEditorPage/hooks/usePipelineEditorMutations';
 import { usePipelineEditorQueries } from '../../../pages/PipelineEditorPage/hooks/usePipelineEditorQueries';
+import { calculateNewNodePosition } from '../../../pages/PipelineEditorPage/utils/getNewNodePosition';
 import { usePipelineEditorStore } from '../../../store/pipelineEditorStore';
 import calculateIcon from '../../../assets/node-icons/calculate.svg';
 import columnsIcon from '../../../assets/node-icons/columns.svg';
@@ -37,6 +38,7 @@ function resolveIcon(operation: OperationItem) {
     defaultIcon
   );
 }
+
 export function OperationsSidebar({ pipelineId }: OperationsSidebarProps) {
   const { operationsQuery, sortedCategories } = usePipelineEditorQueries(pipelineId);
   const { createNodeMutation } = usePipelineEditorMutations({ pipelineId });
@@ -48,23 +50,9 @@ export function OperationsSidebar({ pipelineId }: OperationsSidebarProps) {
   const operations = operationsQuery.data?.operations ?? [];
   const isLoading = operationsQuery.isLoading;
 
-  const getNewNodePosition = () => {
-    if (!flowInstance) {
-      return { x: 120, y: 120 };
-    }
-    const canvasElement = document.querySelector('[style*="position"][style*="absolute"]');
-    if (!canvasElement) {
-      return { x: 120, y: 120 };
-    }
-    const bounds = canvasElement.getBoundingClientRect();
-    return flowInstance.screenToFlowPosition({
-      x: bounds.left + bounds.width / 2,
-      y: bounds.top + bounds.height / 2,
-    });
-  };
-
   const onCreateNode = (operation: OperationItem) => {
-    void createNodeMutation.mutateAsync({ operation, position: getNewNodePosition() });
+    const position = calculateNewNodePosition(flowInstance);
+    void createNodeMutation.mutateAsync({ operation, position });
   };
   return (
     <aside className={styles.sidebar}>

@@ -6,7 +6,7 @@ import pytest
 from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import SimpleUploadedFile
 
-from core.models import DataSource
+from core.models import DataSource, SourceFile
 
 
 TEST_FILES_DIR = Path(__file__).resolve().parent / 'test_files'
@@ -110,29 +110,51 @@ def multi_sheet_xlsx_upload_file():
 
 
 @pytest.fixture
-def owner_datasource(user):
+def owner_source_file(user, minimal_csv_upload_file):
+    return SourceFile.objects.create(
+        owner=user,
+        original_file=minimal_csv_upload_file,
+        original_filename='owner.csv',
+        sheets_metadata=[{"sheet_name": "default", "index": 0}],
+    )
+
+
+@pytest.fixture
+def foreign_source_file(some_users, minimal_csv_upload_file):
+    return SourceFile.objects.create(
+        owner=some_users[0],
+        original_file=minimal_csv_upload_file,
+        original_filename='foreign.csv',
+        sheets_metadata=[{"sheet_name": "default", "index": 0}],
+    )
+
+
+@pytest.fixture
+def owner_datasource(user, owner_source_file):
     return DataSource.objects.create(
         owner=user,
         name='Owner data source',
         source_type=DataSource.SourceType.FILE,
         status=DataSource.Status.PENDING,
-        original_filename='owner.csv',
+        source_file=owner_source_file,
+        sheet_name='default',
     )
 
 
 @pytest.fixture
-def foreign_datasource(some_users):
+def foreign_datasource(some_users, foreign_source_file):
     return DataSource.objects.create(
         owner=some_users[0],
         name='Foreign data source',
         source_type=DataSource.SourceType.FILE,
         status=DataSource.Status.PENDING,
-        original_filename='foreign.csv',
+        source_file=foreign_source_file,
+        sheet_name='default',
     )
 
 
 @pytest.fixture
-def ready_datasource(user):
+def ready_datasource(user, owner_source_file):
     dataframe = pd.DataFrame(
         [
             {'id': 1, 'name': 'Alice', 'amount': 10.5},
@@ -147,7 +169,8 @@ def ready_datasource(user):
         name='Ready source',
         source_type=DataSource.SourceType.FILE,
         status=DataSource.Status.READY,
-        original_filename='ready.csv',
+        source_file=owner_source_file,
+        sheet_name='default',
         row_count=3,
         column_count=3,
         columns_meta=[
@@ -165,13 +188,14 @@ def ready_datasource(user):
 
 
 @pytest.fixture
-def pending_datasource(user):
+def pending_datasource(user, owner_source_file):
     return DataSource.objects.create(
         owner=user,
         name='Pending source',
         source_type=DataSource.SourceType.FILE,
         status=DataSource.Status.PENDING,
-        original_filename='pending.csv',
+        source_file=owner_source_file,
+        sheet_name='default',
     )
 
 

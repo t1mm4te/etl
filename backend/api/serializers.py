@@ -45,12 +45,12 @@ class UserCreateSerializer(UserCreateSerializerBase):
         super_create = super().create
         validated_data['is_active'] = False
         user = super_create(validated_data)
-        
+
         code = str(random.randint(100000, 999999))
         EmailVerificationCode.objects.create(user=user, code=code)
-        
+
         send_verification_email.delay(user.email, code)
-        
+
         return user
 
 

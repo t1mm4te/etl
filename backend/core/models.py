@@ -65,7 +65,8 @@ class EmailVerificationCode(models.Model):
         verbose_name_plural = 'Коды подтверждения email'
 
     def is_valid(self):
-        expiration_time = self.created_at + timedelta(minutes=settings.EMAIL_VERIFICATION_CODE_LIFETIME_MINUTES)
+        expiration_time = self.created_at + \
+            timedelta(minutes=settings.EMAIL_VERIFICATION_CODE_LIFETIME_MINUTES)
         return timezone.now() <= expiration_time
 
     def __str__(self):

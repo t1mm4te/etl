@@ -77,14 +77,17 @@ def analyze_source_file(source_file) -> None:
             sheets = [{"sheet_name": "default", "index": 0}]
         else:
             xls = pd.ExcelFile(file_path)
-            sheets = [{"sheet_name": name, "index": i} for i, name in enumerate(xls.sheet_names)]
+            sheets = [{"sheet_name": name, "index": i}
+                      for i, name in enumerate(xls.sheet_names)]
 
         source_file.sheets_metadata = sheets
         source_file.save(update_fields=['sheets_metadata'])
-        
-        logger.info('SourceFile %s проанализирован: %d листов', source_file.pk, len(sheets))
+
+        logger.info('SourceFile %s проанализирован: %d листов',
+                    source_file.pk, len(sheets))
     except Exception as exc:
-        logger.exception('Непредвиденная ошибка при анализе SourceFile %s', source_file.pk)
+        logger.exception(
+            'Непредвиденная ошибка при анализе SourceFile %s', source_file.pk)
         raise FileProcessingError(f'Ошибка анализа файла: {exc}') from exc
 
 
@@ -110,8 +113,8 @@ def process_uploaded_file(datasource) -> None:
         # Конвертация в Parquet
         parquet_bytes = dataframe_to_parquet_bytes(df)
         parquet_filename = (
-            Path(datasource.source_file.original_filename).stem + 
-            (f'_{datasource.sheet_name}' if datasource.sheet_name and datasource.sheet_name != 'default' else '') + 
+            Path(datasource.source_file.original_filename).stem +
+            (f'_{datasource.sheet_name}' if datasource.sheet_name and datasource.sheet_name != 'default' else '') +
             '.parquet'
         )
         datasource.parquet_file.save(

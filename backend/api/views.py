@@ -212,7 +212,7 @@ class SourceFileViewSet(
     viewsets.GenericViewSet,
 ):
     permission_classes = [permissions.IsAuthenticated]
-    
+
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
             return SourceFile.objects.none()
@@ -230,20 +230,20 @@ class SourceFileViewSet(
     def create(self, request, *args, **kwargs):
         serializer = SourceFileUploadSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
+
         file = serializer.validated_data['file']
         source_file = SourceFile.objects.create(
             owner=request.user,
             original_file=file,
             original_filename=file.name,
         )
-        
+
         try:
             analyze_source_file(source_file)
         except Exception as e:
             source_file.delete()
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-            
+
         return Response(SourceFileSerializer(source_file).data, status=status.HTTP_201_CREATED)
 
 
@@ -307,16 +307,17 @@ class DataSourceViewSet(
     def create(self, request, *args, **kwargs):
         serializer = DataSourceCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
+
         source_file_id = serializer.validated_data['source_file_id']
         name = serializer.validated_data.get('name')
         sheet_name = serializer.validated_data.get('sheet_name', '')
-        
+
         try:
-            source_file = SourceFile.objects.get(id=source_file_id, owner=request.user)
+            source_file = SourceFile.objects.get(
+                id=source_file_id, owner=request.user)
         except SourceFile.DoesNotExist:
             return Response({"error": "Исходный файл не найден."}, status=status.HTTP_404_NOT_FOUND)
-            
+
         ds = DataSource.objects.create(
             owner=request.user,
             name=name or f"{source_file.original_filename} - {sheet_name}",
@@ -324,9 +325,9 @@ class DataSourceViewSet(
             source_file=source_file,
             sheet_name=sheet_name
         )
-        
+
         process_datasource.delay(str(ds.pk))
-        
+
         return Response(DataSourceDetailSerializer(ds).data, status=status.HTTP_201_CREATED)
 
     @extend_schema(

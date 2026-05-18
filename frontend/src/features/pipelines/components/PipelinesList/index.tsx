@@ -1,15 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
-import styles from '../index.module.scss';
-import { listPipelines } from '../../../shared/api/pipelines.ts';
-import { pipelinesListKey } from '../../../shared/api/queryKeys.ts';
-import { extractError } from '../../../shared/lib/extractError';
-import { PipelineListItem } from './PipelineListItem.tsx';
+import { listPipelines } from '../../../../shared/api/pipelines.ts';
+import { pipelinesListKey } from '../../../../shared/api/queryKeys.ts';
+import { extractError } from '../../../../shared/lib/extractError.ts';
+import { PipelineCard } from '../PipelineCard/index.tsx';
+import styles from './index.module.scss';
 
-export function PipelinesListSection() {
+export function PipelinesList() {
   const pipelinesQuery = useQuery({ queryKey: pipelinesListKey, queryFn: listPipelines });
 
   return (
-    <section className={styles.list}>
+    <section className={styles.root}>
       {pipelinesQuery.isLoading && <p className={styles.muted}>Загрузка...</p>}
       {pipelinesQuery.isError && (
         <p className={styles.error}>{extractError(pipelinesQuery.error, 'Ошибка загрузки')}</p>
@@ -21,7 +21,7 @@ export function PipelinesListSection() {
 
       <ul className={styles.items}>
         {pipelinesQuery.data?.results.map((pipeline) => (
-          <PipelineListItem key={pipeline.id} pipeline={pipeline} />
+          <PipelineCard key={pipeline.id} pipeline={pipeline} />
         ))}
       </ul>
     </section>

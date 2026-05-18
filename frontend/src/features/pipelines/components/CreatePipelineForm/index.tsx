@@ -2,18 +2,18 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '../../../shared/ui/Button';
-import { createPipeline } from '../../../shared/api/pipelines';
-import { extractError } from '../../../shared/lib/extractError';
-import styles from '../index.module.scss';
-import { pipelinesListKey } from '../../../shared/api/queryKeys';
+import { Button } from '../../../../shared/ui/Button';
+import { createPipeline } from '../../../../shared/api/pipelines';
+import { extractError } from '../../../../shared/lib/extractError';
+import { pipelinesListKey } from '../../../../shared/api/queryKeys';
+import styles from './index.module.scss';
 
 type CreatePipelineFormValues = {
   name: string;
   description: string;
 };
 
-export function CreatePipelineSection() {
+export function CreatePipelineForm() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [errorText, setErrorText] = useState<string>();
@@ -47,9 +47,9 @@ export function CreatePipelineSection() {
   };
 
   return (
-    <section className={styles.createCard}>
-      <h2 className={styles.createCardTitle}>Новый пайплайн</h2>
-      <form className={styles.formGrid} onSubmit={handleSubmit((values) => void onCreate(values))}>
+    <section className={styles.card}>
+      <h2 className={styles.title}>Новый пайплайн</h2>
+      <form className={styles.form} onSubmit={handleSubmit((values) => void onCreate(values))}>
         <label className={styles.label}>
           Название
           <input

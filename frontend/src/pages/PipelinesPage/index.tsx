@@ -1,6 +1,6 @@
+import { CreatePipelineForm } from '../../features/pipelines/components/CreatePipelineForm';
+import { PipelinesList } from '../../features/pipelines/components/PipelinesList';
 import styles from './index.module.scss';
-import { CreatePipelineSection } from './sections/CreatePipelineSection';
-import { PipelinesListSection } from './sections/PipelinesListSection';
 
 export function PipelinesPage() {
   return (
@@ -12,8 +12,8 @@ export function PipelinesPage() {
         </p>
       </header>
       <div className={styles.container}>
-        <CreatePipelineSection />
-        <PipelinesListSection />
+        <CreatePipelineForm />
+        <PipelinesList />
       </div>
     </main>
   );

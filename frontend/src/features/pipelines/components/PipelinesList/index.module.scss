@@ -1,0 +1,36 @@
+@use '../../../../styles/_vars.scss' as *;
+
+.root {
+  flex: 1;
+  min-width: 0;
+}
+
+.muted {
+  margin-left: 4px;
+  margin-top: 10px;
+  color: $labelColor;
+  text-align: center;
+  font-size: 22px;
+}
+
+.error {
+  margin-left: 4px;
+  margin-top: 8px;
+  color: $dangerColor;
+}
+
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+@media (max-width: 760px) {
+  .muted {
+    font-size: 18px;
+  }
+
+  .items {
+    gap: 14px;
+  }
+}

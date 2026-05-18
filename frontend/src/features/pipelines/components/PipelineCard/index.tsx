@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import editIcon from '../../../assets/node-icons/edit.svg';
-import trashIcon from '../../../assets/node-icons/trash.svg';
-import type { PipelineListItem as PipelineType } from '../../../shared/api/types';
-import { extractError } from '../../../shared/lib/extractError';
-import styles from '../index.module.scss';
-import type { EditPipelineValues } from '../hooks/types';
-import { useDeletePipelineMutation } from '../hooks/useDeletePipelineMutation';
-import { useUpdatePipelineMutation } from '../hooks/useUpdatePipelineMutation';
+import editIcon from '../../../../assets/node-icons/edit.svg';
+import trashIcon from '../../../../assets/node-icons/trash.svg';
+import type { PipelineListItem as PipelineType } from '../../../../shared/api/types';
+import { extractError } from '../../../../shared/lib/extractError';
+import type { EditPipelineValues } from '../../types/types';
+import { useDeletePipelineMutation } from '../../hooks/useDeletePipelineMutation';
+import { useUpdatePipelineMutation } from '../../hooks/useUpdatePipelineMutation';
+import styles from './index.module.scss';
 
 const UPDATED_AT_FORMATTER = new Intl.DateTimeFormat('ru-RU', {
   day: 'numeric',
@@ -24,7 +24,7 @@ type Props = {
   pipeline: PipelineType;
 };
 
-export function PipelineListItem({ pipeline }: Props) {
+export function PipelineCard({ pipeline }: Props) {
   const [isEditing, setIsEditing] = useState(false);
   const [deleteErrorText, setDeleteErrorText] = useState<string>();
   const [updateErrorText, setUpdateErrorText] = useState<string>();
@@ -87,13 +87,13 @@ export function PipelineListItem({ pipeline }: Props) {
   };
 
   return (
-    <li className={styles.item}>
+    <li className={styles.root}>
       {isEditing ? (
         <form
-          className={styles.itemEditForm}
+          className={styles.editForm}
           onSubmit={handleSubmit((values) => void onSaveEdit(values))}
         >
-          <div className={`${styles.itemCard} ${styles.itemCardEditing}`}>
+          <div className={`${styles.card} ${styles.cardEditing}`}>
             <div className={styles.meta}>
               <label className={styles.editLabel}>
                 Название
@@ -136,10 +136,10 @@ export function PipelineListItem({ pipeline }: Props) {
         </form>
       ) : (
         <>
-          <Link className={styles.itemCard} to={`/pipelines/${pipeline.id}/editor`}>
+          <Link className={styles.card} to={`/pipelines/${pipeline.id}/editor`}>
             <div className={styles.meta}>
-              <h3 className={styles.pipelineTitle}>{pipeline.name}</h3>
-              <p className={styles.pipelineDescription}>{pipeline.description || 'Без описания'}</p>
+              <h3 className={styles.title}>{pipeline.name}</h3>
+              <p className={styles.description}>{pipeline.description || 'Без описания'}</p>
               <div className={styles.badges}>
                 <span>Нод: {pipeline.node_count}</span>
                 <span>Последний запуск: {pipeline.last_run_status ?? '—'}</span>

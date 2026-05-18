@@ -5,6 +5,7 @@ from . import views
 
 
 router = DefaultRouter()
+router.register(r'files', views.SourceFileViewSet, basename='file')
 router.register(r'datasources', views.DataSourceViewSet, basename='datasource')
 router.register(r'pipelines', views.PipelineViewSet, basename='pipeline')
 router.register('users', views.UserViewSet, basename='user')

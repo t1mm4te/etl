@@ -72,6 +72,41 @@ class EmailVerificationCode(models.Model):
         return f"Code for {self.user.email}"
 
 
+class SourceFile(UUIDPrimaryKeyModelMixin, TimestampedModelMixin):
+    """
+    Первично загруженный сырой файл (CSV, XLSX)
+    Содержит метаданные листов, чтобы пользователь мог выбрать нужные.
+    """
+    owner = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='source_files',
+        verbose_name='Владелец',
+    )
+    original_file = models.FileField(
+        'Оригинальный файл',
+        upload_to='uploads/originals/%Y/%m/',
+    )
+    original_filename = models.CharField(
+        'Имя файла',
+        max_length=settings.DATA_SOURCE_NAME_MAX_LENGTH,
+    )
+    sheets_metadata = models.JSONField(
+        'Метаданные листов',
+        default=list,
+        blank=True,
+        help_text='[{"sheet_name": "Sheet1", "index": 0}, ...]',
+    )
+
+    class Meta:
+        verbose_name = 'Исходный файл'
+        verbose_name_plural = 'Исходные файлы'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.original_filename} ({self.owner.username})"
+
+
 class DataSource(UUIDPrimaryKeyModelMixin, TimestampedModelMixin):
     """
     Загруженный файл (CSV/XLSX) или подключение к внешней БД.
@@ -113,14 +148,12 @@ class DataSource(UUIDPrimaryKeyModelMixin, TimestampedModelMixin):
     )
 
     # Загрузка файла
-    original_file = models.FileField(
-        'Оригинальный файл',
-        upload_to='uploads/originals/%Y/%m/',
-        blank=True,
-    )
-    original_filename = models.CharField(
-        'Имя файла',
-        max_length=settings.DATA_SOURCE_NAME_MAX_LENGTH,
+    source_file = models.ForeignKey(
+        SourceFile,
+        on_delete=models.CASCADE,
+        related_name='data_sources',
+        verbose_name='Исходный файл',
+        null=True,
         blank=True,
     )
     sheet_name = models.CharField(

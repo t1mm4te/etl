@@ -13,7 +13,7 @@ import {
 import { deleteEdge, deleteNode } from '../../../shared/api/pipelines';
 import type { Edge, Node, OperationItem, PipelineDetail } from '../../../shared/api/types';
 import { type PipelineOperationNodeData } from '../../../components/PipelineOperationNode';
-import { extractError } from '../../../lib/extractError';
+import { extractError } from '../../../shared/lib/extractError';
 import { usePipelineEditorStore } from '../../../store/pipelineEditorStore';
 import { pipelineDetailKey } from '../../../shared/api/queryKeys';
 

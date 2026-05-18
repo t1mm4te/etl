@@ -7,8 +7,8 @@ import { Button } from '../../shared/ui/Button';
 import { AuthShell } from '../../features/auth/components/AuthShell';
 import { PasswordInput } from '../../shared/ui/PasswordInput';
 import { useLogin } from '../../features/auth/hooks/useLogin';
-import { extractError } from '../../lib/extractError';
 import styles from './index.module.scss';
+import { extractError } from '../../shared/lib/extractError';
 
 const loginSchema = z.object({
   email: z.string().min(1, 'Введите email').email('Введите корректный email'),

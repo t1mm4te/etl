@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import styles from '../index.module.scss';
 import { listPipelines } from '../../../shared/api/pipelines.ts';
 import { pipelinesListKey } from '../../../shared/api/queryKeys.ts';
-import { extractError } from '../../../lib/extractError';
+import { extractError } from '../../../shared/lib/extractError';
 import { PipelineListItem } from './PipelineListItem.tsx';
 
 export function PipelinesListSection() {

@@ -1,4 +1,4 @@
-import type { User } from '../shared/api/types';
+import type { User } from '../api/types';
 
 function pickFirstLetter(value: string): string {
   const trimmed = value.trim();

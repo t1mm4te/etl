@@ -6,7 +6,7 @@ import {
   uploadDatasource,
 } from '../../../shared/api/pipelines';
 import type { Node as ApiNode, NodeConfig, PreviewResponse } from '../../../shared/api/types';
-import { extractError } from '../../../lib/extractError';
+import { extractError } from '../../../shared/lib/extractError';
 import { buildNextNodeConfig } from './nodePreviewUtils';
 
 type UseSourceNodePreviewActionsParams = {

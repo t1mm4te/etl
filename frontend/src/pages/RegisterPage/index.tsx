@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { AuthShell } from '../../features/auth/components/AuthShell';
 import { Button } from '../../shared/ui/Button';
 import { PasswordInput } from '../../shared/ui/PasswordInput';
-import { extractError } from '../../lib/extractError';
+import { extractError } from '../../shared/lib/extractError';
 import styles from './index.module.scss';
 import { useRegister } from '../../features/auth/hooks/useRegister';
 

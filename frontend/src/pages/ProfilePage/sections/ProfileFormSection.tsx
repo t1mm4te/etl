@@ -6,9 +6,9 @@ import { z } from 'zod';
 import { deleteMyAvatar, patchMe, putMyAvatar } from '../../../shared/api/auth';
 import { authMeKey } from '../../../shared/api/queryKeys';
 import { Button } from '../../../shared/ui/Button';
-import { extractError } from '../../../lib/extractError';
-import { getUserInitials } from '../../../lib/getUserInitials';
-import { resolveMediaUrl } from '../../../lib/resolveMediaUrl';
+import { extractError } from '../../../shared/lib/extractError';
+import { getUserInitials } from '../../../shared/lib/getUserInitials';
+import { resolveMediaUrl } from '../../../shared/lib/resolveMediaUrl';
 import type { User } from '../../../shared/api/types';
 import styles from '../index.module.scss';
 

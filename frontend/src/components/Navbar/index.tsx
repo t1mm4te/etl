@@ -4,8 +4,8 @@ import { Button, LinkButton } from '../../shared/ui/Button';
 import { useLogout } from '../../features/auth/hooks/useLogout';
 import { useCurrentUser } from '../../features/auth/hooks/useCurrentUser';
 import { useAuthStore } from '../../features/auth/store/authStore';
-import { getUserInitials } from '../../lib/getUserInitials';
-import { resolveMediaUrl } from '../../lib/resolveMediaUrl';
+import { getUserInitials } from '../../shared/lib/getUserInitials';
+import { resolveMediaUrl } from '../../shared/lib/resolveMediaUrl';
 import logo from '../../assets/logo.svg';
 import styles from './index.module.scss';
 

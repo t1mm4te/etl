@@ -1,5 +1,5 @@
 import { useCurrentUser } from '../../features/auth/hooks/useCurrentUser';
-import { extractError } from '../../lib/extractError';
+import { extractError } from '../../shared/lib/extractError';
 import { ProfileFormSection } from './sections/ProfileFormSection';
 import { PasswordFormSection } from './sections/PasswordFormSection';
 import { EmailFormSection } from './sections/EmailFormSection';

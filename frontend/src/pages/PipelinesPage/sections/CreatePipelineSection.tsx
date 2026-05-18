@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../../shared/ui/Button';
 import { createPipeline } from '../../../shared/api/pipelines';
-import { extractError } from '../../../lib/extractError';
+import { extractError } from '../../../shared/lib/extractError';
 import styles from '../index.module.scss';
 import { pipelinesListKey } from '../../../shared/api/queryKeys';
 

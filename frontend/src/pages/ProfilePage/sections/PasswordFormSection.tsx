@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { setPassword } from '../../../shared/api/auth';
 import { Button } from '../../../shared/ui/Button';
 import { PasswordInput } from '../../../shared/ui/PasswordInput';
-import { extractError } from '../../../lib/extractError';
+import { extractError } from '../../../shared/lib/extractError';
 import styles from '../index.module.scss';
 
 const passwordSchema = z

@@ -7,7 +7,7 @@ import { setEmail } from '../../../shared/api/auth';
 import { authMeKey } from '../../../shared/api/queryKeys';
 import { Button } from '../../../shared/ui/Button';
 import { PasswordInput } from '../../../shared/ui/PasswordInput';
-import { extractError } from '../../../lib/extractError';
+import { extractError } from '../../../shared/lib/extractError';
 import type { User } from '../../../shared/api/types';
 import styles from '../index.module.scss';
 

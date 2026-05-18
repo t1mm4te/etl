@@ -11,6 +11,7 @@ from .tasks import send_verification_email
 from .utils import Base64ImageField
 from core.models import (
     DataSource,
+    SourceFile,
     EmailVerificationCode,
     Edge,
     Node,
@@ -44,12 +45,12 @@ class UserCreateSerializer(UserCreateSerializerBase):
         super_create = super().create
         validated_data['is_active'] = False
         user = super_create(validated_data)
-        
+
         code = str(random.randint(100000, 999999))
         EmailVerificationCode.objects.create(user=user, code=code)
-        
+
         send_verification_email.delay(user.email, code)
-        
+
         return user
 
 
@@ -79,44 +80,17 @@ class UserShortSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class DataSourceListSerializer(serializers.ModelSerializer):
-
+class SourceFileSerializer(serializers.ModelSerializer):
     class Meta:
-        model = DataSource
+        model = SourceFile
         fields = (
-            'id', 'name', 'source_type', 'status',
-            'original_filename', 'row_count', 'column_count',
-            'created_at', 'updated_at',
+            'id', 'original_filename', 'sheets_metadata', 'created_at'
         )
         read_only_fields = fields
 
 
-class DataSourceDetailSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = DataSource
-        fields = (
-            'id', 'name', 'source_type', 'status',
-            'original_filename', 'sheet_name',
-            'row_count', 'column_count', 'columns_meta',
-            'file_size_bytes', 'error_message',
-            'created_at', 'updated_at',
-        )
-        read_only_fields = fields
-
-
-class DataSourceUploadSerializer(serializers.Serializer):
-
+class SourceFileUploadSerializer(serializers.Serializer):
     file = serializers.FileField()
-    name = serializers.CharField(
-        max_length=settings.DATA_SOURCE_NAME_MAX_LENGTH,
-        required=False
-    )
-    sheet_name = serializers.CharField(
-        max_length=settings.DATA_SOURCE_NAME_MAX_LENGTH,
-        required=False,
-        allow_blank=True
-    )
 
     def validate_file(self, value):
         allowed = ('.csv', '.xlsx', '.xls')
@@ -132,6 +106,43 @@ class DataSourceUploadSerializer(serializers.Serializer):
                 f'Максимум: {settings.MAX_FILE_SIZE} байт.'
             )
         return value
+
+
+class DataSourceListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DataSource
+        fields = (
+            'id', 'name', 'source_type', 'status',
+            'source_file', 'sheet_name', 'row_count', 'column_count',
+            'created_at', 'updated_at',
+        )
+        read_only_fields = fields
+
+
+class DataSourceDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DataSource
+        fields = (
+            'id', 'name', 'source_type', 'status',
+            'source_file', 'sheet_name',
+            'row_count', 'column_count', 'columns_meta',
+            'file_size_bytes', 'error_message',
+            'created_at', 'updated_at',
+        )
+        read_only_fields = fields
+
+
+class DataSourceCreateSerializer(serializers.Serializer):
+    source_file_id = serializers.UUIDField(required=True)
+    name = serializers.CharField(
+        max_length=settings.DATA_SOURCE_NAME_MAX_LENGTH,
+        required=False
+    )
+    sheet_name = serializers.CharField(
+        max_length=settings.DATA_SOURCE_NAME_MAX_LENGTH,
+        required=False,
+        allow_blank=True
+    )
 
 
 class DataSourceDBSerializer(serializers.ModelSerializer):

@@ -17,14 +17,15 @@ from rest_framework import (
     viewsets,
 )
 from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
 from .serializers import (
     DataSourceDBSerializer,
     DataSourceDetailSerializer,
     DataSourceListSerializer,
-    DataSourceUploadSerializer,
+    DataSourceCreateSerializer,
+    SourceFileSerializer,
+    SourceFileUploadSerializer,
     EdgeSerializer,
     NodeSerializer,
     PipelineCreateUpdateSerializer,
@@ -36,7 +37,8 @@ from .serializers import (
 )
 from .services.operation_catalog import get_catalog, get_categories
 from .tasks import process_datasource, run_pipeline, run_pipeline_preview
-from core.models import DataSource, Edge, Node, NodeRun, Pipeline, PipelineRun, User, EmailVerificationCode
+from core.models import DataSource, SourceFile, Edge, Node, NodeRun, Pipeline, PipelineRun, User, EmailVerificationCode
+from .services.file_processing import analyze_source_file
 
 
 # Общие inline-сериализаторы для preview-ответов
@@ -202,6 +204,49 @@ def resend_verification_code(request):
     return Response({'detail': 'Новый код отправлен на почту.'}, status=status.HTTP_200_OK)
 
 
+@extend_schema(tags=['Файлы источников'])
+class SourceFileViewSet(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,
+):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return SourceFile.objects.none()
+        return SourceFile.objects.filter(owner=self.request.user)
+
+    def get_serializer_class(self):
+        return SourceFileSerializer
+
+    @extend_schema(
+        summary='Загрузка исходного файла',
+        description='Загружает файл (CSV/XLSX), сохраняет на диск и синхронно генерирует список листов.',
+        request=SourceFileUploadSerializer,
+        responses={status.HTTP_201_CREATED: SourceFileSerializer},
+    )
+    def create(self, request, *args, **kwargs):
+        serializer = SourceFileUploadSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        file = serializer.validated_data['file']
+        source_file = SourceFile.objects.create(
+            owner=request.user,
+            original_file=file,
+            original_filename=file.name,
+        )
+
+        try:
+            analyze_source_file(source_file)
+        except Exception as e:
+            source_file.delete()
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(SourceFileSerializer(source_file).data, status=status.HTTP_201_CREATED)
+
+
 @extend_schema(tags=['Источники данных'])
 @extend_schema_view(
     list=extend_schema(
@@ -234,64 +279,56 @@ class DataSourceViewSet(
     viewsets.GenericViewSet,
 ):
     permission_classes = [permissions.IsAuthenticated]
-    queryset = DataSource.objects.none()
 
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
             return DataSource.objects.none()
-        return DataSource.objects.filter(owner=self.request.user)
+        qs = DataSource.objects.filter(owner=self.request.user)
+        source_file_id = self.request.query_params.get('source_file_id')
+        if source_file_id:
+            qs = qs.filter(source_file_id=source_file_id)
+        return qs
 
     def get_serializer_class(self):
         if self.action == 'list':
             return DataSourceListSerializer
-        if self.action == 'upload':
-            return DataSourceUploadSerializer
+        if self.action == 'create':
+            return DataSourceCreateSerializer
         if self.action == 'connect_db':
             return DataSourceDBSerializer
         return DataSourceDetailSerializer
 
     @extend_schema(
-        summary='Загрузка файла (CSV / XLSX)',
-        description=(
-            'Загружает файл формата CSV или XLSX и ставит его в очередь '
-            'на обработку (Celery). После обработки источник переходит '
-            'в статус `ready`, а данные конвертируются в Parquet.\n\n'
-            '**Ограничения:** макс. размер файла — 100 МБ (MAX_FILE_SIZE), '
-            'макс. число строк — 5 000 (DATASOURCE_MAX_ROWS).'
-        ),
-        request=DataSourceUploadSerializer,
+        summary='Создание источника данных',
+        description='Инициирует создание источника данных из конкретного листа загруженного файла. Начинает асинхронную обработку.',
+        request=DataSourceCreateSerializer,
         responses={status.HTTP_201_CREATED: DataSourceDetailSerializer},
     )
-    @action(
-        detail=False,
-        methods=['post'],
-        url_path='upload',
-        parser_classes=[MultiPartParser, FormParser],
-    )
-    def upload(self, request):
-        serializer = DataSourceUploadSerializer(data=request.data)
+    def create(self, request, *args, **kwargs):
+        serializer = DataSourceCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        file = serializer.validated_data['file']
-        name = serializer.validated_data.get('name', file.name)
-        sheet_name = serializer.validated_data.get('sheet_name', None)
+        source_file_id = serializer.validated_data['source_file_id']
+        name = serializer.validated_data.get('name')
+        sheet_name = serializer.validated_data.get('sheet_name', '')
+
+        try:
+            source_file = SourceFile.objects.get(
+                id=source_file_id, owner=request.user)
+        except SourceFile.DoesNotExist:
+            return Response({"error": "Исходный файл не найден."}, status=status.HTTP_404_NOT_FOUND)
 
         ds = DataSource.objects.create(
             owner=request.user,
-            name=name,
+            name=name or f"{source_file.original_filename} - {sheet_name}",
             source_type=DataSource.SourceType.FILE,
-            original_file=file,
-            original_filename=file.name,
-            file_size_bytes=file.size,
-            sheet_name=sheet_name or '',
+            source_file=source_file,
+            sheet_name=sheet_name
         )
 
         process_datasource.delay(str(ds.pk))
 
-        return Response(
-            DataSourceDetailSerializer(ds).data,
-            status=status.HTTP_201_CREATED,
-        )
+        return Response(DataSourceDetailSerializer(ds).data, status=status.HTTP_201_CREATED)
 
     @extend_schema(
         summary='Подключение к внешней БД',

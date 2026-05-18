@@ -1,0 +1,69 @@
+@use '../../../../styles/_vars.scss' as *;
+
+.previewPanel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+
+  .metadataRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $spacingMedium;
+    padding: 8px 10px;
+    background: $darkGray;
+
+    .metadata {
+      margin: 0;
+      color: $labelColor;
+      font-size: $defaultFontSize;
+    }
+
+    .rowLimitSelect {
+      width: auto;
+      min-width: 120px;
+      background: $darkGrayLighter;
+      border: 1px solid $borderColor;
+      border-radius: $borderRadiusSmall;
+      color: $white;
+      padding: 6px 8px;
+      font-size: $defaultFontSize;
+      cursor: pointer;
+
+      option {
+        background: $darkGray;
+        color: $white;
+      }
+    }
+  }
+
+  .tabRow {
+    display: flex;
+    gap: 8px;
+
+    .tab,
+    .tabActive {
+      background: $darkGrayLighter;
+      border: 1px solid $borderColor;
+      color: $labelColor;
+      border-radius: $borderRadiusSmall $borderRadiusSmall 0 0;
+      padding: 8px 10px;
+      cursor: pointer;
+      font-size: $defaultFontSize;
+      background-color: $darkGray;
+      border-bottom: none;
+    }
+
+    .tabActive {
+      color: $white;
+      background-color: $darkGrayLighter;
+      position: relative;
+      top: 1px;
+      z-index: 1;
+    }
+  }
+}
+
+.muted {
+  color: $labelColor;
+}

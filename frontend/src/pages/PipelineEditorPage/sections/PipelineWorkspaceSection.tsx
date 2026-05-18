@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { OperationsSidebar } from '../../../components/PipelineEditor/OperationsSidebar';
+import { OperationsSidebar } from '../../../features/pipelineEditor/components/OperationsSidebar';
 import { PipelineCanvasSection } from './PipelineCanvasSection';
 import { NodeConfigModalSection } from './NodeConfigModalSection';
 import styles from '../index.module.scss';

@@ -1,5 +1,5 @@
-import { RunResultsCard } from '../../../components/PipelineEditor/RunResultsCard';
-import { usePipelineEditorQueries } from '../hooks/usePipelineEditorQueries';
+import { RunResultsCard } from '../../../features/pipelineEditor/components/RunResultsCard';
+import { usePipelineEditorQueries } from '../../../features/pipelineEditor/hooks/usePipelineEditorQueries';
 
 type RunResultsSectionProps = {
   pipelineId: string;

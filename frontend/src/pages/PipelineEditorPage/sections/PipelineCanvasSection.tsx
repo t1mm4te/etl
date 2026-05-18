@@ -1,9 +1,9 @@
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import { Background, Controls, MiniMap, ReactFlow } from 'reactflow';
-import { PipelineOperationNode } from '../../../components/PipelineOperationNode';
-import { usePipelineCanvasState } from '../hooks/usePipelineCanvasState';
-import { usePipelineEditorMutations } from '../hooks/usePipelineEditorMutations';
-import { usePipelineEditorQueries } from '../hooks/usePipelineEditorQueries';
+import { PipelineOperationNode } from '../../../features/pipelineEditor/components/PipelineOperationNode';
+import { usePipelineCanvasState } from '../../../features/pipelineEditor/hooks/usePipelineCanvasState';
+import { usePipelineEditorMutations } from '../../../features/pipelineEditor/hooks/usePipelineEditorMutations';
+import { usePipelineEditorQueries } from '../../../features/pipelineEditor/hooks/usePipelineEditorQueries';
 import { usePipelineEditorStore } from '../../../store/pipelineEditorStore';
 import styles from '../index.module.scss';
 import 'reactflow/dist/style.css';

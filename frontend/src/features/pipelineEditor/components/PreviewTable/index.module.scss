@@ -1,0 +1,40 @@
+@use '../../../../styles/_vars.scss' as *;
+
+.previewTableWrapper {
+  width: 100%;
+  max-width: 100%;
+  max-height: clamp(280px, 60vh, 560px);
+  overflow-x: auto;
+  overflow-y: auto;
+  border: 1px solid $borderColor;
+  border-radius: 0 $borderRadiusSmall 0 0;
+  background-color: $darkGrayLighter;
+  padding: 10px;
+
+  table {
+    width: max-content;
+    min-width: 100%;
+    border-collapse: collapse;
+    background-color: $darkGrayLighter;
+
+    th,
+    td {
+      border-bottom: 1px solid $borderColor;
+      padding: 6px;
+      color: $white;
+      text-align: left;
+      white-space: nowrap;
+      font-size: 16px;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      background: $darkGrayLighter;
+    }
+
+    td {
+      color: $labelColor;
+    }
+  }
+}

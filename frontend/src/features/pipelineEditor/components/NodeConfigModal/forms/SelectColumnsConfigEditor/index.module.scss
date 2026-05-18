@@ -1,0 +1,139 @@
+@use '../../../../../../styles/vars' as *;
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.title {
+  margin: 0;
+  color: $white;
+  font-size: 16px;
+}
+
+.muted {
+  color: $labelColor;
+  margin: 0;
+}
+
+.checkboxAll,
+.checkboxItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: $labelColor;
+  width: 100%;
+  line-height: 1.3;
+
+  &:hover {
+    color: $white;
+  }
+}
+
+.controlsRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.checkboxAll {
+  color: $white;
+  font-weight: 600;
+}
+
+.controlButton {
+  border: 1px solid $borderColor;
+  background: transparent;
+  color: $labelColor;
+  border-radius: $borderRadiusSmall;
+  padding: 6px 10px;
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    border-color $transitionFast,
+    color $transitionFast;
+
+  &:hover {
+    color: $white;
+    border-color: $white;
+  }
+}
+
+.sectionTitle {
+  margin: 2px 0 -2px;
+  color: $labelColor;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.checkboxRoot {
+  flex: 0 0 auto;
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  max-width: 16px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 4px;
+  border: 1px solid $borderColor;
+  background: $darkGray;
+  color: transparent;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+
+  &[data-checked] {
+    background: $primaryColor;
+    border-color: $primaryColor;
+    color: $white;
+  }
+}
+
+.checkboxIndicator {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.checkboxText {
+  overflow-wrap: anywhere;
+}
+
+.checkboxList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid $borderColor;
+  border-radius: $borderRadiusSmall;
+  padding: 10px;
+  background: $darkGrayLighter;
+}
+
+.dragHandle {
+  border: 0;
+  background: transparent;
+  color: $labelColor;
+  cursor: grab;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px 4px;
+  border-radius: 4px;
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  &:hover {
+    color: $white;
+    background: rgb(255 255 255 / 8%);
+  }
+}
+
+.checkboxItem[data-dragging='true'] {
+  opacity: 0.7;
+}

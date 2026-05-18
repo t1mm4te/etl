@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
-import { NodeConfigModal } from '../../../components/PipelineEditor/NodeConfigModal';
-import { useNodeConfigModalState } from '../hooks/useNodeConfigModalState';
-import { usePipelineEditorQueries } from '../hooks/usePipelineEditorQueries';
-import { usePipelineEditorMutations } from '../hooks/usePipelineEditorMutations';
+import { NodeConfigModal } from '../../../features/pipelineEditor/components/NodeConfigModal';
+import { useNodeConfigModalState } from '../../../features/pipelineEditor/hooks/useNodeConfigModalState';
+import { usePipelineEditorQueries } from '../../../features/pipelineEditor/hooks/usePipelineEditorQueries';
+import { usePipelineEditorMutations } from '../../../features/pipelineEditor/hooks/usePipelineEditorMutations';
 
 type NodeConfigModalSectionProps = {
   pipelineId: string;

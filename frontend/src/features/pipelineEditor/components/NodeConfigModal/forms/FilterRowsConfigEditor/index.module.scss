@@ -1,0 +1,50 @@
+@use '../../../../../../styles/vars' as *;
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.title {
+  margin: 0;
+  color: $white;
+  font-size: 16px;
+}
+
+.configLabel {
+  color: $labelColor;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  input {
+    background-color: $darkGrayLighter;
+    border: 1px solid #475569;
+    border-radius: $borderRadiusSmall;
+    color: $white;
+    padding: 10px 12px;
+    width: 100%;
+    font-size: $defaultFontSize;
+    transition: border-color $transitionFast;
+
+    &:hover {
+      border-color: $borderColor;
+    }
+
+    &:focus {
+      outline: none;
+      border-color: $primaryColor;
+      box-shadow: none;
+    }
+
+    &::placeholder {
+      color: $labelColor;
+    }
+  }
+}
+
+.muted {
+  color: $labelColor;
+  margin: 0;
+}

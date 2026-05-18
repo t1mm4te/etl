@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { usePipelineEditorStore } from '../../store/pipelineEditorStore';
-import { EditorToolbar } from '../../components/PipelineEditor/EditorToolbar';
+import { EditorToolbar } from '../../features/pipelineEditor/components/EditorToolbar';
 import { PipelineWorkspaceSection } from './sections/PipelineWorkspaceSection';
 import { RunResultsSection } from './sections/RunResultsSection';
 import styles from './index.module.scss';

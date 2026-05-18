@@ -1,16 +1,16 @@
-import type { OperationItem } from '../../../shared/api/types';
-import { usePipelineEditorMutations } from '../../../features/pipelineEditor/hooks/usePipelineEditorMutations';
-import { usePipelineEditorQueries } from '../../../features/pipelineEditor/hooks/usePipelineEditorQueries';
-import { calculateNewNodePosition } from '../../../features/pipelineEditor/utils/getNewNodePosition';
-import { usePipelineEditorStore } from '../../../store/pipelineEditorStore';
-import calculateIcon from '../../../assets/node-icons/calculate.svg';
-import columnsIcon from '../../../assets/node-icons/columns.svg';
-import databaseIcon from '../../../assets/node-icons/database.svg';
-import defaultIcon from '../../../assets/node-icons/default.svg';
-import excelIcon from '../../../assets/node-icons/excel.svg';
-import loadIcon from '../../../assets/node-icons/load.svg';
-import rowsIcon from '../../../assets/node-icons/rows.svg';
-import tableIcon from '../../../assets/node-icons/table.svg';
+import type { OperationItem } from '../../../../shared/api/types';
+import { usePipelineEditorMutations } from '../../hooks/usePipelineEditorMutations';
+import { usePipelineEditorQueries } from '../../hooks/usePipelineEditorQueries';
+import { calculateNewNodePosition } from '../../utils/getNewNodePosition';
+import { usePipelineEditorStore } from '../../../../store/pipelineEditorStore';
+import calculateIcon from '../../../../assets/node-icons/calculate.svg';
+import columnsIcon from '../../../../assets/node-icons/columns.svg';
+import databaseIcon from '../../../../assets/node-icons/database.svg';
+import defaultIcon from '../../../../assets/node-icons/default.svg';
+import excelIcon from '../../../../assets/node-icons/excel.svg';
+import loadIcon from '../../../../assets/node-icons/load.svg';
+import rowsIcon from '../../../../assets/node-icons/rows.svg';
+import tableIcon from '../../../../assets/node-icons/table.svg';
 import styles from './index.module.scss';
 
 type OperationsSidebarProps = {

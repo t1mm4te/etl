@@ -6,7 +6,7 @@ import {
   getPipelineRun,
 } from '../../../shared/api/pipelines';
 import type { OperationItem } from '../../../shared/api/types';
-import { usePipelineEditorStore } from '../../../store/pipelineEditorStore';
+import { usePipelineEditorStore } from '../store/pipelineEditorStore';
 import {
   pipelineDetailKey,
   operationsCatalogKey,

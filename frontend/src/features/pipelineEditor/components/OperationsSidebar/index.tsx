@@ -2,7 +2,7 @@ import type { OperationItem } from '../../../../shared/api/types';
 import { usePipelineEditorMutations } from '../../hooks/usePipelineEditorMutations';
 import { usePipelineEditorQueries } from '../../hooks/usePipelineEditorQueries';
 import { calculateNewNodePosition } from '../../utils/getNewNodePosition';
-import { usePipelineEditorStore } from '../../../../store/pipelineEditorStore';
+import { usePipelineEditorStore } from '../../store/pipelineEditorStore';
 import calculateIcon from '../../../../assets/node-icons/calculate.svg';
 import columnsIcon from '../../../../assets/node-icons/columns.svg';
 import databaseIcon from '../../../../assets/node-icons/database.svg';

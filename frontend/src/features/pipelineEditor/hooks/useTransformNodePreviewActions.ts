@@ -15,7 +15,7 @@ import type {
   PreviewResponse,
 } from '../../../shared/api/types';
 import { extractError } from '../../../shared/lib/extractError';
-import { usePipelineEditorStore } from '../../../store/pipelineEditorStore';
+import { usePipelineEditorStore } from '../store/pipelineEditorStore';
 import { buildNextNodeConfig } from './nodePreviewUtils';
 import type { NodeKind } from './useNodeConfigModalState';
 

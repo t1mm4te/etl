@@ -4,7 +4,7 @@ import { PipelineOperationNode } from '../../../features/pipelineEditor/componen
 import { usePipelineCanvasState } from '../../../features/pipelineEditor/hooks/usePipelineCanvasState';
 import { usePipelineEditorMutations } from '../../../features/pipelineEditor/hooks/usePipelineEditorMutations';
 import { usePipelineEditorQueries } from '../../../features/pipelineEditor/hooks/usePipelineEditorQueries';
-import { usePipelineEditorStore } from '../../../store/pipelineEditorStore';
+import { usePipelineEditorStore } from '../../../features/pipelineEditor/store/pipelineEditorStore';
 import styles from '../index.module.scss';
 import 'reactflow/dist/style.css';
 

@@ -3,14 +3,14 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState, type ChangeEvent } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { deleteMyAvatar, patchMe, putMyAvatar } from '../../../shared/api/auth';
-import { authMeKey } from '../../../shared/api/queryKeys';
-import { Button } from '../../../shared/ui/Button';
-import { extractError } from '../../../shared/lib/extractError';
-import { getUserInitials } from '../../../shared/lib/getUserInitials';
-import { resolveMediaUrl } from '../../../shared/lib/resolveMediaUrl';
-import type { User } from '../../../shared/api/types';
-import styles from '../index.module.scss';
+import { deleteMyAvatar, patchMe, putMyAvatar } from '../../../../shared/api/auth';
+import { authMeKey } from '../../../../shared/api/queryKeys';
+import type { User } from '../../../../shared/api/types';
+import { extractError } from '../../../../shared/lib/extractError';
+import { getUserInitials } from '../../../../shared/lib/getUserInitials';
+import { resolveMediaUrl } from '../../../../shared/lib/resolveMediaUrl';
+import { Button } from '../../../../shared/ui/Button';
+import styles from './index.module.scss';
 
 const profileSchema = z.object({
   username: z
@@ -23,7 +23,8 @@ const profileSchema = z.object({
 });
 
 type ProfileValues = z.infer<typeof profileSchema>;
-type ProfileFormSectionProps = {
+
+type ProfileFormProps = {
   user: User | undefined;
 };
 
@@ -37,7 +38,7 @@ const readFileAsDataUrl = (file: File) =>
     reader.readAsDataURL(file);
   });
 
-export function ProfileFormSection({ user }: ProfileFormSectionProps) {
+export function ProfileForm({ user }: ProfileFormProps) {
   const queryClient = useQueryClient();
 
   const [profileErrorText, setProfileErrorText] = useState<string>();
@@ -79,17 +80,9 @@ export function ProfileFormSection({ user }: ProfileFormSectionProps) {
     });
   }, [user, reset]);
 
-  const profileMutation = useMutation({
-    mutationFn: patchMe,
-  });
-
-  const avatarUploadMutation = useMutation({
-    mutationFn: putMyAvatar,
-  });
-
-  const avatarDeleteMutation = useMutation({
-    mutationFn: deleteMyAvatar,
-  });
+  const profileMutation = useMutation({ mutationFn: patchMe });
+  const avatarUploadMutation = useMutation({ mutationFn: putMyAvatar });
+  const avatarDeleteMutation = useMutation({ mutationFn: deleteMyAvatar });
 
   const onAvatarFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

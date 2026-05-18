@@ -1,8 +1,8 @@
 import { useCurrentUser } from '../../features/auth/hooks/useCurrentUser';
+import { EmailForm } from '../../features/profile/components/EmailForm';
+import { PasswordForm } from '../../features/profile/components/PasswordForm';
+import { ProfileForm } from '../../features/profile/components/ProfileForm';
 import { extractError } from '../../shared/lib/extractError';
-import { ProfileFormSection } from './sections/ProfileFormSection';
-import { PasswordFormSection } from './sections/PasswordFormSection';
-import { EmailFormSection } from './sections/EmailFormSection';
 import styles from './index.module.scss';
 
 export function ProfilePage() {
@@ -17,11 +17,11 @@ export function ProfilePage() {
 
       {!isLoading && !isError ? (
         <div className={styles.layout}>
-          <ProfileFormSection user={user} />
+          <ProfileForm user={user} />
 
           <div className={styles.rightColumn}>
-            <PasswordFormSection />
-            <EmailFormSection user={user} />
+            <PasswordForm />
+            <EmailForm user={user} />
           </div>
         </div>
       ) : null}

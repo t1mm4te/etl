@@ -1,0 +1,102 @@
+@use '../../../../styles/_vars.scss' as *;
+
+.card {
+  border-radius: $borderRadiusLarge;
+  border: 1px solid rgba($solidMutedColor, 0.82);
+  background: linear-gradient(
+    145deg,
+    rgba($solidMutedColor, 0.34) 0%,
+    rgba($solidMutedColor2, 0.66) 100%
+  );
+  box-shadow:
+    0 18px 40px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba($white, 0.2);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  h2 {
+    margin: 0;
+    color: $white;
+    font-size: 25px;
+    letter-spacing: -0.01em;
+  }
+}
+
+.hint {
+  margin: 0;
+  color: rgba($labelColor, 0.95);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  > button {
+    width: 100%;
+  }
+}
+
+.label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  color: $labelColor;
+
+  input {
+    min-height: 42px;
+    border-radius: $borderRadiusSmall;
+    border: 1px solid $borderColor;
+    background-color: rgba($darkGrayLighter, 0.95);
+    color: $defaultTextColor;
+    padding: 10px 12px;
+    font-size: 16px;
+    transition:
+      border-color $transitionFast,
+      box-shadow $transitionFast,
+      background-color $transitionFast;
+
+    &:focus {
+      outline: none;
+      border-color: rgba($primaryColor, 0.85);
+      box-shadow: 0 0 0 3px rgba($primaryColor, 0.18);
+      background-color: rgba($darkGrayLighter, 1);
+    }
+  }
+}
+
+.invalid {
+  border-color: rgba($dangerColor, 0.72) !important;
+}
+
+.error,
+.success {
+  margin: 0;
+  border-radius: $borderRadiusSmall;
+  padding: 10px 12px;
+  font-size: 15px;
+}
+
+.error {
+  color: $dangerColor;
+  background: rgba($dangerBg, 0.12);
+  border: 1px solid rgba($dangerBorder, 0.35);
+}
+
+.success {
+  color: $successColor;
+  background: rgba($successBg, 0.1);
+  border: 1px solid rgba($successBorder, 0.32);
+}
+
+@media (max-width: 720px) {
+  .card {
+    padding: 16px;
+
+    h2 {
+      font-size: 22px;
+    }
+  }
+}

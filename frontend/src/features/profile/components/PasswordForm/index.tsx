@@ -3,11 +3,11 @@ import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { setPassword } from '../../../shared/api/auth';
-import { Button } from '../../../shared/ui/Button';
-import { PasswordInput } from '../../../shared/ui/PasswordInput';
-import { extractError } from '../../../shared/lib/extractError';
-import styles from '../index.module.scss';
+import { setPassword } from '../../../../shared/api/auth';
+import { extractError } from '../../../../shared/lib/extractError';
+import { Button } from '../../../../shared/ui/Button';
+import { PasswordInput } from '../../../../shared/ui/PasswordInput';
+import styles from './index.module.scss';
 
 const passwordSchema = z
   .object({
@@ -22,7 +22,7 @@ const passwordSchema = z
 
 type PasswordValues = z.infer<typeof passwordSchema>;
 
-export function PasswordFormSection() {
+export function PasswordForm() {
   const [errorText, setErrorText] = useState<string>();
   const [successText, setSuccessText] = useState<string>();
 

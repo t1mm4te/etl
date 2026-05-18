@@ -1,4 +1,4 @@
-import type { OperationItem } from '../../../api/types';
+import type { OperationItem } from '../../../shared/api/types';
 import { usePipelineEditorMutations } from '../../../pages/PipelineEditorPage/hooks/usePipelineEditorMutations';
 import { usePipelineEditorQueries } from '../../../pages/PipelineEditorPage/hooks/usePipelineEditorQueries';
 import { calculateNewNodePosition } from '../../../pages/PipelineEditorPage/utils/getNewNodePosition';

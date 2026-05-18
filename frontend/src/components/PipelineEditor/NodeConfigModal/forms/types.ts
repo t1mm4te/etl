@@ -1,4 +1,4 @@
-import type { NodeConfig } from '../../../../api/types';
+import type { NodeConfig } from '../../../../shared/api/types';
 
 export type OperationConfigEditorProps = {
   config: NodeConfig;

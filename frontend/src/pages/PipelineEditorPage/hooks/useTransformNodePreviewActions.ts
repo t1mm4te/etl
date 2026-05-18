@@ -6,14 +6,14 @@ import {
   previewDatasource,
   previewNodeRun,
   runPipelinePreview,
-} from '../../../api/pipelines';
+} from '../../../shared/api/pipelines';
 import type {
   Edge,
   Node as ApiNode,
   NodeConfig,
   NodeRun,
   PreviewResponse,
-} from '../../../api/types';
+} from '../../../shared/api/types';
 import { extractError } from '../../../lib/extractError';
 import { usePipelineEditorStore } from '../../../store/pipelineEditorStore';
 import { buildNextNodeConfig } from './nodePreviewUtils';

@@ -3,12 +3,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { setEmail } from '../../../api/auth';
-import { authMeKey } from '../../../api/queryKeys';
+import { setEmail } from '../../../shared/api/auth';
+import { authMeKey } from '../../../shared/api/queryKeys';
 import { Button } from '../../../shared/ui/Button';
 import { PasswordInput } from '../../../shared/ui/PasswordInput';
 import { extractError } from '../../../lib/extractError';
-import type { User } from '../../../api/types';
+import type { User } from '../../../shared/api/types';
 import styles from '../index.module.scss';
 
 const emailSchema = z.object({

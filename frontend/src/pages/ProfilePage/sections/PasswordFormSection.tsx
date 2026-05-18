@@ -3,7 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { setPassword } from '../../../api/auth';
+import { setPassword } from '../../../shared/api/auth';
 import { Button } from '../../../shared/ui/Button';
 import { PasswordInput } from '../../../shared/ui/PasswordInput';
 import { extractError } from '../../../lib/extractError';

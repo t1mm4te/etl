@@ -1,4 +1,4 @@
-import type { NodeRun } from '../../../api/types';
+import type { NodeRun } from '../../../shared/api/types';
 import styles from './index.module.scss';
 
 type RunResultsCardProps = {

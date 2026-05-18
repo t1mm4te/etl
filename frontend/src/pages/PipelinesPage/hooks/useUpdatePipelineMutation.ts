@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { patchPipeline } from '../../../api/pipelines';
-import { pipelinesListKey } from '../../../api/queryKeys';
+import { patchPipeline } from '../../../shared/api/pipelines';
+import { pipelinesListKey } from '../../../shared/api/queryKeys';
 import type { EditPipelineValues } from './types';
 
 type UpdatePipelineVariables = EditPipelineValues & {

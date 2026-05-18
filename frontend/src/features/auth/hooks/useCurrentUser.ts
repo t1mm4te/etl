@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
-import { getMe } from '../../../api/auth';
-import type { User } from '../../../api/types';
+import { getMe } from '../../../shared/api/auth';
+import type { User } from '../../../shared/api/types';
 import { useAuthStore } from '../store/authStore';
-import { authMeKey } from '../../../api/queryKeys';
+import { authMeKey } from '../../../shared/api/queryKeys';
 
 export function useCurrentUser() {
   const token = useAuthStore((state) => state.token);

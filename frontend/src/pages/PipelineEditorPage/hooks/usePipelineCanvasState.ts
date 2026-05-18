@@ -10,12 +10,12 @@ import {
   useEdgesState,
   useNodesState,
 } from 'reactflow';
-import { deleteEdge, deleteNode } from '../../../api/pipelines';
-import type { Edge, Node, OperationItem, PipelineDetail } from '../../../api/types';
+import { deleteEdge, deleteNode } from '../../../shared/api/pipelines';
+import type { Edge, Node, OperationItem, PipelineDetail } from '../../../shared/api/types';
 import { type PipelineOperationNodeData } from '../../../components/PipelineOperationNode';
 import { extractError } from '../../../lib/extractError';
 import { usePipelineEditorStore } from '../../../store/pipelineEditorStore';
-import { pipelineDetailKey } from '../../../api/queryKeys';
+import { pipelineDetailKey } from '../../../shared/api/queryKeys';
 
 type SortedCategories = Array<[string, { order: number }]>;
 

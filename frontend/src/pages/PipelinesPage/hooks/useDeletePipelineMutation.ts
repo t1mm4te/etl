@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { deletePipeline } from '../../../api/pipelines';
-import { pipelinesListKey } from '../../../api/queryKeys';
+import { deletePipeline } from '../../../shared/api/pipelines';
+import { pipelinesListKey } from '../../../shared/api/queryKeys';
 
 export function useDeletePipelineMutation() {
   const queryClient = useQueryClient();

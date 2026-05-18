@@ -4,8 +4,8 @@ import {
   previewDatasource,
   setDatasourceSheet,
   uploadDatasource,
-} from '../../../api/pipelines';
-import type { Node as ApiNode, NodeConfig, PreviewResponse } from '../../../api/types';
+} from '../../../shared/api/pipelines';
+import type { Node as ApiNode, NodeConfig, PreviewResponse } from '../../../shared/api/types';
 import { extractError } from '../../../lib/extractError';
 import { buildNextNodeConfig } from './nodePreviewUtils';
 

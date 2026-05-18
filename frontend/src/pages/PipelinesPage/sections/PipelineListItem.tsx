@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import editIcon from '../../../assets/node-icons/edit.svg';
 import trashIcon from '../../../assets/node-icons/trash.svg';
-import type { PipelineListItem as PipelineType } from '../../../api/types';
+import type { PipelineListItem as PipelineType } from '../../../shared/api/types';
 import { extractError } from '../../../lib/extractError';
 import styles from '../index.module.scss';
 import type { EditPipelineValues } from '../hooks/types';

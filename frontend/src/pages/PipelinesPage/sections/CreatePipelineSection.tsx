@@ -3,10 +3,10 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../../shared/ui/Button';
-import { createPipeline } from '../../../api/pipelines';
+import { createPipeline } from '../../../shared/api/pipelines';
 import { extractError } from '../../../lib/extractError';
 import styles from '../index.module.scss';
-import { pipelinesListKey } from '../../../api/queryKeys';
+import { pipelinesListKey } from '../../../shared/api/queryKeys';
 
 type CreatePipelineFormValues = {
   name: string;

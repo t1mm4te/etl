@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { PreviewResponse } from '../../../api/types';
+import type { PreviewResponse } from '../../../shared/api/types';
 import { PreviewTable } from '../PreviewTable';
 import styles from './index.module.scss';
 

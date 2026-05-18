@@ -1,4 +1,4 @@
-import type { NodeConfig } from '../../../api/types';
+import type { NodeConfig } from '../../../shared/api/types';
 
 type BuildNextNodeConfigOptions = {
   selectedSheetName?: string;

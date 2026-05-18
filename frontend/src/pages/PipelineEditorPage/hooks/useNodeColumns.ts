@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
-import { getNodeInputColumns } from '../../../api/pipelines';
-import type { Edge, Node as ApiNode } from '../../../api/types';
+import { getNodeInputColumns } from '../../../shared/api/pipelines';
+import type { Edge, Node as ApiNode } from '../../../shared/api/types';
 
 type UseNodeColumnsParams = {
   pipelineId: string;

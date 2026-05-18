@@ -1,5 +1,11 @@
 import { useCallback, useState } from 'react';
-import type { Edge, Node as ApiNode, NodeConfig, NodeRun, PreviewResponse } from '../../../api/types';
+import type {
+  Edge,
+  Node as ApiNode,
+  NodeConfig,
+  NodeRun,
+  PreviewResponse,
+} from '../../../shared/api/types';
 import { useNodeColumns } from './useNodeColumns';
 import { useSourceNodePreviewActions } from './useSourceNodePreviewActions';
 import { useTransformNodePreviewActions } from './useTransformNodePreviewActions';

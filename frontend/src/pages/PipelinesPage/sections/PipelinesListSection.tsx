@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import styles from '../index.module.scss';
-import { listPipelines } from '../../../api/pipelines';
-import { pipelinesListKey } from '../../../api/queryKeys';
+import { listPipelines } from '../../../shared/api/pipelines.ts';
+import { pipelinesListKey } from '../../../shared/api/queryKeys.ts';
 import { extractError } from '../../../lib/extractError';
 import { PipelineListItem } from './PipelineListItem.tsx';
 

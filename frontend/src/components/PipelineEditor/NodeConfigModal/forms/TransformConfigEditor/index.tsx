@@ -1,4 +1,4 @@
-import type { NodeConfig } from '../../../../../api/types';
+import type { NodeConfig } from '../../../../../shared/api/types';
 import styles from './index.module.scss';
 import { AggregateConfigEditor } from '../AggregateConfigEditor/index';
 import { CastTypesConfigEditor } from '../CastTypesConfigEditor/index';

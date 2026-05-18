@@ -1,9 +1,17 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getOperationsCatalog, getPipelineDetail, getPipelineRun } from '../../../api/pipelines';
-import type { OperationItem } from '../../../api/types';
+import {
+  getOperationsCatalog,
+  getPipelineDetail,
+  getPipelineRun,
+} from '../../../shared/api/pipelines';
+import type { OperationItem } from '../../../shared/api/types';
 import { usePipelineEditorStore } from '../../../store/pipelineEditorStore';
-import { pipelineDetailKey, operationsCatalogKey, pipelineRunKey } from '../../../api/queryKeys';
+import {
+  pipelineDetailKey,
+  operationsCatalogKey,
+  pipelineRunKey,
+} from '../../../shared/api/queryKeys';
 
 export function usePipelineEditorQueries(pipelineId: string) {
   const runId = usePipelineEditorStore((state) => state.runId);

@@ -1,9 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Connection } from 'reactflow';
-import { createEdge, createNode, patchNode, runPipeline } from '../../../api/pipelines';
-import type { NodeConfig, NodeUpdatePayload, OperationItem } from '../../../api/types';
+import { createEdge, createNode, patchNode, runPipeline } from '../../../shared/api/pipelines';
+import type { NodeConfig, NodeUpdatePayload, OperationItem } from '../../../shared/api/types';
 import { usePipelineEditorStore } from '../../../store/pipelineEditorStore';
-import { pipelineDetailKey } from '../../../api/queryKeys';
+import { pipelineDetailKey } from '../../../shared/api/queryKeys';
 
 type UsePipelineEditorMutationsParams = {
   pipelineId: string;

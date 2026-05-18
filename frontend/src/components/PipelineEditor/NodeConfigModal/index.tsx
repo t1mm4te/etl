@@ -1,4 +1,4 @@
-import type { Node as ApiNode, NodeConfig, PreviewResponse } from '../../../api/types';
+import type { Node as ApiNode, NodeConfig, PreviewResponse } from '../../../shared/api/types';
 import { Button } from '../../../shared/ui/Button';
 import { SourceDbConfigEditor, SourceFileConfigEditor, TransformConfigEditor } from './forms';
 import { PreviewPanel } from '../PreviewPanel';

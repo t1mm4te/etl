@@ -14,6 +14,22 @@ function getColumns(config: Record<string, unknown>) {
     .filter((item) => item.length > 0);
 }
 
+function normalizeColumns(options: SelectOption | readonly SelectOption[] | null) {
+  if (!options) {
+    return [];
+  }
+
+  if (Array.isArray(options)) {
+    return Array.from(new Set(options.map((option) => option.value)));
+  }
+
+  if ('value' in options) {
+    return [options.value];
+  }
+
+  return [];
+}
+
 export function MergeColumnsConfigEditor({
   config,
   availableColumns,
@@ -39,14 +55,9 @@ export function MergeColumnsConfigEditor({
           options={columnOptions}
           value={selectedValues}
           onChange={(options) => {
-            const cols = Array.isArray(options)
-              ? options.map((opt) => opt.value)
-              : options
-                ? [options.value]
-                : [];
             onChange({
               ...typedConfig,
-              columns: cols,
+              columns: normalizeColumns(options),
             });
           }}
           placeholder="Выберите столбцы для объединения"

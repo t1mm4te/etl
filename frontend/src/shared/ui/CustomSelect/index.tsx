@@ -1,4 +1,4 @@
-import Select, { type StylesConfig } from 'react-select';
+import Select, { type OnChangeValue, type StylesConfig } from 'react-select';
 import styles from './index.module.scss';
 
 export interface SelectOption {
@@ -8,8 +8,8 @@ export interface SelectOption {
 
 interface CustomSelectProps {
   options: readonly SelectOption[];
-  value?: SelectOption | SelectOption[] | null;
-  onChange?: (option: SelectOption | SelectOption[] | null) => void;
+  value?: OnChangeValue<SelectOption, boolean>;
+  onChange?: (option: OnChangeValue<SelectOption, boolean>) => void;
   placeholder?: string;
   isDisabled?: boolean;
   className?: string;
@@ -40,8 +40,8 @@ export function CustomSelect({
   const OPTION_SELECTED = '#204633';
   const OPTION_SELECTED_HOVER = '#142c20';
 
-  const customStyles: StylesConfig<SelectOption, any> = {
-    control: (base, { isFocused, isMulti: isMultiState }) => ({
+  const customStyles: StylesConfig<SelectOption, boolean> = {
+    control: (base, { isFocused }) => ({
       ...base,
       backgroundColor: isDark ? CONTROL_BG : '#ffffff',
       borderColor: isFocused ? '#2eaf71' : isDark ? CONTROL_BORDER : '#d1d5db',
@@ -173,7 +173,9 @@ export function CustomSelect({
       <Select
         options={options}
         value={value}
-        onChange={onChange}
+        onChange={(nextValue) => {
+          onChange?.(nextValue);
+        }}
         placeholder={placeholder}
         isDisabled={isDisabled}
         isMulti={isMulti}

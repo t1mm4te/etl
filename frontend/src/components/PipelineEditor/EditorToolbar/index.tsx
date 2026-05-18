@@ -1,4 +1,4 @@
-import { Button } from '../../Button';
+import { Button } from '../../../shared/ui/Button';
 import styles from './index.module.scss';
 import { useNavigate } from 'react-router-dom';
 import { usePipelineEditorQueries } from '../../../pages/PipelineEditorPage/hooks/usePipelineEditorQueries';

@@ -1,4 +1,4 @@
-import { LinkButton } from '../../components/Button';
+import { LinkButton } from '../../shared/ui/Button';
 import styles from './index.module.scss';
 
 export function LandingPage() {

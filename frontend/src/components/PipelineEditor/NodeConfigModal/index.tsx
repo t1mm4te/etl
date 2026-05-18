@@ -1,5 +1,5 @@
 import type { Node as ApiNode, NodeConfig, PreviewResponse } from '../../../api/types';
-import { Button } from '../../Button';
+import { Button } from '../../../shared/ui/Button';
 import { SourceDbConfigEditor, SourceFileConfigEditor, TransformConfigEditor } from './forms';
 import { PreviewPanel } from '../PreviewPanel';
 import styles from './index.module.scss';

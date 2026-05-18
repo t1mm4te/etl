@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { setPassword } from '../../../api/auth';
-import { Button } from '../../../components/Button';
-import { PasswordInput } from '../../../components/PasswordInput';
+import { Button } from '../../../shared/ui/Button';
+import { PasswordInput } from '../../../shared/ui/PasswordInput';
 import { extractError } from '../../../lib/extractError';
 import styles from '../index.module.scss';
 

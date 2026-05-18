@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '../../../components/Button';
+import { Button } from '../../../shared/ui/Button';
 import { createPipeline } from '../../../api/pipelines';
 import { extractError } from '../../../lib/extractError';
 import styles from '../index.module.scss';

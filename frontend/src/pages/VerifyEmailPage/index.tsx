@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { useLocation } from 'react-router-dom';
 import { z } from 'zod';
 import { AuthShell } from '../../components/AuthShell';
-import { Button } from '../../components/Button';
+import { Button } from '../../shared/ui/Button';
 import { extractError } from '../../lib/extractError';
 import { useVerifyEmail } from '../../hooks/useVerifyEmail';
 import { useResendCode } from '../../hooks/useResendCode';

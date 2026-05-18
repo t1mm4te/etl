@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { deleteMyAvatar, patchMe, putMyAvatar } from '../../../api/auth';
 import { authMeKey } from '../../../api/queryKeys';
-import { Button } from '../../../components/Button';
+import { Button } from '../../../shared/ui/Button';
 import { extractError } from '../../../lib/extractError';
 import { getUserInitials } from '../../../lib/getUserInitials';
 import { resolveMediaUrl } from '../../../lib/resolveMediaUrl';

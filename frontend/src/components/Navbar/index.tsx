@@ -1,6 +1,6 @@
 import { Link, NavLink } from 'react-router-dom';
 import { useState } from 'react';
-import { Button, LinkButton } from '../Button';
+import { Button, LinkButton } from '../../shared/ui/Button';
 import { useLogout } from '../../hooks/useLogout';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { useAuthStore } from '../../store/authStore';

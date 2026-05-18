@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button } from '../../../../Button';
+import { Button } from '../../../../../shared/ui/Button';
 import styles from './index.module.scss';
 import type { OperationConfigEditorProps } from '../types';
 

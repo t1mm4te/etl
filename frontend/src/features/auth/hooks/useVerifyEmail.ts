@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { verifyEmail } from '../api/auth';
-import type { VerifyEmailPayload } from '../api/types';
+import { verifyEmail } from '../../../api/auth';
+import type { VerifyEmailPayload } from '../../../api/types';
 
 type LoginLocationState = {
   email?: string;

@@ -3,11 +3,11 @@ import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useLocation } from 'react-router-dom';
 import { z } from 'zod';
-import { AuthShell } from '../../components/AuthShell';
+import { AuthShell } from '../../features/auth/components/AuthShell';
 import { Button } from '../../shared/ui/Button';
 import { extractError } from '../../lib/extractError';
-import { useVerifyEmail } from '../../hooks/useVerifyEmail';
-import { useResendCode } from '../../hooks/useResendCode';
+import { useVerifyEmail } from '../../features/auth/hooks/useVerifyEmail';
+import { useResendCode } from '../../features/auth/hooks/useResendCode';
 import styles from './index.module.scss';
 
 const verifySchema = z.object({

@@ -1,4 +1,4 @@
-import { useCurrentUser } from '../../hooks/useCurrentUser';
+import { useCurrentUser } from '../../features/auth/hooks/useCurrentUser';
 import { extractError } from '../../lib/extractError';
 import { ProfileFormSection } from './sections/ProfileFormSection';
 import { PasswordFormSection } from './sections/PasswordFormSection';

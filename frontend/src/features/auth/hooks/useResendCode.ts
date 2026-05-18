@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
-import { resendVerificationCode } from '../api/auth';
-import type { ResendCodePayload } from '../api/types';
+import { resendVerificationCode } from '../../../api/auth';
+import type { ResendCodePayload } from '../../../api/types';
 
 export function useResendCode() {
   return useMutation({

@@ -4,9 +4,9 @@ import { useForm } from 'react-hook-form';
 import { useLocation } from 'react-router-dom';
 import { z } from 'zod';
 import { Button } from '../../shared/ui/Button';
-import { AuthShell } from '../../components/AuthShell';
+import { AuthShell } from '../../features/auth/components/AuthShell';
 import { PasswordInput } from '../../shared/ui/PasswordInput';
-import { useLogin } from '../../hooks/useLogin';
+import { useLogin } from '../../features/auth/hooks/useLogin';
 import { extractError } from '../../lib/extractError';
 import styles from './index.module.scss';
 

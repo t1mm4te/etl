@@ -2,12 +2,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { AuthShell } from '../../components/AuthShell';
+import { AuthShell } from '../../features/auth/components/AuthShell';
 import { Button } from '../../shared/ui/Button';
 import { PasswordInput } from '../../shared/ui/PasswordInput';
 import { extractError } from '../../lib/extractError';
 import styles from './index.module.scss';
-import { useRegister } from '../../hooks/useRegister';
+import { useRegister } from '../../features/auth/hooks/useRegister';
 
 const registerSchema = z
   .object({

@@ -1,9 +1,9 @@
 import { Link, NavLink } from 'react-router-dom';
 import { useState } from 'react';
 import { Button, LinkButton } from '../../shared/ui/Button';
-import { useLogout } from '../../hooks/useLogout';
-import { useCurrentUser } from '../../hooks/useCurrentUser';
-import { useAuthStore } from '../../store/authStore';
+import { useLogout } from '../../features/auth/hooks/useLogout';
+import { useCurrentUser } from '../../features/auth/hooks/useCurrentUser';
+import { useAuthStore } from '../../features/auth/store/authStore';
 import { getUserInitials } from '../../lib/getUserInitials';
 import { resolveMediaUrl } from '../../lib/resolveMediaUrl';
 import logo from '../../assets/logo.svg';

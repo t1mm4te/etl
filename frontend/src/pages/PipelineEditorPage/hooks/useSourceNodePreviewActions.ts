@@ -1,16 +1,12 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import {
   getDatasourceDetail,
   previewDatasource,
   setDatasourceSheet,
   uploadDatasource,
 } from '../../../api/pipelines';
-import type { Node as ApiNode, NodeConfig } from '../../../api/types';
+import type { Node as ApiNode, NodeConfig, PreviewResponse } from '../../../api/types';
 import { extractError } from '../../../lib/extractError';
-import {
-  useNodeConfigModalActions,
-  useNodeConfigModalStateSlice,
-} from '../../../store/nodeConfigModalStore';
 import { buildNextNodeConfig } from './nodePreviewUtils';
 
 type UseSourceNodePreviewActionsParams = {
@@ -18,6 +14,7 @@ type UseSourceNodePreviewActionsParams = {
   config: NodeConfig;
   uploadedDatasourceId: string;
   selectedSheetName?: string;
+  excelSheetNames: string[];
   previewRowLimit: number;
   saveNodeConfig: (
     nodeId: string,
@@ -26,6 +23,19 @@ type UseSourceNodePreviewActionsParams = {
   ) => Promise<void>;
   loadAvailableColumns: (nodeId: string) => Promise<void>;
   closeModal: () => void;
+  setConfig: (value: NodeConfig) => void;
+  setSelectedFile: (value: File | null) => void;
+  setSelectedFileName: (value?: string) => void;
+  setSelectedSheetName: (value?: string) => void;
+  setExcelSheetNames: (value: string[]) => void;
+  setUploadedDatasourceId: (value: string) => void;
+  setPreviewRowLimit: (value: number) => void;
+  setInputPreview: (value: PreviewResponse | null) => void;
+  setLeftInputPreview: (value: PreviewResponse | null) => void;
+  setRightInputPreview: (value: PreviewResponse | null) => void;
+  setResultPreview: (value: PreviewResponse | null) => void;
+  setIsPreviewLoading: (value: boolean) => void;
+  setModalError: (value?: string) => void;
 };
 
 function buildSourceFileLabel(fileName: string) {
@@ -37,29 +47,25 @@ export function useSourceNodePreviewActions({
   config,
   uploadedDatasourceId,
   selectedSheetName,
+  excelSheetNames,
   previewRowLimit,
   saveNodeConfig,
   loadAvailableColumns,
   closeModal,
+  setConfig,
+  setSelectedFile,
+  setSelectedFileName,
+  setSelectedSheetName,
+  setExcelSheetNames,
+  setUploadedDatasourceId,
+  setPreviewRowLimit,
+  setInputPreview,
+  setLeftInputPreview,
+  setRightInputPreview,
+  setResultPreview,
+  setIsPreviewLoading,
+  setModalError,
 }: UseSourceNodePreviewActionsParams) {
-  const {
-    setConfig,
-    setSelectedFile,
-    setSelectedFileName,
-    setSelectedSheetName,
-    setExcelSheetNames,
-    setUploadedDatasourceId,
-    setInputPreview,
-    setLeftInputPreview,
-    setRightInputPreview,
-    setResultPreview,
-    setIsPreviewLoading,
-    setPreviewInfo,
-    setModalError,
-  } = useNodeConfigModalActions();
-
-  const { excelSheetNames } = useNodeConfigModalStateSlice();
-
   const clearSourcePreviews = useCallback(() => {
     setInputPreview(null);
     setLeftInputPreview(null);
@@ -70,7 +76,6 @@ export function useSourceNodePreviewActions({
   const fetchSourcePreview = useCallback(
     async (datasourceId: string, limit?: number) => {
       setIsPreviewLoading(true);
-      setPreviewInfo(undefined);
       setModalError(undefined);
       clearSourcePreviews();
 
@@ -79,7 +84,6 @@ export function useSourceNodePreviewActions({
         if (datasource.status !== 'ready') {
           setSelectedFileName(datasource.original_filename || undefined);
           setResultPreview(null);
-          setPreviewInfo(`Источник в статусе ${datasource.status}. Данные ещё обрабатываются.`);
           return;
         }
 
@@ -111,7 +115,6 @@ export function useSourceNodePreviewActions({
       previewRowLimit,
       setIsPreviewLoading,
       setModalError,
-      setPreviewInfo,
       setResultPreview,
       setSelectedFileName,
       setSelectedSheetName,
@@ -165,13 +168,11 @@ export function useSourceNodePreviewActions({
 
       setSelectedFile(file);
       setSelectedFileName(file.name);
-      setPreviewInfo(undefined);
       setModalError(undefined);
 
       try {
         const uploaded = await uploadDatasource(file, file.name);
         setUploadedDatasourceId(uploaded.id);
-        setPreviewInfo('Файл загружен. Загружаем предпросмотр...');
 
         if (uploaded.available_sheets && uploaded.available_sheets.length > 0) {
           setExcelSheetNames(uploaded.available_sheets);
@@ -208,7 +209,6 @@ export function useSourceNodePreviewActions({
       setExcelSheetNames,
       setConfig,
       setModalError,
-      setPreviewInfo,
       setSelectedFile,
       setSelectedFileName,
       setSelectedSheetName,
@@ -217,10 +217,16 @@ export function useSourceNodePreviewActions({
     ]
   );
 
+  // Refetch preview when row limit changes
+  useEffect(() => {
+    if (uploadedDatasourceId) {
+      fetchSourcePreview(uploadedDatasourceId);
+    }
+  }, [previewRowLimit, uploadedDatasourceId, fetchSourcePreview]);
+
   const onSheetNameChange = useCallback(
     async (sheetName: string) => {
       setModalError(undefined);
-      setPreviewInfo(undefined);
       setSelectedSheetName(sheetName);
 
       if (!editingNode) {
@@ -269,7 +275,6 @@ export function useSourceNodePreviewActions({
       saveNodeConfig,
       setConfig,
       setModalError,
-      setPreviewInfo,
       setSelectedSheetName,
       setUploadedDatasourceId,
       uploadedDatasourceId,
@@ -278,19 +283,17 @@ export function useSourceNodePreviewActions({
   );
 
   const onPreviewRowLimitChange = useCallback(
-    async (limit?: number) => {
-      if (uploadedDatasourceId) {
-        await fetchSourcePreview(uploadedDatasourceId, limit);
-      }
+    (limit: number) => {
+      setPreviewRowLimit(limit);
     },
-    [fetchSourcePreview, uploadedDatasourceId]
+    [setPreviewRowLimit]
   );
 
   return {
     fetchSourcePreview,
     onSaveNodeConfig,
     onFileChange,
-    onPreviewRowLimitChange,
     onSheetNameChange,
+    onPreviewRowLimitChange,
   };
 }

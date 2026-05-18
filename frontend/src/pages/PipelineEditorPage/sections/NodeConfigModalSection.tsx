@@ -6,47 +6,31 @@ import { usePipelineEditorMutations } from '../hooks/usePipelineEditorMutations'
 
 type NodeConfigModalSectionProps = {
   pipelineId: string;
+  editingNodeId: string | null;
+  onClose: () => void;
 };
 
-export function NodeConfigModalSection({ pipelineId }: NodeConfigModalSectionProps) {
+export function NodeConfigModalSection({
+  pipelineId,
+  editingNodeId,
+  onClose,
+}: NodeConfigModalSectionProps) {
   const { pipelineQuery, runQuery } = usePipelineEditorQueries(pipelineId);
   const { saveNodeConfig } = usePipelineEditorMutations({ pipelineId });
 
   const {
     editingNode,
-    nodeKind,
-    hasIncomingData,
-    config,
-    modalError,
-    inputPreview,
-    leftInputPreview,
-    rightInputPreview,
-    resultPreview,
-    isPreviewLoading,
-    activePreviewTab,
-    previewInfo,
-    availableColumns,
-    availableColumnsByPort,
-    inputNodeLabelsByPort,
-    selectedFile,
-    selectedFileName,
-    selectedSheetName,
-    excelSheetNames,
-    previewRowLimit,
-    onApplyPreview,
-    onSaveNodeConfig,
-    onPreviewRowLimitChange,
-    onSheetNameChange,
+    modalState,
+    previewState,
+    modalActions,
+    previewActions,
+    previewCallbacks,
     openNodeModal,
-    closeModal,
-    setConfig,
-    setActivePreviewTab,
-    setSelectedSheetName,
-    setExcelSheetNames,
-    setPreviewRowLimit,
-    onSourceFileChange,
+    onSheetNameChange,
   } = useNodeConfigModalState({
     pipelineId,
+    editingNodeId,
+    onClose,
     nodes: pipelineQuery.data?.nodes,
     edges: pipelineQuery.data?.edges,
     nodeRuns: runQuery.data?.node_runs,
@@ -56,18 +40,18 @@ export function NodeConfigModalSection({ pipelineId }: NodeConfigModalSectionPro
   const initializedNodeIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!editingNode) {
+    if (!editingNodeId) {
       initializedNodeIdRef.current = null;
       return;
     }
 
-    if (initializedNodeIdRef.current === editingNode.id) {
+    if (initializedNodeIdRef.current === editingNodeId) {
       return;
     }
 
-    initializedNodeIdRef.current = editingNode.id;
-    void openNodeModal(editingNode.id);
-  }, [editingNode?.id, openNodeModal, editingNode]);
+    initializedNodeIdRef.current = editingNodeId;
+    void openNodeModal(editingNodeId);
+  }, [editingNodeId, openNodeModal]);
 
   if (!editingNode) {
     return null;
@@ -75,51 +59,12 @@ export function NodeConfigModalSection({ pipelineId }: NodeConfigModalSectionPro
 
   return (
     <NodeConfigModal
-      modalState={{
-        node: editingNode,
-        nodeKind,
-        hasIncomingData,
-        config,
-        selectedFile,
-        selectedFileName,
-        selectedSheetName,
-        excelSheetNames,
-        previewRowLimit,
-        availableColumns,
-        availableColumnsByPort,
-        inputNodeLabelsByPort,
-        previewInfo,
-        modalError,
-      }}
-      previewState={{
-        inputPreview,
-        leftInputPreview,
-        rightInputPreview,
-        resultPreview,
-        isPreviewLoading,
-        activePreviewTab,
-      }}
-      modalActions={{
-        onClose: closeModal,
-        onConfigChange: setConfig,
-        onFileChange: onSourceFileChange,
-        onSaveConfig: () => {
-          void onSaveNodeConfig();
-        },
-      }}
-      previewActions={{
-        onActivePreviewTabChange: setActivePreviewTab,
-        onApplyPreview: () => {
-          void onApplyPreview();
-        },
-      }}
-      previewCallbacks={{
-        onSetExcelSheetNames: setExcelSheetNames,
-        onSetSelectedSheetName: setSelectedSheetName,
-        onSetPreviewRowLimit: setPreviewRowLimit,
-      }}
+      modalState={modalState}
+      previewState={previewState}
+      modalActions={modalActions}
+      previewActions={previewActions}
+      previewCallbacks={previewCallbacks}
       onSheetNameChange={onSheetNameChange}
-      onPreviewRowLimitChange={onPreviewRowLimitChange}
     />
   );
 }

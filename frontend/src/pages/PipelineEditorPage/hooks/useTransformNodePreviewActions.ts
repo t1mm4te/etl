@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import {
   getDatasourceDetail,
   getPipelineRun,
@@ -15,11 +15,9 @@ import type {
   PreviewResponse,
 } from '../../../api/types';
 import { extractError } from '../../../lib/extractError';
-import { useNodeConfigModalActions } from '../../../store/nodeConfigModalStore';
 import { usePipelineEditorStore } from '../../../store/pipelineEditorStore';
-import type { NodeKind } from './useNodeConfigState';
 import { buildNextNodeConfig } from './nodePreviewUtils';
-import { getNodeKind } from './useNodeConfigState';
+import type { NodeKind } from './useNodeConfigModalState';
 
 type UseTransformNodePreviewActionsParams = {
   pipelineId: string;
@@ -30,13 +28,30 @@ type UseTransformNodePreviewActionsParams = {
   nodeKind: NodeKind;
   config: NodeConfig;
   uploadedDatasourceId: string;
+  setPreviewRowLimit: (value: number) => void;
   previewRowLimit: number;
   saveNodeConfig: (
     nodeId: string,
     config: NodeConfig,
     options?: { label?: string }
   ) => Promise<void>;
+  setInputPreview: (value: PreviewResponse | null) => void;
+  setLeftInputPreview: (value: PreviewResponse | null) => void;
+  setRightInputPreview: (value: PreviewResponse | null) => void;
+  setResultPreview: (value: PreviewResponse | null) => void;
+  setIsPreviewLoading: (value: boolean) => void;
+  setModalError: (value?: string) => void;
 };
+
+function getNodeKind(operationType: string): NodeKind {
+  if (operationType === 'source_file' || operationType === 'source_db') {
+    return 'source';
+  }
+  if (operationType === 'export_file') {
+    return 'sink';
+  }
+  return 'transform';
+}
 
 export function useTransformNodePreviewActions({
   pipelineId,
@@ -47,20 +62,17 @@ export function useTransformNodePreviewActions({
   nodeKind,
   config,
   uploadedDatasourceId,
+  setPreviewRowLimit,
   previewRowLimit,
   saveNodeConfig,
+  setInputPreview,
+  setLeftInputPreview,
+  setRightInputPreview,
+  setResultPreview,
+  setIsPreviewLoading,
+  setModalError,
 }: UseTransformNodePreviewActionsParams) {
   const setRunId = usePipelineEditorStore((state) => state.setRunId);
-  const {
-    setInputPreview,
-    setLeftInputPreview,
-    setRightInputPreview,
-    setResultPreview,
-    setIsPreviewLoading,
-    setActivePreviewTab,
-    setPreviewInfo,
-    setModalError,
-  } = useNodeConfigModalActions();
 
   const clearTransformPreviews = useCallback(() => {
     setInputPreview(null);
@@ -121,9 +133,8 @@ export function useTransformNodePreviewActions({
   }, [nodeRuns, pipelineId, setRunId]);
 
   const fetchNodePreviewsFromRuns = useCallback(
-    async (node: ApiNode, runsOverride?: NodeRun[], limit?: number) => {
+    async (node: ApiNode, runsOverride?: NodeRun[]) => {
       setIsPreviewLoading(true);
-      setPreviewInfo(undefined);
       setModalError(undefined);
 
       try {
@@ -142,17 +153,14 @@ export function useTransformNodePreviewActions({
               const upstreamRun = getSuccessfulNodeRun(incomingEdge.source_node, runsOverride);
 
               if (upstreamRun) {
-                preview = await previewNodeRun(upstreamRun.id, limit ?? previewRowLimit);
+                preview = await previewNodeRun(upstreamRun.id, previewRowLimit);
               } else {
                 const upstreamNode = nodes?.find((item) => item.id === incomingEdge.source_node);
                 const upstreamDatasourceId = upstreamNode?.config?.datasource_id;
                 if (typeof upstreamDatasourceId === 'string' && upstreamDatasourceId) {
                   const upstreamDatasource = await getDatasourceDetail(upstreamDatasourceId);
                   if (upstreamDatasource.status === 'ready') {
-                    preview = await previewDatasource(
-                      upstreamDatasourceId,
-                      limit ?? previewRowLimit
-                    );
+                    preview = await previewDatasource(upstreamDatasourceId, previewRowLimit);
                   }
                 }
               }
@@ -169,16 +177,10 @@ export function useTransformNodePreviewActions({
 
         const ownRun = getSuccessfulNodeRun(node.id, runsOverride);
         if (ownRun) {
-          const ownPreview = await previewNodeRun(ownRun.id, limit ?? previewRowLimit);
+          const ownPreview = await previewNodeRun(ownRun.id, previewRowLimit);
           setResultPreview(ownPreview);
         } else {
           setResultPreview(null);
-        }
-
-        if (node.operation_type === 'join') {
-          setActivePreviewTab('left_input');
-        } else {
-          setActivePreviewTab(getNodeKind(node.operation_type) === 'source' ? 'result' : 'input');
         }
       } catch (error) {
         clearTransformPreviews();
@@ -195,12 +197,10 @@ export function useTransformNodePreviewActions({
       getSuccessfulNodeRun,
       nodes,
       previewRowLimit,
-      setActivePreviewTab,
       setInputPreview,
       setIsPreviewLoading,
       setLeftInputPreview,
       setModalError,
-      setPreviewInfo,
       setResultPreview,
       setRightInputPreview,
     ]
@@ -227,14 +227,12 @@ export function useTransformNodePreviewActions({
     }
 
     setModalError(undefined);
-    setPreviewInfo(undefined);
     setIsPreviewLoading(true);
 
     try {
       const nextConfig = getNextConfig();
       await saveNodeConfig(editingNode.id, nextConfig);
 
-      setPreviewInfo('Конфигурация сохранена. Запускаем локальный предпросмотр для узла...');
       const startedRun = await runPipelinePreview(pipelineId, editingNode.id);
       setRunId(startedRun.id);
       const completedRun = await waitForRunCompletion(startedRun.id);
@@ -249,10 +247,7 @@ export function useTransformNodePreviewActions({
         throw new Error('Локальный запуск предпросмотра был отменен');
       }
 
-      setPreviewInfo('Локальный запуск завершен. Загружаем свежий предпросмотр...');
       await fetchNodePreviewsFromRuns(editingNode, completedRun.node_runs);
-      setActivePreviewTab('result');
-      setPreviewInfo('Предпросмотр обновлен.');
     } catch (error) {
       setModalError(extractError(error, 'Не удалось применить настройки для предпросмотра'));
       setIsPreviewLoading(false);
@@ -264,23 +259,26 @@ export function useTransformNodePreviewActions({
     nodeKind,
     pipelineId,
     saveNodeConfig,
-    setActivePreviewTab,
     setIsPreviewLoading,
     setModalError,
-    setPreviewInfo,
     setRunId,
     waitForRunCompletion,
   ]);
 
+  // Refetch previews when row limit changes
+  useEffect(() => {
+    if (!editingNode || nodeKind === 'source') {
+      return;
+    }
+
+    fetchNodePreviewsFromRuns(editingNode);
+  }, [editingNode, nodeKind, previewRowLimit, fetchNodePreviewsFromRuns]);
+
   const onPreviewRowLimitChange = useCallback(
-    async (limit?: number) => {
-      if (!editingNode) {
-        return;
-      }
-      const runsForPreview = await resolveNodeRunsForPreview();
-      await fetchNodePreviewsFromRuns(editingNode, runsForPreview ?? undefined, limit);
+    (limit: number) => {
+      setPreviewRowLimit(limit);
     },
-    [editingNode, fetchNodePreviewsFromRuns, resolveNodeRunsForPreview]
+    [setPreviewRowLimit]
   );
 
   return {

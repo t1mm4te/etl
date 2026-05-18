@@ -5,7 +5,6 @@ import { usePipelineCanvasState } from '../hooks/usePipelineCanvasState';
 import { usePipelineEditorMutations } from '../hooks/usePipelineEditorMutations';
 import { usePipelineEditorQueries } from '../hooks/usePipelineEditorQueries';
 import { usePipelineEditorStore } from '../../../store/pipelineEditorStore';
-import { useNodeConfigModalStore } from '../../../store/nodeConfigModalStore';
 import styles from '../index.module.scss';
 import 'reactflow/dist/style.css';
 
@@ -15,15 +14,18 @@ const NODE_TYPES = {
 
 type PipelineCanvasSectionProps = {
   pipelineId: string;
+  onOpenNodeConfig: (nodeId: string) => void;
 };
 
-export function PipelineCanvasSection({ pipelineId }: PipelineCanvasSectionProps) {
+export function PipelineCanvasSection({
+  pipelineId,
+  onOpenNodeConfig,
+}: PipelineCanvasSectionProps) {
   const { pipelineQuery, operationMetaByType, sortedCategories } =
     usePipelineEditorQueries(pipelineId);
   const { createEdgeMutation, patchNodePosition } = usePipelineEditorMutations({ pipelineId });
 
   const canvasError = usePipelineEditorStore((state) => state.canvasError);
-  const openNodeModalState = useNodeConfigModalStore((state) => state.openNodeModalState);
 
   const {
     canvasRef,
@@ -50,7 +52,7 @@ export function PipelineCanvasSection({ pipelineId }: PipelineCanvasSectionProps
     if (!selectedNode) {
       return;
     }
-    openNodeModalState(selectedNode);
+    onOpenNodeConfig(selectedNode.id);
   };
 
   return (

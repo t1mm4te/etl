@@ -1,5 +1,6 @@
 import styles from './index.module.scss';
 import type { OperationConfigEditorProps } from '../types';
+import { CustomSelect, type SelectOption } from '../../../../../shared/ui/CustomSelect';
 
 const FILTER_OPERATORS = [
   { value: '==', label: 'Равно' },
@@ -55,37 +56,46 @@ export function FilterRowsConfigEditor({
   const operator = getOperator(typedConfig);
   const hasValue = !OPERATORS_WITHOUT_VALUE.has(operator);
 
+  const operatorOptions = FILTER_OPERATORS.map((op) => ({
+    value: op.value,
+    label: op.label,
+  }));
+
+  const columnOptions: SelectOption[] = availableColumns.map((column) => ({
+    value: column,
+    label: column,
+  }));
+
+  const selectedOperator = operatorOptions.find((opt) => opt.value === operator);
+  const selectedColumn = columnOptions.find((opt) => opt.value === typedConfig.column);
+
   return (
     <div className={styles.root}>
       <p className={styles.title}>Фильтрация строк</p>
 
       <label className={styles.configLabel}>
         Оставить строки, у которых:
-        <input
-          list="filter-columns"
-          value={typeof typedConfig.column === 'string' ? typedConfig.column : ''}
-          placeholder="Выберите столбец для фильтрации"
-          onChange={(event) =>
+        <CustomSelect
+          options={columnOptions}
+          value={selectedColumn}
+          onChange={(option) =>
             onChange({
               ...typedConfig,
-              column: event.target.value,
+              column: !Array.isArray(option) && option?.value ? option.value : '',
             })
           }
+          placeholder="Выберите столбец для фильтрации"
+          isClearable
         />
       </label>
 
-      <datalist id="filter-columns">
-        {availableColumns.map((column) => (
-          <option key={column} value={column} />
-        ))}
-      </datalist>
-
       <label className={styles.configLabel}>
         Оператор
-        <select
-          value={operator}
-          onChange={(event) => {
-            const nextOperator = event.target.value;
+        <CustomSelect
+          options={operatorOptions}
+          value={selectedOperator}
+          onChange={(option) => {
+            const nextOperator = !Array.isArray(option) && option?.value ? option.value : '==';
             const nextConfig: Record<string, unknown> = {
               ...typedConfig,
               operator: nextOperator,
@@ -97,13 +107,8 @@ export function FilterRowsConfigEditor({
 
             onChange(nextConfig);
           }}
-        >
-          {FILTER_OPERATORS.map((item) => (
-            <option key={item.value} value={item.value}>
-              {item.label}
-            </option>
-          ))}
-        </select>
+          placeholder="Выберите оператор"
+        />
       </label>
 
       {hasValue ? (

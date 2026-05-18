@@ -1,6 +1,6 @@
-import { useState } from 'react';
 import styles from './index.module.scss';
 import type { OperationConfigEditorProps } from '../types';
+import { CustomSelect, type SelectOption } from '../../../../../shared/ui/CustomSelect';
 
 function getColumns(config: Record<string, unknown>) {
   const raw = config.columns;
@@ -14,44 +14,46 @@ function getColumns(config: Record<string, unknown>) {
     .filter((item) => item.length > 0);
 }
 
-function parseCommaSeparated(raw: string) {
-  return raw
-    .split(',')
-    .map((item) => item.trim())
-    .filter((item) => item.length > 0);
-}
-
 export function MergeColumnsConfigEditor({
   config,
   availableColumns,
   onChange,
 }: OperationConfigEditorProps) {
   const typedConfig = config as Record<string, unknown>;
-  const [columnsInput, setColumnsInput] = useState(() => getColumns(typedConfig).join(', '));
+  const selectedColumns = getColumns(typedConfig);
+
+  const columnOptions: SelectOption[] = availableColumns.map((column) => ({
+    value: column,
+    label: column,
+  }));
+
+  const selectedValues = columnOptions.filter((opt) => selectedColumns.includes(opt.value));
 
   return (
     <div className={styles.root}>
       <p className={styles.title}>Объединение столбцов</p>
 
       <label className={styles.configLabel}>
-        Столбцы для объединения (через запятую)
-        <input
-          value={columnsInput}
-          placeholder="Например: first_name, last_name"
-          onChange={(event) => {
-            const nextValue = event.target.value;
-            setColumnsInput(nextValue);
+        Столбцы для объединения
+        <CustomSelect
+          options={columnOptions}
+          value={selectedValues}
+          onChange={(options) => {
+            const cols = Array.isArray(options)
+              ? options.map((opt) => opt.value)
+              : options
+                ? [options.value]
+                : [];
             onChange({
               ...typedConfig,
-              columns: parseCommaSeparated(nextValue),
+              columns: cols,
             });
           }}
+          placeholder="Выберите столбцы для объединения"
+          isMulti
+          isClearable
         />
       </label>
-
-      {availableColumns.length > 0 ? (
-        <p className={styles.muted}>Доступные столбцы: {availableColumns.join(', ')}</p>
-      ) : null}
 
       <label className={styles.configLabel}>
         Разделитель

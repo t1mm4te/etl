@@ -1,9 +1,14 @@
 import { useState } from 'react';
 import { Button } from '../../../../../../shared/ui/Button';
+import { CustomSelect, type SelectOption } from '../../../../../../shared/ui/CustomSelect';
 import styles from './index.module.scss';
 import type { OperationConfigEditorProps } from '../types';
 
 const TYPE_OPTIONS = ['int64', 'float64', 'str', 'bool', 'datetime64[ns]', 'category'] as const;
+const TYPE_SELECT_OPTIONS: SelectOption[] = TYPE_OPTIONS.map((dtype) => ({
+  value: dtype,
+  label: dtype,
+}));
 
 type MappingRow = {
   column: string;
@@ -42,6 +47,10 @@ export function CastTypesConfigEditor({
 }: OperationConfigEditorProps) {
   const typedConfig = config as Record<string, unknown>;
   const [rows, setRows] = useState<MappingRow[]>(() => rowsFromConfig(typedConfig));
+  const columnOptions: SelectOption[] = availableColumns.map((column) => ({
+    value: column,
+    label: column,
+  }));
 
   const updateRows = (nextRows: MappingRow[]) => {
     setRows(nextRows);
@@ -72,34 +81,40 @@ export function CastTypesConfigEditor({
         <div className={styles.row} key={`cast-types-${index}`}>
           <label className={styles.configLabel}>
             Столбец
-            <input
-              list="cast-types-columns"
-              value={row.column}
+            <CustomSelect
+              options={columnOptions}
+              value={
+                columnOptions.find((option) => option.value === row.column) ??
+                (row.column ? { value: row.column, label: row.column } : null)
+              }
               placeholder="Выберите столбец"
-              onChange={(event) => {
+              onChange={(option) => {
+                const selectedOption = option as SelectOption | null;
                 const nextRows = [...rows];
-                nextRows[index] = { ...row, column: event.target.value };
+                nextRows[index] = { ...row, column: selectedOption?.value ?? '' };
                 updateRows(nextRows);
               }}
+              isClearable
             />
           </label>
 
           <label className={styles.configLabel}>
             Новый тип
-            <select
-              value={row.dtype}
-              onChange={(event) => {
+            <CustomSelect
+              options={TYPE_SELECT_OPTIONS}
+              value={
+                TYPE_SELECT_OPTIONS.find((option) => option.value === row.dtype) ??
+                TYPE_SELECT_OPTIONS[2]
+              }
+              onChange={(option) => {
+                const selectedOption = option as SelectOption | null;
                 const nextRows = [...rows];
-                nextRows[index] = { ...row, dtype: event.target.value };
+                nextRows[index] = { ...row, dtype: selectedOption?.value ?? 'str' };
                 updateRows(nextRows);
               }}
-            >
-              {TYPE_OPTIONS.map((dtype) => (
-                <option key={dtype} value={dtype}>
-                  {dtype}
-                </option>
-              ))}
-            </select>
+              isSearchable={false}
+              isClearable={false}
+            />
           </label>
 
           <Button type="button" color="white" onClick={() => removeRow(index)}>
@@ -107,12 +122,6 @@ export function CastTypesConfigEditor({
           </Button>
         </div>
       ))}
-
-      <datalist id="cast-types-columns">
-        {availableColumns.map((column) => (
-          <option key={column} value={column} />
-        ))}
-      </datalist>
 
       <Button type="button" color="white" onClick={addRow}>
         Добавить преобразование

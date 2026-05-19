@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import styles from './index.module.scss';
 import type { OperationConfigEditorProps } from '../types';
+import { CustomSelect, type SelectOption } from '../../../../../../shared/ui/CustomSelect';
+import { Input } from '../../../../../../shared/ui/Input';
 
 const STRATEGY_OPTIONS = [
   { value: 'value', label: 'Заменить значением' },
@@ -56,6 +58,10 @@ export function FillMissingConfigEditor({
   const strategy = typeof typedConfig.strategy === 'string' ? typedConfig.strategy : 'drop';
   const selectedColumns = useMemo(() => getSelectedColumns(typedConfig), [typedConfig]);
   const selectedSet = new Set(selectedColumns);
+  const strategyOptions: SelectOption[] = STRATEGY_OPTIONS.map((item) => ({
+    value: item.value,
+    label: item.label,
+  }));
   const [fillValueInput, setFillValueInput] = useState(
     typeof typedConfig.fill_value === 'string'
       ? typedConfig.fill_value
@@ -78,10 +84,12 @@ export function FillMissingConfigEditor({
 
       <label className={styles.configLabel}>
         Стратегия
-        <select
-          value={strategy}
-          onChange={(event) => {
-            const nextStrategy = event.target.value;
+        <CustomSelect
+          options={strategyOptions}
+          value={strategyOptions.find((item) => item.value === strategy) ?? strategyOptions[6]}
+          onChange={(option) => {
+            const selectedOption = option as SelectOption | null;
+            const nextStrategy = selectedOption?.value ?? 'drop';
             const nextConfig: Record<string, unknown> = {
               ...typedConfig,
               strategy: nextStrategy,
@@ -93,19 +101,15 @@ export function FillMissingConfigEditor({
 
             onChange(nextConfig);
           }}
-        >
-          {STRATEGY_OPTIONS.map((item) => (
-            <option key={item.value} value={item.value}>
-              {item.label}
-            </option>
-          ))}
-        </select>
+          isSearchable={false}
+          isClearable={false}
+        />
       </label>
 
       {strategy === VALUE_BASED_STRATEGY ? (
         <label className={styles.configLabel}>
           Значение заполнения
-          <input
+          <Input
             value={fillValueInput}
             placeholder="Например: 0"
             onChange={(event) => {

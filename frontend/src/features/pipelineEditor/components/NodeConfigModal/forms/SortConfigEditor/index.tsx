@@ -1,6 +1,7 @@
 import { Button } from '../../../../../../shared/ui/Button';
 import styles from './index.module.scss';
 import type { OperationConfigEditorProps } from '../types';
+import { CustomSelect, type SelectOption } from '../../../../../../shared/ui/CustomSelect';
 
 function getSortBy(config: Record<string, unknown>) {
   const raw = config.by;
@@ -33,6 +34,10 @@ export function SortConfigEditor({
   const typedConfig = config as Record<string, unknown>;
   const by = getSortBy(typedConfig);
   const ascending = getSortAscending(typedConfig, by.length);
+  const columnOptions: SelectOption[] = availableColumns.map((column) => ({
+    value: column,
+    label: column,
+  }));
 
   const updateRows = (nextBy: string[], nextAscending: boolean[]) => {
     const nextConfig: Record<string, unknown> = {
@@ -65,31 +70,44 @@ export function SortConfigEditor({
         <div className={styles.row} key={`sort-${index}`}>
           <label className={styles.configLabel}>
             Столбец
-            <input
-              list="sort-columns"
-              value={column}
+            <CustomSelect
+              options={columnOptions}
+              value={
+                columnOptions.find((option) => option.value === column) ??
+                (column ? { value: column, label: column } : null)
+              }
               placeholder="Выберите столбец для сортировки"
-              onChange={(event) => {
+              onChange={(option) => {
+                const selectedOption = option as SelectOption | null;
                 const nextBy = [...by];
-                nextBy[index] = event.target.value;
+                nextBy[index] = selectedOption?.value ?? '';
                 updateRows(nextBy, ascending);
               }}
+              isClearable
             />
           </label>
 
           <label className={styles.configLabel}>
             Порядок
-            <select
-              value={ascending[index] ? 'asc' : 'desc'}
-              onChange={(event) => {
+            <CustomSelect
+              options={[
+                { value: 'asc', label: 'По возрастанию' },
+                { value: 'desc', label: 'По убыванию' },
+              ]}
+              value={
+                ascending[index]
+                  ? { value: 'asc', label: 'По возрастанию' }
+                  : { value: 'desc', label: 'По убыванию' }
+              }
+              onChange={(option) => {
+                const selectedOption = option as SelectOption | null;
                 const nextAscending = [...ascending];
-                nextAscending[index] = event.target.value === 'asc';
+                nextAscending[index] = selectedOption?.value === 'asc';
                 updateRows(by, nextAscending);
               }}
-            >
-              <option value="asc">По возрастанию</option>
-              <option value="desc">По убыванию</option>
-            </select>
+              isSearchable={false}
+              isClearable={false}
+            />
           </label>
 
           <Button type="button" color="white" onClick={() => removeRow(index)}>
@@ -97,12 +115,6 @@ export function SortConfigEditor({
           </Button>
         </div>
       ))}
-
-      <datalist id="sort-columns">
-        {availableColumns.map((column) => (
-          <option key={column} value={column} />
-        ))}
-      </datalist>
 
       <Button type="button" color="white" onClick={addRow}>
         Добавить правило сортировки

@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Button } from '../../../../../../shared/ui/Button';
 import styles from './index.module.scss';
 import type { OperationConfigEditorProps } from '../types';
+import { CustomSelect, type SelectOption } from '../../../../../../shared/ui/CustomSelect';
+import { Input } from '../../../../../../shared/ui/Input';
 
 type RenameRow = {
   source: string;
@@ -40,6 +42,10 @@ export function RenameColumnsConfigEditor({
 }: OperationConfigEditorProps) {
   const typedConfig = config as Record<string, unknown>;
   const [rows, setRows] = useState<RenameRow[]>(() => rowsFromConfig(typedConfig));
+  const sourceOptions: SelectOption[] = availableColumns.map((column) => ({
+    value: column,
+    label: column,
+  }));
 
   const updateRows = (nextRows: RenameRow[]) => {
     setRows(nextRows);
@@ -71,21 +77,26 @@ export function RenameColumnsConfigEditor({
         <div className={styles.row} key={`rename-${index}`}>
           <label className={styles.configLabel}>
             Исходное имя
-            <input
-              list="rename-columns-source"
-              value={row.source}
-              placeholder="Например: old_name"
-              onChange={(event) => {
+            <CustomSelect
+              options={sourceOptions}
+              value={
+                sourceOptions.find((option) => option.value === row.source) ??
+                (row.source ? { value: row.source, label: row.source } : null)
+              }
+              placeholder="Выберите столбец"
+              onChange={(option) => {
+                const selectedOption = option as SelectOption | null;
                 const nextRows = [...rows];
-                nextRows[index] = { ...row, source: event.target.value };
+                nextRows[index] = { ...row, source: selectedOption?.value ?? '' };
                 updateRows(nextRows);
               }}
+              isClearable
             />
           </label>
 
           <label className={styles.configLabel}>
             Новое имя
-            <input
+            <Input
               value={row.target}
               placeholder="Например: full_name"
               onChange={(event) => {
@@ -101,12 +112,6 @@ export function RenameColumnsConfigEditor({
           </Button>
         </div>
       ))}
-
-      <datalist id="rename-columns-source">
-        {availableColumns.map((column) => (
-          <option key={column} value={column} />
-        ))}
-      </datalist>
 
       <Button type="button" color="white" onClick={addRow}>
         Добавить переименование

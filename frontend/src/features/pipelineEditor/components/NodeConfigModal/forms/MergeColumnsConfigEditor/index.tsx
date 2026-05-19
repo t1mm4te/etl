@@ -1,6 +1,7 @@
 import styles from './index.module.scss';
 import type { OperationConfigEditorProps } from '../types';
 import { CustomSelect, type SelectOption } from '../../../../../../shared/ui/CustomSelect';
+import { Input } from '../../../../../../shared/ui/Input';
 
 function getColumns(config: Record<string, unknown>) {
   const raw = config.columns;
@@ -68,7 +69,7 @@ export function MergeColumnsConfigEditor({
 
       <label className={styles.configLabel}>
         Разделитель
-        <input
+        <Input
           value={typeof typedConfig.separator === 'string' ? typedConfig.separator : ' '}
           placeholder="Пробел"
           onChange={(event) =>
@@ -82,7 +83,7 @@ export function MergeColumnsConfigEditor({
 
       <label className={styles.configLabel}>
         Имя нового столбца
-        <input
+        <Input
           value={typeof typedConfig.new_column === 'string' ? typedConfig.new_column : ''}
           placeholder="Например: full_name"
           onChange={(event) =>

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import styles from './index.module.scss';
 import type { OperationConfigEditorProps } from '../types';
+import { CustomSelect, type SelectOption } from '../../../../../../shared/ui/CustomSelect';
+import { Input } from '../../../../../../shared/ui/Input';
 
 function getNewColumns(config: Record<string, unknown>) {
   const raw = config.new_columns;
@@ -30,6 +32,10 @@ export function SplitColumnConfigEditor({
   const [newColumnsInput, setNewColumnsInput] = useState(() =>
     getNewColumns(typedConfig).join(', ')
   );
+  const columnOptions: SelectOption[] = availableColumns.map((column) => ({
+    value: column,
+    label: column,
+  }));
 
   return (
     <div className={styles.root}>
@@ -37,28 +43,29 @@ export function SplitColumnConfigEditor({
 
       <label className={styles.configLabel}>
         Столбец
-        <input
-          list="split-column-name"
-          value={typeof typedConfig.column === 'string' ? typedConfig.column : ''}
+        <CustomSelect
+          options={columnOptions}
+          value={
+            columnOptions.find((option) => option.value === typedConfig.column) ??
+            (typedConfig.column
+              ? { value: typedConfig.column as string, label: typedConfig.column as string }
+              : null)
+          }
           placeholder="Выберете столбец для разделения"
-          onChange={(event) =>
+          onChange={(option) => {
+            const selectedOption = option as SelectOption | null;
             onChange({
               ...typedConfig,
-              column: event.target.value,
-            })
-          }
+              column: selectedOption?.value ?? '',
+            });
+          }}
+          isClearable
         />
       </label>
 
-      <datalist id="split-column-name">
-        {availableColumns.map((column) => (
-          <option key={column} value={column} />
-        ))}
-      </datalist>
-
       <label className={styles.configLabel}>
         Разделитель
-        <input
+        <Input
           value={typeof typedConfig.separator === 'string' ? typedConfig.separator : ','}
           placeholder=","
           onChange={(event) =>
@@ -72,7 +79,7 @@ export function SplitColumnConfigEditor({
 
       <label className={styles.configLabel}>
         Имена новых столбцов (через запятую)
-        <input
+        <Input
           value={newColumnsInput}
           placeholder="Например: first_name, last_name"
           onChange={(event) => {
@@ -93,10 +100,6 @@ export function SplitColumnConfigEditor({
           }}
         />
       </label>
-
-      {availableColumns.length > 0 ? (
-        <p className={styles.muted}>Входные столбцы: {availableColumns.join(', ')}</p>
-      ) : null}
 
       <p className={styles.muted}>
         Если не указать новые имена, бэкенд сгенерирует их автоматически.

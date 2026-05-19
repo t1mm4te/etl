@@ -13,10 +13,9 @@
 }
 
 .row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
-  align-items: end;
 
   @media (max-width: 760px) {
     grid-template-columns: 1fr;

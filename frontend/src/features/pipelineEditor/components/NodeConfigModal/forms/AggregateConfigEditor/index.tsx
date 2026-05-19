@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Button } from '../../../../../../shared/ui/Button';
+import { CustomSelect, type SelectOption } from '../../../../../../shared/ui/CustomSelect';
 import styles from './index.module.scss';
 import type { OperationConfigEditorProps } from '../types';
 
@@ -15,6 +16,11 @@ const AGGREGATION_FUNCTIONS = [
   'std',
   'var',
 ] as const;
+
+const AGGREGATION_FUNCTION_OPTIONS: SelectOption[] = AGGREGATION_FUNCTIONS.map((fn) => ({
+  value: fn,
+  label: fn,
+}));
 
 type AggregationRow = {
   column: string;
@@ -58,27 +64,27 @@ function aggregationsFromRows(rows: AggregationRow[]) {
   }, {});
 }
 
-function parseCommaSeparated(raw: string) {
-  return raw
-    .split(',')
-    .map((item) => item.trim())
-    .filter((item) => item.length > 0);
-}
-
 export function AggregateConfigEditor({
   config,
   availableColumns,
   onChange,
 }: OperationConfigEditorProps) {
   const typedConfig = config as Record<string, unknown>;
-  const [groupByInput, setGroupByInput] = useState(() => getGroupBy(typedConfig).join(', '));
+  const groupBy = getGroupBy(typedConfig);
   const [rows, setRows] = useState<AggregationRow[]>(() => rowsFromConfig(typedConfig));
+  const columnOptions: SelectOption[] = availableColumns.map((column) => ({
+    value: column,
+    label: column,
+  }));
+  const selectedGroupByOptions: SelectOption[] = groupBy
+    .map((col) => columnOptions.find((opt) => opt.value === col))
+    .filter((opt): opt is SelectOption => Boolean(opt));
 
   const updateRows = (nextRows: AggregationRow[]) => {
     setRows(nextRows);
     onChange({
       ...typedConfig,
-      group_by: parseCommaSeparated(groupByInput),
+      group_by: groupBy,
       aggregations: aggregationsFromRows(nextRows),
     });
   };
@@ -101,19 +107,23 @@ export function AggregateConfigEditor({
       <p className={styles.title}>Группировка и агрегация</p>
 
       <label className={styles.configLabel}>
-        Столбцы группировки (через запятую)
-        <input
-          value={groupByInput}
-          placeholder="Например: city, category"
-          onChange={(event) => {
-            const nextValue = event.target.value;
-            setGroupByInput(nextValue);
+        Столбцы группировки
+        <CustomSelect
+          options={columnOptions}
+          value={selectedGroupByOptions}
+          onChange={(options) => {
+            const selected = Array.isArray(options) ? options : options ? [options] : [];
+            const selectedCols = (selected as SelectOption[]).map((opt) => opt.value);
             onChange({
               ...typedConfig,
-              group_by: parseCommaSeparated(nextValue),
+              group_by: selectedCols,
               aggregations: aggregationsFromRows(rows),
             });
           }}
+          placeholder="Выберите столбцы группировки"
+          isMulti
+          isClearable
+          isSearchable
         />
       </label>
 
@@ -121,34 +131,40 @@ export function AggregateConfigEditor({
         <div className={styles.row} key={`aggregate-${index}`}>
           <label className={styles.configLabel}>
             Столбец
-            <input
-              list="aggregate-columns"
-              value={row.column}
+            <CustomSelect
+              options={columnOptions}
+              value={
+                columnOptions.find((option) => option.value === row.column) ??
+                (row.column ? { value: row.column, label: row.column } : null)
+              }
               placeholder="Например: amount"
-              onChange={(event) => {
+              onChange={(option) => {
+                const selectedOption = option as SelectOption | null;
                 const nextRows = [...rows];
-                nextRows[index] = { ...row, column: event.target.value };
+                nextRows[index] = { ...row, column: selectedOption?.value ?? '' };
                 updateRows(nextRows);
               }}
+              isClearable
             />
           </label>
 
           <label className={styles.configLabel}>
             Функция
-            <select
-              value={row.fn}
-              onChange={(event) => {
+            <CustomSelect
+              options={AGGREGATION_FUNCTION_OPTIONS}
+              value={
+                AGGREGATION_FUNCTION_OPTIONS.find((option) => option.value === row.fn) ??
+                AGGREGATION_FUNCTION_OPTIONS[0]
+              }
+              onChange={(option) => {
+                const selectedOption = option as SelectOption | null;
                 const nextRows = [...rows];
-                nextRows[index] = { ...row, fn: event.target.value };
+                nextRows[index] = { ...row, fn: selectedOption?.value ?? 'sum' };
                 updateRows(nextRows);
               }}
-            >
-              {AGGREGATION_FUNCTIONS.map((fn) => (
-                <option key={fn} value={fn}>
-                  {fn}
-                </option>
-              ))}
-            </select>
+              isSearchable={false}
+              isClearable={false}
+            />
           </label>
 
           <Button type="button" color="white" onClick={() => removeRow(index)}>
@@ -157,19 +173,9 @@ export function AggregateConfigEditor({
         </div>
       ))}
 
-      <datalist id="aggregate-columns">
-        {availableColumns.map((column) => (
-          <option key={column} value={column} />
-        ))}
-      </datalist>
-
       <Button type="button" color="white" onClick={addRow}>
         Добавить агрегацию
       </Button>
-
-      {availableColumns.length > 0 ? (
-        <p className={styles.muted}>Входные столбцы: {availableColumns.join(', ')}</p>
-      ) : null}
     </div>
   );
 }

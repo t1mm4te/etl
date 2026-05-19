@@ -27,19 +27,40 @@
 
 .checkboxList {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid $borderColor;
+  border-radius: $borderRadiusSmall;
+  padding: 10px;
+  background: $darkGrayLighter;
 }
 
 .checkboxItem {
   color: $labelColor;
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  width: 100%;
+  line-height: 1.3;
+
+  &:hover {
+    color: $white;
+  }
 }
 
 .checkboxInput {
+  flex: 0 0 auto;
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  max-width: 16px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 4px;
   accent-color: $primaryColor;
+  align-self: center;
 }
 
 .muted {

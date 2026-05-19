@@ -45,20 +45,4 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-
-  .select {
-    background: $darkGrayLighter;
-    border: 1px solid $borderColor;
-    border-radius: $borderRadiusSmall;
-    color: $white;
-    padding: 8px;
-    width: 100%;
-    cursor: pointer;
-    font-size: 14px;
-
-    option {
-      background: $darkGray;
-      color: $white;
-    }
-  }
 }

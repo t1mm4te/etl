@@ -1,5 +1,6 @@
 import styles from './index.module.scss';
 import type { OperationConfigEditorProps } from '../types';
+import { Input } from '../../../../../../shared/ui/Input';
 
 export function ComputedColumnConfigEditor({
   config,
@@ -14,7 +15,7 @@ export function ComputedColumnConfigEditor({
 
       <label className={styles.configLabel}>
         Имя нового столбца
-        <input
+        <Input
           value={typeof typedConfig.new_column === 'string' ? typedConfig.new_column : ''}
           placeholder="Например: total"
           onChange={(event) =>
@@ -28,7 +29,7 @@ export function ComputedColumnConfigEditor({
 
       <label className={styles.configLabel}>
         Выражение
-        <input
+        <Input
           value={typeof typedConfig.expression === 'string' ? typedConfig.expression : ''}
           placeholder="Например: price * quantity"
           onChange={(event) =>

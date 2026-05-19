@@ -1,5 +1,7 @@
 import styles from './index.module.scss';
 import type { OperationConfigEditorProps } from '../types';
+import { CustomSelect, type SelectOption } from '../../../../../../shared/ui/CustomSelect';
+import { Input } from '../../../../../../shared/ui/Input';
 
 const KEEP_OPTIONS = [
   { value: 'all', label: 'Оставить все строки' },
@@ -54,93 +56,108 @@ export function JoinConfigEditor({
     inputNodeLabelsByPort?.left ?? inputNodeLabelsByPort?.main ?? 'предыдущего узла';
   const fromRightLabel = inputNodeLabelsByPort?.right ?? 'второго узла';
 
+  const keepOptions: SelectOption[] = [
+    { value: 'all', label: 'Оставить все строки' },
+    { value: 'matching', label: 'Оставить только совпавшие строки' },
+  ];
+
+  const leftColumnOptions: SelectOption[] = leftColumns.map((column) => ({
+    value: column,
+    label: column,
+  }));
+
+  const rightColumnOptions: SelectOption[] = rightColumns.map((column) => ({
+    value: column,
+    label: column,
+  }));
+
   return (
     <div className={styles.root}>
       <p className={styles.title}>Сопоставление двух таблиц</p>
 
       <label className={styles.configLabel}>
         Из «{fromLeftLabel}»
-        <select
-          value={leftKeep}
-          onChange={(event) =>
+        <CustomSelect
+          options={keepOptions}
+          value={keepOptions.find((item) => item.value === leftKeep)}
+          onChange={(option) => {
+            const selectedOption = option as SelectOption | null;
             onChange({
               ...typedConfig,
-              how: getHowFromKeepRules(event.target.value, rightKeep),
-            })
-          }
-        >
-          {KEEP_OPTIONS.map((item) => (
-            <option key={item.value} value={item.value}>
-              {item.label}
-            </option>
-          ))}
-        </select>
+              how: getHowFromKeepRules(selectedOption?.value ?? 'matching', rightKeep),
+            });
+          }}
+          isSearchable={false}
+          isClearable={false}
+        />
       </label>
 
       <label className={styles.configLabel}>
         Из «{fromRightLabel}»
-        <select
-          value={rightKeep}
-          onChange={(event) =>
+        <CustomSelect
+          options={keepOptions}
+          value={keepOptions.find((item) => item.value === rightKeep)}
+          onChange={(option) => {
+            const selectedOption = option as SelectOption | null;
             onChange({
               ...typedConfig,
-              how: getHowFromKeepRules(leftKeep, event.target.value),
-            })
-          }
-        >
-          {KEEP_OPTIONS.map((item) => (
-            <option key={item.value} value={item.value}>
-              {item.label}
-            </option>
-          ))}
-        </select>
+              how: getHowFromKeepRules(leftKeep, selectedOption?.value ?? 'matching'),
+            });
+          }}
+          isSearchable={false}
+          isClearable={false}
+        />
       </label>
 
       <p className={styles.muted}>Где совпадают значения в столбцах:</p>
 
       <label className={styles.configLabel}>
         Ключ из первой таблицы
-        <input
-          list="join-left-columns"
-          value={typeof typedConfig.left_on === 'string' ? typedConfig.left_on : ''}
+        <CustomSelect
+          options={leftColumnOptions}
+          value={
+            leftColumnOptions.find((option) => option.value === typedConfig.left_on) ??
+            (typedConfig.left_on
+              ? { value: typedConfig.left_on as string, label: typedConfig.left_on as string }
+              : null)
+          }
           placeholder="Выберите столбец"
-          onChange={(event) =>
+          onChange={(option) => {
+            const selectedOption = option as SelectOption | null;
             onChange({
               ...typedConfig,
-              left_on: event.target.value,
-            })
-          }
+              left_on: selectedOption?.value ?? '',
+            });
+          }}
+          isClearable
         />
       </label>
 
       <label className={styles.configLabel}>
         Ключ из второй таблицы
-        <input
-          list="join-right-columns"
-          value={typeof typedConfig.right_on === 'string' ? typedConfig.right_on : ''}
+        <CustomSelect
+          options={rightColumnOptions}
+          value={
+            rightColumnOptions.find((option) => option.value === typedConfig.right_on) ??
+            (typedConfig.right_on
+              ? { value: typedConfig.right_on as string, label: typedConfig.right_on as string }
+              : null)
+          }
           placeholder="Выберите столбец"
-          onChange={(event) =>
+          onChange={(option) => {
+            const selectedOption = option as SelectOption | null;
             onChange({
               ...typedConfig,
-              right_on: event.target.value,
-            })
-          }
+              right_on: selectedOption?.value ?? '',
+            });
+          }}
+          isClearable
         />
       </label>
 
-      <datalist id="join-left-columns">
-        {leftColumns.map((column) => (
-          <option key={`left-${column}`} value={column} />
-        ))}
-      </datalist>
-
-      <datalist id="join-right-columns">
-        {rightColumns.map((column) => (
-          <option key={`right-${column}`} value={column} />
-        ))}
-      </datalist>
-
-      <p className={styles.muted}>Если столбца нет в подсказке, можно ввести его вручную.</p>
+      <p className={styles.muted}>
+        Если столбца нет в подсказке, можно ввести его в CustomSelect выше.
+      </p>
     </div>
   );
 }

@@ -1,5 +1,12 @@
 import styles from './index.module.scss';
 import type { OperationConfigEditorProps } from '../types';
+import { CustomSelect, type SelectOption } from '../../../../../../shared/ui/CustomSelect';
+
+const KEEP_OPTIONS: SelectOption[] = [
+  { value: 'first', label: 'Первая строка в группе' },
+  { value: 'last', label: 'Последняя строка в группе' },
+  { value: 'none', label: 'Не оставлять дубликаты' },
+];
 
 function getSubset(config: Record<string, unknown>) {
   const raw = config.subset;
@@ -57,20 +64,20 @@ export function DeduplicateConfigEditor({
 
       <label className={styles.configLabel}>
         Какие строки оставлять
-        <select
-          value={keep === false ? 'none' : keep}
-          onChange={(event) => {
-            const value = event.target.value;
+        <CustomSelect
+          options={KEEP_OPTIONS}
+          value={KEEP_OPTIONS.find((item) => item.value === (keep === false ? 'none' : keep))}
+          onChange={(option) => {
+            const selectedOption = option as SelectOption | null;
+            const value = selectedOption?.value ?? 'first';
             onChange({
               ...typedConfig,
               keep: value === 'none' ? false : value,
             });
           }}
-        >
-          <option value="first">Первая строка в группе</option>
-          <option value="last">Последняя строка в группе</option>
-          <option value="none">Не оставлять дубликаты</option>
-        </select>
+          isSearchable={false}
+          isClearable={false}
+        />
       </label>
 
       {uniqueAvailableColumns.length === 0 ? (

@@ -59,6 +59,8 @@ export function useNodeConfigModalState({
   const [sourceFileId, setSourceFileId] = useState<string>('');
   const [sourceFileMetadata, setSourceFileMetadata] = useState<SourceFile | null>(null);
   const [uploadedDatasourceId, setUploadedDatasourceId] = useState<string>('');
+  const [isSourceFileUploading, setIsSourceFileUploading] = useState(false);
+  const [sourceFileUploadProgress, setSourceFileUploadProgress] = useState<number | null>(null);
   const [modalError, setModalError] = useState<string | undefined>();
 
   // Preview state
@@ -110,6 +112,8 @@ export function useNodeConfigModalState({
     setConfig,
     setSelectedFile,
     setSelectedFileName,
+    setIsSourceFileUploading,
+    setSourceFileUploadProgress,
     setSelectedSheetName,
     setExcelSheetNames,
     setUploadedDatasourceId,
@@ -165,6 +169,8 @@ export function useNodeConfigModalState({
       setSourceFileId('');
       setSourceFileMetadata(null);
       setUploadedDatasourceId('');
+      setIsSourceFileUploading(false);
+      setSourceFileUploadProgress(null);
       setModalError(undefined);
       setInputPreview(null);
       setLeftInputPreview(null);
@@ -235,6 +241,8 @@ export function useNodeConfigModalState({
       selectedFileName,
       selectedSheetName,
       excelSheetNames,
+      isSourceFileUploading,
+      sourceFileUploadProgress,
       sourceFileId,
       sourceFileMetadata,
       availableColumns,

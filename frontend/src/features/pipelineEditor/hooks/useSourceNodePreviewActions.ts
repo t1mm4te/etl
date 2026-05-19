@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from 'react';
+import type { AxiosProgressEvent } from 'axios';
 import {
   getDatasourceDetail,
   previewDatasource,
@@ -71,6 +72,8 @@ type UseSourceNodePreviewActionsParams = {
   setConfig: (value: NodeConfig) => void;
   setSelectedFile: (value: File | null) => void;
   setSelectedFileName: (value?: string) => void;
+  setIsSourceFileUploading: (value: boolean) => void;
+  setSourceFileUploadProgress: (value: number | null) => void;
   setSourceFileId?: (value: string) => void;
   setSourceFileMetadata?: (value: SourceFile | null) => void;
   setSelectedSheetName: (value?: string) => void;
@@ -101,6 +104,8 @@ export function useSourceNodePreviewActions({
   setConfig,
   setSelectedFile,
   setSelectedFileName,
+  setIsSourceFileUploading,
+  setSourceFileUploadProgress,
   setSourceFileId,
   setSourceFileMetadata,
   setSelectedSheetName,
@@ -154,7 +159,8 @@ export function useSourceNodePreviewActions({
           setResultPreview(null);
           if (datasource.status === 'error') {
             setModalError(
-              'Не удалось подготовить DataSource. Проверьте файл и попробуйте еще раз.'
+              datasource.error_message ||
+                'Не удалось подготовить DataSource. Проверьте файл и попробуйте еще раз.'
             );
           }
           return;
@@ -232,9 +238,23 @@ export function useSourceNodePreviewActions({
       setSelectedFile(file);
       setSelectedFileName(file.name);
       setModalError(undefined);
+      setIsSourceFileUploading(true);
+      setSourceFileUploadProgress(0);
+
+      const onUploadProgress = (progressEvent: AxiosProgressEvent) => {
+        if (!progressEvent.total) {
+          return;
+        }
+
+        const percent = Math.min(
+          100,
+          Math.round((progressEvent.loaded / progressEvent.total) * 100)
+        );
+        setSourceFileUploadProgress(percent);
+      };
 
       try {
-        const uploaded = await uploadSourceFile(file, file.name);
+        const uploaded = await uploadSourceFile(file, file.name, { onUploadProgress });
         const sourceFileId = uploaded.id;
         const sourceFileName = uploaded.filename || file.name;
         const sheetNames = (uploaded.sheets_metadata || []).map((sheet) => sheet.sheet_name);
@@ -257,6 +277,7 @@ export function useSourceNodePreviewActions({
         setResultPreview(null);
         setExcelSheetNames(sheetNames);
         setSelectedFileName(sourceFileName);
+        setSourceFileUploadProgress(100);
 
         await saveNodeConfig(editingNode.id, nextConfig, { label: getSourceLabel(sourceFileName) });
 
@@ -287,6 +308,9 @@ export function useSourceNodePreviewActions({
         }
       } catch (error) {
         setModalError(extractError(error, 'Не удалось загрузить файл'));
+      } finally {
+        setIsSourceFileUploading(false);
+        setSourceFileUploadProgress(null);
       }
     },
     [
@@ -304,6 +328,8 @@ export function useSourceNodePreviewActions({
       setModalError,
       setSelectedFile,
       setSelectedFileName,
+      setIsSourceFileUploading,
+      setSourceFileUploadProgress,
       setSelectedSheetName,
       setUploadedDatasourceId,
       setSourceFileId,

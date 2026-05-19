@@ -15,6 +15,8 @@ export type SourceFileConfigEditorProps = {
   sourceFileMetadata?: SourceFile | null;
   selectedSheetName?: string;
   excelSheetNames: string[];
+  isUploading?: boolean;
+  uploadProgress?: number | null;
   onFileChange: (file: File | null, sheetName?: string) => void;
   onSheetNameChange: (sheetName: string) => void;
 };

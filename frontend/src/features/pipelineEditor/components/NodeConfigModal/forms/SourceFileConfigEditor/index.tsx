@@ -10,6 +10,8 @@ export function SourceFileConfigEditor({
   sourceFileMetadata,
   selectedSheetName,
   excelSheetNames,
+  isUploading = false,
+  uploadProgress = null,
   onFileChange,
   onSheetNameChange,
 }: SourceFileConfigEditorProps) {
@@ -42,6 +44,7 @@ export function SourceFileConfigEditor({
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     multiple: false,
+    disabled: isUploading,
     accept: {
       'text/csv': ['.csv'],
       'application/vnd.ms-excel': ['.xls'],
@@ -57,12 +60,34 @@ export function SourceFileConfigEditor({
         {...getRootProps()}
         className={styles.dropzone}
         data-active={isDragActive ? 'true' : 'false'}
+        data-uploading={isUploading ? 'true' : 'false'}
       >
         <input {...getInputProps()} />
         <p className={styles.dropzoneText}>
-          {isDragActive ? 'Отпустите файл здесь' : 'Перетащите файл сюда или нажмите для выбора'}
+          {isUploading
+            ? 'Загружаем файл...'
+            : isDragActive
+              ? 'Отпустите файл здесь'
+              : 'Перетащите файл сюда или нажмите для выбора'}
         </p>
       </div>
+
+      {isUploading ? (
+        <div className={styles.progressBlock}>
+          <div className={styles.progressTrack} aria-hidden="true">
+            <div
+              className={styles.progressFill}
+              data-complete={uploadProgress === 100 ? 'true' : 'false'}
+              style={{ width: `${uploadProgress ?? 0}%` }}
+            />
+          </div>
+          <p className={styles.loading}>
+            {uploadProgress !== null && uploadProgress < 100
+              ? `Загружаем файл... ${uploadProgress}%`
+              : 'Файл передан. Ждём ответ сервера...'}
+          </p>
+        </div>
+      ) : null}
 
       {currentFileName ? <p className={styles.muted}>Выбран файл: {currentFileName}</p> : null}
 
@@ -75,6 +100,7 @@ export function SourceFileConfigEditor({
             placeholder="Выберите лист..."
             isClearable={false}
             isSearchable={false}
+            isDisabled={isUploading}
             onChange={(option) => {
               const nextSheetName = (option as SelectOption)?.value;
               if (!nextSheetName) {

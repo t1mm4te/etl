@@ -1,3 +1,4 @@
+import type { AxiosProgressEvent } from 'axios';
 import { apiClient } from './client';
 import type {
   DataSourceDetail,
@@ -150,13 +151,18 @@ export const getNodeInputColumns = async (pipelineId: string, nodeId: string) =>
 };
 
 // New API: upload source file (POST /api/files/)
-export const uploadSourceFile = async (file: File, name?: string) => {
+export const uploadSourceFile = async (
+  file: File,
+  name?: string,
+  options?: { onUploadProgress?: (progressEvent: AxiosProgressEvent) => void }
+) => {
   const formData = new FormData();
   formData.append('file', file);
   if (name) formData.append('name', name);
 
   const response = await apiClient.post<SourceFile>('/files/', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress: options?.onUploadProgress,
   });
 
   return response.data;

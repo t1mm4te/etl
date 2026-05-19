@@ -21,6 +21,8 @@ type NodeConfigModalProps = {
     selectedFileName?: string;
     selectedSheetName?: string;
     excelSheetNames: string[];
+    isSourceFileUploading: boolean;
+    sourceFileUploadProgress: number | null;
     sourceFileId?: string;
     sourceFileMetadata?: SourceFile | null;
     availableColumns: string[];
@@ -69,6 +71,8 @@ export function NodeConfigModal({
     selectedFileName,
     selectedSheetName,
     excelSheetNames,
+    isSourceFileUploading,
+    sourceFileUploadProgress,
     availableColumns,
     availableColumnsByPort,
     inputNodeLabelsByPort,
@@ -108,6 +112,8 @@ export function NodeConfigModal({
                     sourceFileMetadata={sourceFileMetadata}
                     selectedSheetName={selectedSheetName}
                     excelSheetNames={excelSheetNames}
+                    isUploading={isSourceFileUploading}
+                    uploadProgress={sourceFileUploadProgress}
                     onFileChange={onFileChange}
                     onSheetNameChange={(sheetName) => {
                       previewCallbacks?.onSetSelectedSheetName(sheetName);

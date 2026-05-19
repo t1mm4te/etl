@@ -1,0 +1,42 @@
+@use '../../../styles/_vars.scss' as *;
+
+.input {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid $borderColor;
+  border-radius: $borderRadiusSmall;
+  background-color: $darkGrayLighter;
+  color: $defaultTextColor;
+  padding: 0 12px;
+  font-size: $defaultFontSize;
+  appearance: none;
+  -webkit-appearance: none;
+  transition:
+    border-color $transitionFast,
+    background-color $transitionFast,
+    box-shadow $transitionFast;
+
+  &:hover {
+    border-color: $borderColor;
+  }
+
+  &:focus,
+  &:focus-visible {
+    outline: none;
+    border-color: $primaryColor;
+    box-shadow: inset 0 0 0 1px $primaryColor;
+  }
+
+  &::placeholder {
+    color: $labelColor;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+}
+
+.invalid {
+  border-color: $dangerColor !important;
+}

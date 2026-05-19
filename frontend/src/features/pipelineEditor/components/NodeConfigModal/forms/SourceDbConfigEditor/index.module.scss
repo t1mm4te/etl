@@ -3,3 +3,63 @@
 .muted {
   color: $labelColor;
 }
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.configLabel {
+  font-weight: 600;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.fieldPassword {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+
+  :global(.label) {
+    gap: 6px;
+  }
+}
+
+.label {
+  color: $labelColor;
+  font-size: 13px;
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+
+  .field,
+  .fieldPassword {
+    flex: 1;
+  }
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.result {
+  padding: 8px 10px;
+  background: rgba(46, 175, 113, 0.06);
+  border-radius: 6px;
+}
+
+.error {
+  color: $dangerColor;
+}

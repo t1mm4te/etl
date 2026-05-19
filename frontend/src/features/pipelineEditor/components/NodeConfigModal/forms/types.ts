@@ -1,4 +1,5 @@
 import type { NodeConfig } from '../../../../../shared/api/types';
+import type { SourceFile } from '../../../../../shared/api/types';
 
 export type OperationConfigEditorProps = {
   config: NodeConfig;
@@ -11,6 +12,7 @@ export type OperationConfigEditorProps = {
 export type SourceFileConfigEditorProps = {
   selectedFile: File | null;
   selectedFileName?: string;
+  sourceFileMetadata?: SourceFile | null;
   selectedSheetName?: string;
   excelSheetNames: string[];
   onFileChange: (file: File | null, sheetName?: string) => void;

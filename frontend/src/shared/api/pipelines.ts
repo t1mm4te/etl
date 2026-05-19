@@ -16,6 +16,7 @@ import type {
   PipelineRunDetail,
   PipelineUpdatePayload,
   PreviewResponse,
+  SourceFile,
 } from './types';
 
 export const listPipelines = async () => {
@@ -145,5 +146,48 @@ export const getNodeInputColumns = async (pipelineId: string, nodeId: string) =>
   const response = await apiClient.get<NodeInputColumnsResponse>(
     `/pipelines/${pipelineId}/nodes/${nodeId}/input-columns/`
   );
+  return response.data;
+};
+
+// New API: upload source file (POST /api/files/)
+export const uploadSourceFile = async (file: File, name?: string) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  if (name) formData.append('name', name);
+
+  const response = await apiClient.post<SourceFile>('/files/', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+
+  return response.data;
+};
+
+// Create DataSource from an existing SourceFile's sheet
+export const createDatasourceFromSheet = async (sourceFileId: string, sheetName: string) => {
+  const response = await apiClient.post<DataSourceDetail>('/datasources/', {
+    source_file_id: sourceFileId,
+    sheet_name: sheetName,
+  });
+  return response.data;
+};
+
+// List source files (GET /api/files/)
+export const listSourceFiles = async (limit?: number, offset?: number) => {
+  const response = await apiClient.get<PaginatedResponse<SourceFile>>('/files/', {
+    params: { limit, offset },
+  });
+  return response.data;
+};
+
+export const getSourceFileDetail = async (fileId: string) => {
+  const response = await apiClient.get<SourceFile>(`/files/${fileId}/`);
+  return response.data;
+};
+
+// List datasources (optionally filter by source_file_id)
+export const listDatasources = async (sourceFileId?: string) => {
+  const response = await apiClient.get<PaginatedResponse<DataSourceDetail>>('/datasources/', {
+    params: sourceFileId ? { source_file_id: sourceFileId } : undefined,
+  });
   return response.data;
 };

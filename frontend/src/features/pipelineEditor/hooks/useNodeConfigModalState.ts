@@ -5,7 +5,9 @@ import type {
   NodeConfig,
   NodeRun,
   PreviewResponse,
+  SourceFile,
 } from '../../../shared/api/types';
+import { getDatasourceDetail, getSourceFileDetail } from '../../../shared/api/pipelines';
 import { useNodeColumns } from './useNodeColumns';
 import { useSourceNodePreviewActions } from './useSourceNodePreviewActions';
 import { useTransformNodePreviewActions } from './useTransformNodePreviewActions';
@@ -54,6 +56,8 @@ export function useNodeConfigModalState({
   const [selectedFileName, setSelectedFileName] = useState<string | undefined>();
   const [selectedSheetName, setSelectedSheetName] = useState<string | undefined>();
   const [excelSheetNames, setExcelSheetNames] = useState<string[]>([]);
+  const [sourceFileId, setSourceFileId] = useState<string>('');
+  const [sourceFileMetadata, setSourceFileMetadata] = useState<SourceFile | null>(null);
   const [uploadedDatasourceId, setUploadedDatasourceId] = useState<string>('');
   const [modalError, setModalError] = useState<string | undefined>();
 
@@ -94,6 +98,7 @@ export function useNodeConfigModalState({
     editingNode,
     config,
     uploadedDatasourceId,
+    sourceFileId,
     selectedSheetName,
     excelSheetNames,
     previewRowLimit,
@@ -106,6 +111,8 @@ export function useNodeConfigModalState({
     setSelectedSheetName,
     setExcelSheetNames,
     setUploadedDatasourceId,
+    setSourceFileId,
+    setSourceFileMetadata,
     setPreviewRowLimit,
     setInputPreview,
     setLeftInputPreview,
@@ -149,14 +156,51 @@ export function useNodeConfigModalState({
       }
 
       setConfig(node.config ?? {});
+      setSelectedFile(null);
+      setSelectedFileName(undefined);
+      setSelectedSheetName(undefined);
+      setExcelSheetNames([]);
+      setSourceFileId('');
+      setSourceFileMetadata(null);
+      setUploadedDatasourceId('');
+      setModalError(undefined);
+      setInputPreview(null);
+      setLeftInputPreview(null);
+      setRightInputPreview(null);
+      setResultPreview(null);
       await loadAvailableColumns(node.id);
 
       const kind = getNodeKind(node.operation_type);
       const currentDatasourceId =
         typeof node.config?.datasource_id === 'string' ? node.config.datasource_id : '';
+      const currentSourceFileId =
+        typeof node.config?.source_file_id === 'string' ? node.config.source_file_id : '';
+
+      const resolvedSourceFileId = currentSourceFileId || currentDatasourceId;
+
+      if (kind === 'source' && resolvedSourceFileId) {
+        try {
+          setSourceFileId(resolvedSourceFileId);
+          const sourceFile = await getSourceFileDetail(resolvedSourceFileId);
+          setSourceFileMetadata(sourceFile);
+          setSelectedFileName(sourceFile.filename);
+          setExcelSheetNames(sourceFile.sheets_metadata.map((sheet) => sheet.sheet_name));
+        } catch {
+          // Best effort only; a datasource preview may still be available below.
+        }
+      }
 
       if (kind === 'source' && currentDatasourceId) {
+        setUploadedDatasourceId(currentDatasourceId);
         await fetchSourcePreview(currentDatasourceId);
+        try {
+          const datasourceDetail = await getDatasourceDetail(currentDatasourceId);
+          if (datasourceDetail.sheet_name) {
+            setSelectedSheetName(datasourceDetail.sheet_name);
+          }
+        } catch {
+          // Preview already loaded above.
+        }
       }
 
       if (kind !== 'source') {
@@ -189,6 +233,8 @@ export function useNodeConfigModalState({
       selectedFileName,
       selectedSheetName,
       excelSheetNames,
+      sourceFileId,
+      sourceFileMetadata,
       availableColumns,
       availableColumnsByPort,
       inputNodeLabelsByPort,

@@ -2,16 +2,27 @@ import { useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import styles from './index.module.scss';
 import type { SourceFileConfigEditorProps } from '../types';
+import { CustomSelect, type SelectOption } from '../../../../../../shared/ui/CustomSelect';
 
 export function SourceFileConfigEditor({
   selectedFile,
   selectedFileName,
+  sourceFileMetadata,
   selectedSheetName,
   excelSheetNames,
   onFileChange,
   onSheetNameChange,
 }: SourceFileConfigEditorProps) {
   const currentFileName = selectedFile?.name ?? selectedFileName;
+  const sheetNames =
+    sourceFileMetadata?.sheets_metadata.map((sheet) => sheet.sheet_name) ?? excelSheetNames;
+  const sheetOptions: SelectOption[] = sheetNames.map((sheetName) => ({
+    value: sheetName,
+    label: sheetName,
+  }));
+
+  const isCsvFile = currentFileName?.toLowerCase().endsWith('.csv') ?? false;
+  const selectedOption = sheetOptions.find((option) => option.value === selectedSheetName) ?? null;
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
@@ -53,23 +64,25 @@ export function SourceFileConfigEditor({
 
       {currentFileName ? <p className={styles.muted}>Выбран файл: {currentFileName}</p> : null}
 
-      {excelSheetNames.length > 0 ? (
+      {isCsvFile ? (
+        <p className={styles.muted}>CSV будет импортирован автоматически без выбора листа.</p>
+      ) : sheetOptions.length > 0 ? (
         <div className={styles.sheetSelector}>
-          <label htmlFor="sheet-select" className={styles.configLabel}>
-            Лист Excel
-          </label>
-          <select
-            id="sheet-select"
-            value={selectedSheetName || ''}
-            onChange={(e) => onSheetNameChange(e.target.value)}
-            className={styles.select}
-          >
-            {excelSheetNames.map((sheetName) => (
-              <option key={sheetName} value={sheetName}>
-                {sheetName}
-              </option>
-            ))}
-          </select>
+          <label className={styles.configLabel}>Лист Excel</label>
+          <CustomSelect
+            options={sheetOptions}
+            value={selectedOption}
+            placeholder="Выберите лист..."
+            isClearable={false}
+            isSearchable={false}
+            onChange={(option) => {
+              const nextSheetName = option?.value;
+              if (!nextSheetName) {
+                return;
+              }
+              onSheetNameChange(nextSheetName);
+            }}
+          />
         </div>
       ) : null}
     </div>

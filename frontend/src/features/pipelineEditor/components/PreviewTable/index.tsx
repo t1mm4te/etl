@@ -1,4 +1,4 @@
-import type { PreviewResponse } from '../../../shared/api/types';
+import type { PreviewResponse } from '../../../../shared/api/types';
 import styles from './index.module.scss';
 
 type PreviewTableProps = {

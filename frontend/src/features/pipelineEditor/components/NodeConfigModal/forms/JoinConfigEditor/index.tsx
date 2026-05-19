@@ -1,12 +1,6 @@
 import styles from './index.module.scss';
 import type { OperationConfigEditorProps } from '../types';
 import { CustomSelect, type SelectOption } from '../../../../../../shared/ui/CustomSelect';
-import { Input } from '../../../../../../shared/ui/Input';
-
-const KEEP_OPTIONS = [
-  { value: 'all', label: 'Оставить все строки' },
-  { value: 'matching', label: 'Оставить только совпавшие строки' },
-] as const;
 
 function getKeepRules(how: string) {
   if (how === 'left') {

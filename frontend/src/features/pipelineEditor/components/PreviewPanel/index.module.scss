@@ -20,19 +20,10 @@
     }
 
     .rowLimitSelect {
-      width: auto;
-      min-width: 120px;
-      background: $darkGrayLighter;
-      border: 1px solid $borderColor;
-      border-radius: $borderRadiusSmall;
-      color: $white;
-      padding: 6px 8px;
-      font-size: $defaultFontSize;
+      width: 160px;
       cursor: pointer;
-
       option {
-        background: $darkGray;
-        color: $white;
+        z-index: 100;
       }
     }
   }
@@ -59,7 +50,6 @@
       background-color: $darkGrayLighter;
       position: relative;
       top: 1px;
-      z-index: 1;
     }
   }
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { PreviewResponse } from '../../../../shared/api/types';
+import { CustomSelect, type SelectOption } from '../../../../shared/ui/CustomSelect';
 import { PreviewTable } from '../PreviewTable';
 import styles from './index.module.scss';
 
@@ -35,7 +36,14 @@ export function PreviewPanel({
   const { inputPreview, leftInputPreview, rightInputPreview, resultPreview, isPreviewLoading } =
     previewState;
 
-  // Source node: show only result preview
+  const rowLimitOptions: SelectOption[] = [
+    { value: '10', label: '10 строк' },
+    { value: '25', label: '25 строк' },
+    { value: '50', label: '50 строк' },
+    { value: '100', label: '100 строк' },
+    { value: '500', label: '500 строк' },
+  ];
+
   if (nodeKind === 'source') {
     return (
       <section className={styles.previewPanel}>
@@ -47,17 +55,20 @@ export function PreviewPanel({
               <p className={styles.metadata}>
                 Всего строк: {resultPreview.total_rows} | Столбцов: {resultPreview.columns.length}
               </p>
-              <select
-                value={previewRowLimit}
-                onChange={(e) => onPreviewRowLimitChange(Number(e.target.value))}
+              <CustomSelect
+                options={rowLimitOptions}
+                value={rowLimitOptions.find((opt) => opt.value === String(previewRowLimit))}
+                onChange={(option) => {
+                  const selectedOption = Array.isArray(option) ? option[0] : option;
+
+                  if (selectedOption) {
+                    onPreviewRowLimitChange(Number(selectedOption.value));
+                  }
+                }}
+                isSearchable={false}
+                isClearable={false}
                 className={styles.rowLimitSelect}
-              >
-                <option value={10}>10 строк</option>
-                <option value={25}>25 строк</option>
-                <option value={50}>50 строк</option>
-                <option value={100}>100 строк</option>
-                <option value={500}>500 строк</option>
-              </select>
+              />
             </div>
             <div className={styles.tabRow}>
               <button type="button" className={styles.tabActive}>
@@ -91,17 +102,20 @@ export function PreviewPanel({
                       ? `Всего строк: ${rightInputPreview?.total_rows ?? 0} | Столбцов: ${rightInputPreview?.columns.length ?? 0}`
                       : `Всего строк: ${resultPreview?.total_rows ?? 0} | Столбцов: ${resultPreview?.columns.length ?? 0}`}
               </p>
-              <select
-                value={previewRowLimit}
-                onChange={(e) => onPreviewRowLimitChange(Number(e.target.value))}
+              <CustomSelect
+                options={rowLimitOptions}
+                value={rowLimitOptions.find((opt) => opt.value === String(previewRowLimit))}
+                onChange={(option) => {
+                  const selectedOption = Array.isArray(option) ? option[0] : option;
+
+                  if (selectedOption) {
+                    onPreviewRowLimitChange(Number(selectedOption.value));
+                  }
+                }}
+                isSearchable={false}
+                isClearable={false}
                 className={styles.rowLimitSelect}
-              >
-                <option value={10}>10 строк</option>
-                <option value={25}>25 строк</option>
-                <option value={50}>50 строк</option>
-                <option value={100}>100 строк</option>
-                <option value={500}>500 строк</option>
-              </select>
+              />
             </div>
           )}
 

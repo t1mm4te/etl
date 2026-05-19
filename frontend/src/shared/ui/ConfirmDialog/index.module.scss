@@ -1,0 +1,89 @@
+@use '../../../styles/_vars.scss' as *;
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInOverlay {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeInOverlay $transitionFast ease-out;
+  padding: $spacingLarge;
+
+  .modal {
+    width: clamp(300px, 90%, 420px);
+    background: $darkGray;
+    border: 1px solid $solidMutedColor;
+    border-radius: $borderRadiusMedium;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 20px 25px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s ease-out;
+
+    .modalHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px $spacingMedium;
+      background: $solidMutedColor;
+      border-bottom: 1px solid rgba($solidMutedColor, 0.6);
+
+      h3 {
+        color: $white;
+        margin: 0;
+        font-size: 18px;
+      }
+    }
+
+    .modalContent {
+      padding: $spacingMedium;
+      flex: 1;
+
+      .message {
+        margin: 0;
+        color: rgba($white, 0.85);
+        font-size: $defaultFontSize;
+        line-height: 1.5;
+      }
+    }
+
+    .modalFooter {
+      display: flex;
+      gap: $spacingMedium;
+      padding: $spacingMedium;
+      border-top: 1px solid rgba($solidMutedColor, 0.6);
+      justify-content: flex-end;
+
+      button {
+        flex: 1;
+        min-width: 100px;
+
+        &:last-child {
+          flex: 1.2;
+        }
+      }
+    }
+  }
+}

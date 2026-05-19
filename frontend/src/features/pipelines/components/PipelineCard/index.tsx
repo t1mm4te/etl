@@ -5,6 +5,7 @@ import editIcon from '../../../../assets/node-icons/edit.svg';
 import trashIcon from '../../../../assets/node-icons/trash.svg';
 import { Input } from '../../../../shared/ui/Input';
 import { Textarea } from '../../../../shared/ui/Textarea';
+import { ConfirmDialog } from '../../../../shared/ui/ConfirmDialog';
 import type { PipelineListItem as PipelineType } from '../../../../shared/api/types';
 import { extractError } from '../../../../shared/lib/extractError';
 import type { EditPipelineValues } from '../../types/types';
@@ -28,6 +29,7 @@ type Props = {
 
 export function PipelineCard({ pipeline }: Props) {
   const [isEditing, setIsEditing] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [deleteErrorText, setDeleteErrorText] = useState<string>();
   const [updateErrorText, setUpdateErrorText] = useState<string>();
 
@@ -65,13 +67,23 @@ export function PipelineCard({ pipeline }: Props) {
     });
   };
 
-  const onDelete = async () => {
+  const onDeleteClick = () => {
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const onConfirmDelete = async () => {
     setDeleteErrorText(undefined);
     try {
       await deleteMutation.mutateAsync(pipeline.id);
+      setIsDeleteConfirmOpen(false);
     } catch (error) {
       setDeleteErrorText(extractError(error, 'Не удалось удалить пайплайн'));
+      setIsDeleteConfirmOpen(false);
     }
+  };
+
+  const onCancelDelete = () => {
+    setIsDeleteConfirmOpen(false);
   };
 
   const onSaveEdit = async (values: EditPipelineValues) => {
@@ -165,7 +177,7 @@ export function PipelineCard({ pipeline }: Props) {
               className={styles.deleteButton}
               type="button"
               disabled={deleteMutation.isPending || updateMutation.isPending}
-              onClick={() => void onDelete()}
+              onClick={onDeleteClick}
               aria-label={`Удалить пайплайн ${pipeline.name}`}
               title={`Удалить пайплайн ${pipeline.name}`}
             >
@@ -175,6 +187,21 @@ export function PipelineCard({ pipeline }: Props) {
           {deleteErrorText && <p className={styles.error}>{deleteErrorText}</p>}
         </>
       )}
+      <ConfirmDialog
+        isOpen={isDeleteConfirmOpen}
+        title="Удалить пайплайн?"
+        message={
+          <>
+            Вы уверены, что хотите удалить пайплайн <strong>"{pipeline.name}"</strong>? Это действие
+            невозможно отменить.
+          </>
+        }
+        confirmText="Удалить"
+        cancelText="Отмена"
+        isLoading={deleteMutation.isPending}
+        onConfirm={onConfirmDelete}
+        onCancel={onCancelDelete}
+      />
     </li>
   );
 }

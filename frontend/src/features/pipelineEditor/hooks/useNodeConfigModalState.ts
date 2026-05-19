@@ -99,6 +99,8 @@ export function useNodeConfigModalState({
     config,
     uploadedDatasourceId,
     sourceFileId,
+    sourceFileMetadata,
+    selectedFileName,
     selectedSheetName,
     excelSheetNames,
     previewRowLimit,

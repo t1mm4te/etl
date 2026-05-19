@@ -24,6 +24,8 @@ export function SourceFileConfigEditor({
   const isCsvFile = currentFileName?.toLowerCase().endsWith('.csv') ?? false;
   const selectedOption = sheetOptions.find((option) => option.value === selectedSheetName) ?? null;
 
+  const showSheetSelector = !isCsvFile && sheetOptions.length > 1;
+
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       const file = acceptedFiles[0];
@@ -64,9 +66,7 @@ export function SourceFileConfigEditor({
 
       {currentFileName ? <p className={styles.muted}>Выбран файл: {currentFileName}</p> : null}
 
-      {isCsvFile ? (
-        <p className={styles.muted}>CSV будет импортирован автоматически без выбора листа.</p>
-      ) : sheetOptions.length > 0 ? (
+      {showSheetSelector ? (
         <div className={styles.sheetSelector}>
           <label className={styles.configLabel}>Лист Excel</label>
           <CustomSelect
@@ -76,7 +76,7 @@ export function SourceFileConfigEditor({
             isClearable={false}
             isSearchable={false}
             onChange={(option) => {
-              const nextSheetName = option?.value;
+              const nextSheetName = (option as SelectOption)?.value;
               if (!nextSheetName) {
                 return;
               }
@@ -84,6 +84,8 @@ export function SourceFileConfigEditor({
             }}
           />
         </div>
+      ) : !isCsvFile && sheetOptions.length === 1 ? (
+        <p className={styles.muted}>Найден один лист Excel. Он будет выбран автоматически.</p>
       ) : null}
     </div>
   );

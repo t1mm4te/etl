@@ -19,8 +19,36 @@ function getFileExtension(fileName: string) {
   return lastDot >= 0 ? fileName.slice(lastDot + 1).toLowerCase() : '';
 }
 
-function getSourceLabel(fileName: string) {
-  return fileName;
+function resolveSourceFileName(
+  originalFileName: string | undefined,
+  fallbackFileName: string | undefined,
+  sheetName?: string
+) {
+  const primary = originalFileName?.trim();
+  const fallback = fallbackFileName?.trim();
+  const normalizedSheet = sheetName?.trim().toLowerCase();
+
+  // If backend returns sheet name instead of original file name, prefer known fallback from UI state.
+  if (primary && normalizedSheet && primary.toLowerCase() === normalizedSheet && fallback) {
+    return fallback;
+  }
+
+  return primary || fallback || sheetName || 'файл';
+}
+
+function getSourceLabel(fileName: string, sheetName?: string, excelSheetNames?: string[]) {
+  // Base label for upload
+  const base = `Файл ${fileName}`;
+  // Append sheet name only when provided and there are multiple sheets
+  if (
+    sheetName &&
+    Array.isArray(excelSheetNames) &&
+    excelSheetNames.length > 1 &&
+    fileName.toLowerCase() !== sheetName.toLowerCase()
+  ) {
+    return `${base} ${sheetName}`;
+  }
+  return base;
 }
 
 type UseSourceNodePreviewActionsParams = {
@@ -28,6 +56,8 @@ type UseSourceNodePreviewActionsParams = {
   config: NodeConfig;
   uploadedDatasourceId: string;
   sourceFileId: string;
+  sourceFileMetadata?: SourceFile | null;
+  selectedFileName?: string;
   selectedSheetName?: string;
   excelSheetNames: string[];
   previewRowLimit: number;
@@ -60,6 +90,8 @@ export function useSourceNodePreviewActions({
   config,
   uploadedDatasourceId,
   sourceFileId,
+  sourceFileMetadata,
+  selectedFileName,
   selectedSheetName,
   excelSheetNames,
   previewRowLimit,
@@ -102,8 +134,14 @@ export function useSourceNodePreviewActions({
           datasource = await getDatasourceDetail(datasourceId);
         }
 
+        const resolvedFileName = resolveSourceFileName(
+          datasource.original_filename,
+          sourceFileMetadata?.filename || selectedFileName,
+          datasource.sheet_name
+        );
+
         if (datasource.status === 'processing') {
-          setSelectedFileName(datasource.original_filename || undefined);
+          setSelectedFileName(resolvedFileName);
           setResultPreview(null);
           setModalError(
             'Конвертация файла еще не завершена. Повторите попытку через несколько секунд.'
@@ -112,7 +150,7 @@ export function useSourceNodePreviewActions({
         }
 
         if (datasource.status !== 'ready') {
-          setSelectedFileName(datasource.original_filename || undefined);
+          setSelectedFileName(resolvedFileName);
           setResultPreview(null);
           if (datasource.status === 'error') {
             setModalError(
@@ -122,7 +160,7 @@ export function useSourceNodePreviewActions({
           return;
         }
 
-        setSelectedFileName(datasource.original_filename || undefined);
+        setSelectedFileName(resolvedFileName);
         if (datasource.sheet_name) {
           setSelectedSheetName(datasource.sheet_name);
         }
@@ -143,6 +181,8 @@ export function useSourceNodePreviewActions({
       setResultPreview,
       setSelectedFileName,
       setSelectedSheetName,
+      sourceFileMetadata,
+      selectedFileName,
     ]
   );
 
@@ -220,8 +260,14 @@ export function useSourceNodePreviewActions({
 
         await saveNodeConfig(editingNode.id, nextConfig, { label: getSourceLabel(sourceFileName) });
 
-        if (getFileExtension(sourceFileName) === 'csv') {
-          const defaultSheetName = sheetNames[0] ?? 'default';
+        const isCsv = getFileExtension(sourceFileName) === 'csv';
+        const shouldAutoCreateDatasource = isCsv || sheetNames.length === 1;
+
+        if (shouldAutoCreateDatasource) {
+          const defaultSheetName = sheetNames[0] ?? (isCsv ? 'default' : undefined);
+          if (!defaultSheetName) {
+            return;
+          }
           const created = await createDatasourceFromSheet(sourceFileId, defaultSheetName);
           const readyConfig: NodeConfig = {
             ...nextConfig,
@@ -233,7 +279,7 @@ export function useSourceNodePreviewActions({
           setUploadedDatasourceId(created.id);
           setSelectedSheetName(defaultSheetName);
           await saveNodeConfig(editingNode.id, readyConfig, {
-            label: getSourceLabel(sourceFileName),
+            label: getSourceLabel(sourceFileName, defaultSheetName, sheetNames),
           });
           await fetchSourcePreview(created.id);
           await loadAvailableColumns(editingNode.id);
@@ -291,6 +337,11 @@ export function useSourceNodePreviewActions({
       try {
         const created = await createDatasourceFromSheet(effectiveSourceFileId, sheetName);
         setUploadedDatasourceId(created.id);
+        const sourceLabelFileName = resolveSourceFileName(
+          created.original_filename,
+          sourceFileMetadata?.filename || selectedFileName,
+          created.sheet_name || sheetName
+        );
 
         const nextConfig = buildNextNodeConfig(
           {
@@ -306,7 +357,7 @@ export function useSourceNodePreviewActions({
 
         setConfig(nextConfig);
         await saveNodeConfig(editingNode.id, nextConfig, {
-          label: getSourceLabel(created.original_filename || sheetName),
+          label: getSourceLabel(sourceLabelFileName, created.sheet_name, excelSheetNames),
         });
         await fetchSourcePreview(created.id);
         await loadAvailableColumns(editingNode.id);
@@ -325,6 +376,8 @@ export function useSourceNodePreviewActions({
       setSelectedSheetName,
       setUploadedDatasourceId,
       excelSheetNames,
+      sourceFileMetadata,
+      selectedFileName,
       sourceFileId,
     ]
   );

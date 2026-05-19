@@ -14,7 +14,14 @@ interface PasswordInputProps {
   name?: string;
 }
 
-export function PasswordInput({ label, id, error, disabled, autoComplete, ...props }: PasswordInputProps) {
+export function PasswordInput({
+  label,
+  id,
+  error,
+  disabled,
+  autoComplete,
+  ...props
+}: PasswordInputProps) {
   const [visible, setVisible] = useState(false);
 
   return (
@@ -34,8 +41,12 @@ export function PasswordInput({ label, id, error, disabled, autoComplete, ...pro
           onClick={() => setVisible((state) => !state)}
           type="button"
           disabled={disabled}
+          aria-label={visible ? 'Скрыть пароль' : 'Показать пароль'}
         >
-          {visible ? 'Скрыть' : 'Показать'}
+          <span
+            className={`${styles.icon} ${visible ? styles.iconSeen : styles.iconHidden}`}
+            aria-hidden="true"
+          />
         </button>
       </div>
       {error ? <span className={styles.error}>{error}</span> : null}

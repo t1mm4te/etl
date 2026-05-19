@@ -105,33 +105,6 @@
   gap: 6px;
   color: $labelColor;
   font-size: 13px;
-
-  input,
-  textarea {
-    width: 100%;
-    border: 1px solid $borderColor;
-    border-radius: $borderRadiusSmall;
-    background-color: $darkGray;
-    color: $lightGray;
-    padding: 10px 12px;
-    font-size: $defaultFontSize;
-    transition:
-      border-color $transitionFast,
-      box-shadow $transitionFast,
-      background-color $transitionFast;
-
-    &:focus {
-      outline: none;
-      border-color: rgba($primaryColor, 0.7);
-      box-shadow: 0 0 0 3px rgba($primaryColor, 0.2);
-      background: rgba($darkGrayLighter, 0.95);
-    }
-  }
-
-  textarea {
-    resize: vertical;
-    min-height: 92px;
-  }
 }
 
 .inputError {

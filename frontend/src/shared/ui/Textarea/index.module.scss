@@ -1,0 +1,56 @@
+@use '../../../styles/_vars.scss' as *;
+
+.textarea {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid $borderColor;
+  border-radius: $borderRadiusSmall;
+  background-color: $darkGrayLighter;
+  color: $defaultTextColor;
+  padding: 12px 14px;
+  font-size: $defaultFontSize;
+  font-family: inherit;
+  appearance: none;
+  -webkit-appearance: none;
+  resize: vertical;
+  transition:
+    border-color $transitionFast,
+    background-color $transitionFast,
+    box-shadow $transitionFast;
+
+  &:hover {
+    border-color: $borderColor;
+  }
+
+  &:focus,
+  &:focus-visible {
+    outline: none;
+    border-color: $primaryColor;
+    box-shadow: inset 0 0 0 1px $primaryColor;
+  }
+
+  &:focus.invalid,
+  &:focus-visible.invalid {
+    border-color: $dangerColor;
+    box-shadow: none;
+  }
+
+  &::placeholder {
+    color: $labelColor;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+}
+
+.invalid {
+  border-color: $dangerColor !important;
+
+  &:focus,
+  &:focus-visible {
+    border-color: $dangerColor !important;
+    box-shadow: none;
+  }
+}

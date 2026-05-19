@@ -3,10 +3,12 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../../../shared/ui/Button';
+import { Textarea } from '../../../../shared/ui/Textarea';
 import { createPipeline } from '../../../../shared/api/pipelines';
 import { extractError } from '../../../../shared/lib/extractError';
 import { pipelinesListKey } from '../../../../shared/api/queryKeys';
 import styles from './index.module.scss';
+import { Input } from '../../../../shared/ui/Input';
 
 type CreatePipelineFormValues = {
   name: string;
@@ -52,7 +54,7 @@ export function CreatePipelineForm() {
       <form className={styles.form} onSubmit={handleSubmit((values) => void onCreate(values))}>
         <label className={styles.label}>
           Название
-          <input
+          <Input
             {...register('name', {
               required: 'Введите название пайплайна',
               validate: (value) => value.trim().length > 0 || 'Введите название пайплайна',
@@ -62,7 +64,7 @@ export function CreatePipelineForm() {
 
         <label className={styles.label}>
           Описание
-          <textarea
+          <Textarea
             {...register('description')}
             placeholder="Кратко опишите, какие данные и как будут обрабатываться"
             rows={5}

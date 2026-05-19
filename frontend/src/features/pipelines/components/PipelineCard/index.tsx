@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import editIcon from '../../../../assets/node-icons/edit.svg';
 import trashIcon from '../../../../assets/node-icons/trash.svg';
+import { Input } from '../../../../shared/ui/Input';
+import { Textarea } from '../../../../shared/ui/Textarea';
 import type { PipelineListItem as PipelineType } from '../../../../shared/api/types';
 import { extractError } from '../../../../shared/lib/extractError';
 import type { EditPipelineValues } from '../../types/types';
@@ -97,12 +99,13 @@ export function PipelineCard({ pipeline }: Props) {
             <div className={styles.meta}>
               <label className={styles.editLabel}>
                 Название
-                <input
+                <Input
                   {...register('name', {
                     required: 'Введите название пайплайна',
                     validate: (value) => value.trim().length > 0 || 'Введите название пайплайна',
                     maxLength: { value: 120, message: 'Максимум 120 символов' },
                   })}
+                  isInvalid={Boolean(errors.name)}
                 />
                 {errors.name?.message ? (
                   <span className={styles.inputError}>{errors.name.message}</span>
@@ -110,7 +113,7 @@ export function PipelineCard({ pipeline }: Props) {
               </label>
               <label className={styles.editLabel}>
                 Описание
-                <textarea {...register('description')} rows={3} />
+                <Textarea {...register('description')} rows={3} />
               </label>
               <div className={styles.badges}>
                 <span>Нод: {pipeline.node_count}</span>

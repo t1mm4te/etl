@@ -1,13 +1,13 @@
 import { Route, Routes } from 'react-router-dom';
-import { MainLayout } from './components/MainLayout';
-import { ProtectedRoute } from './components/ProtectedRoute';
-import { LandingPage } from './pages/LandingPage';
-import { LoginPage } from './pages/LoginPage';
-import { PipelineEditorPage } from './pages/PipelineEditorPage';
-import { PipelinesPage } from './pages/PipelinesPage';
-import { ProfilePage } from './pages/ProfilePage';
-import { RegisterPage } from './pages/RegisterPage';
-import { VerifyEmailPage } from './pages/VerifyEmailPage';
+import { MainLayout } from '../layout/MainLayout';
+import { ProtectedRoute } from './ProtectedRoute';
+import { LandingPage } from '../pages/LandingPage';
+import { LoginPage } from '../pages/LoginPage';
+import { PipelineEditorPage } from '../pages/PipelineEditorPage';
+import { PipelinesPage } from '../pages/PipelinesPage';
+import { ProfilePage } from '../pages/ProfilePage';
+import { RegisterPage } from '../pages/RegisterPage';
+import { VerifyEmailPage } from '../pages/VerifyEmailPage';
 
 function App() {
   return (

@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { useLocation } from 'react-router-dom';
 import { z } from 'zod';
 import { Button } from '../../shared/ui/Button';
+import { Input } from '../../shared/ui/Input';
 import { AuthShell } from '../../features/auth/components/AuthShell';
 import { PasswordInput } from '../../shared/ui/PasswordInput';
 import { useLogin } from '../../features/auth/hooks/useLogin';
@@ -67,10 +68,10 @@ export function LoginPage() {
       <form className={styles.form} onSubmit={onSubmit} noValidate>
         <label className={styles.label} htmlFor="email">
           Почта
-          <input
+          <Input
             {...register('email')}
             autoComplete="email"
-            className={`${styles.input} ${errors.email ? styles.invalid : ''}`}
+            isInvalid={Boolean(errors.email)}
             id="email"
             type="email"
           />

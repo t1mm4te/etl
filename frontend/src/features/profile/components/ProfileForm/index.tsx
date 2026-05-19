@@ -10,6 +10,7 @@ import { extractError } from '../../../../shared/lib/extractError';
 import { getUserInitials } from '../../../../shared/lib/getUserInitials';
 import { resolveMediaUrl } from '../../../../shared/lib/resolveMediaUrl';
 import { Button } from '../../../../shared/ui/Button';
+import { Input } from '../../../../shared/ui/Input';
 import styles from './index.module.scss';
 
 const profileSchema = z.object({
@@ -227,9 +228,9 @@ export function ProfileForm({ user }: ProfileFormProps) {
       <form className={styles.form} onSubmit={onSubmit}>
         <label className={styles.label} htmlFor="username">
           Username
-          <input
+          <Input
             {...register('username')}
-            className={errors.username ? styles.invalid : ''}
+            isInvalid={Boolean(errors.username)}
             id="username"
             type="text"
             autoComplete="username"
@@ -242,9 +243,9 @@ export function ProfileForm({ user }: ProfileFormProps) {
         <div className={styles.row}>
           <label className={styles.label} htmlFor="first_name">
             Имя
-            <input
+            <Input
               {...register('first_name')}
-              className={errors.first_name ? styles.invalid : ''}
+              isInvalid={Boolean(errors.first_name)}
               id="first_name"
               type="text"
               autoComplete="given-name"
@@ -256,9 +257,9 @@ export function ProfileForm({ user }: ProfileFormProps) {
 
           <label className={styles.label} htmlFor="last_name">
             Фамилия
-            <input
+            <Input
               {...register('last_name')}
-              className={errors.last_name ? styles.invalid : ''}
+              isInvalid={Boolean(errors.last_name)}
               id="last_name"
               type="text"
               autoComplete="family-name"

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { ChangeEventHandler, FocusEventHandler } from 'react';
+import { Input } from '../Input';
 import styles from './index.module.scss';
 
 interface PasswordInputProps {
@@ -28,13 +29,14 @@ export function PasswordInput({
     <label className={styles.label} htmlFor={id}>
       {label}
       <div className={styles.wrapper}>
-        <input
+        <Input
           {...props}
           id={id}
-          className={`${styles.input} ${error ? styles.invalid : ''}`}
+          className={styles.input}
           type={visible ? 'text' : 'password'}
           autoComplete={autoComplete}
           disabled={disabled}
+          isInvalid={Boolean(error)}
         />
         <button
           className={styles.toggle}

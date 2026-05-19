@@ -1,6 +1,7 @@
 import styles from './index.module.scss';
 import type { OperationConfigEditorProps } from '../types';
 import { CustomSelect, type SelectOption } from '../../../../../../shared/ui/CustomSelect';
+import { Input } from '../../../../../../shared/ui/Input';
 
 const FILTER_OPERATORS = [
   { value: '==', label: 'Равно' },
@@ -78,12 +79,14 @@ export function FilterRowsConfigEditor({
         <CustomSelect
           options={columnOptions}
           value={selectedColumn}
-          onChange={(option) =>
+          onChange={(option) => {
+            const selectedOption = option as SelectOption | null;
+
             onChange({
               ...typedConfig,
-              column: !Array.isArray(option) && option?.value ? option.value : '',
-            })
-          }
+              column: selectedOption?.value ?? '',
+            });
+          }}
           placeholder="Выберите столбец для фильтрации"
           isClearable
         />
@@ -95,7 +98,8 @@ export function FilterRowsConfigEditor({
           options={operatorOptions}
           value={selectedOperator}
           onChange={(option) => {
-            const nextOperator = !Array.isArray(option) && option?.value ? option.value : '==';
+            const selectedOperatorOption = option as SelectOption | null;
+            const nextOperator = selectedOperatorOption?.value ?? '==';
             const nextConfig: Record<string, unknown> = {
               ...typedConfig,
               operator: nextOperator,
@@ -114,7 +118,7 @@ export function FilterRowsConfigEditor({
       {hasValue ? (
         <label className={styles.configLabel}>
           Значение
-          <input
+          <Input
             value={
               typeof typedConfig.value === 'string'
                 ? typedConfig.value
@@ -127,6 +131,7 @@ export function FilterRowsConfigEditor({
                 value: parseFilterValue(event.target.value, operator),
               })
             }
+            type="text"
           />
         </label>
       ) : null}

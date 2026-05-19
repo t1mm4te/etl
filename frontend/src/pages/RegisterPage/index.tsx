@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { AuthShell } from '../../features/auth/components/AuthShell';
 import { Button } from '../../shared/ui/Button';
+import { Input } from '../../shared/ui/Input';
 import { PasswordInput } from '../../shared/ui/PasswordInput';
 import { extractError } from '../../shared/lib/extractError';
 import styles from './index.module.scss';
@@ -64,10 +65,10 @@ export function RegisterPage() {
         <div className={styles.row}>
           <label className={styles.label} htmlFor="first_name">
             Имя
-            <input
+            <Input
               {...register('first_name')}
               autoComplete="given-name"
-              className={`${styles.input} ${errors.first_name ? styles.invalid : ''}`}
+              isInvalid={Boolean(errors.first_name)}
               id="first_name"
               type="text"
             />
@@ -78,10 +79,10 @@ export function RegisterPage() {
 
           <label className={styles.label} htmlFor="last_name">
             Фамилия
-            <input
+            <Input
               {...register('last_name')}
               autoComplete="family-name"
-              className={`${styles.input} ${errors.last_name ? styles.invalid : ''}`}
+              isInvalid={Boolean(errors.last_name)}
               id="last_name"
               type="text"
             />
@@ -93,10 +94,10 @@ export function RegisterPage() {
 
         <label className={styles.label} htmlFor="username">
           Username
-          <input
+          <Input
             {...register('username')}
             autoComplete="username"
-            className={`${styles.input} ${errors.username ? styles.invalid : ''}`}
+            isInvalid={Boolean(errors.username)}
             id="username"
             type="text"
           />
@@ -107,10 +108,10 @@ export function RegisterPage() {
 
         <label className={styles.label} htmlFor="email">
           Email
-          <input
+          <Input
             {...register('email')}
             autoComplete="email"
-            className={`${styles.input} ${errors.email ? styles.invalid : ''}`}
+            isInvalid={Boolean(errors.email)}
             id="email"
             type="email"
           />

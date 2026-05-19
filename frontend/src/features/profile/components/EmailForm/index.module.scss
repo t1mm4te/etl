@@ -44,31 +44,6 @@
   flex-direction: column;
   gap: 7px;
   color: $labelColor;
-
-  input {
-    min-height: 42px;
-    border-radius: $borderRadiusSmall;
-    border: 1px solid $borderColor;
-    background-color: rgba($darkGrayLighter, 0.95);
-    color: $defaultTextColor;
-    padding: 10px 12px;
-    font-size: 16px;
-    transition:
-      border-color $transitionFast,
-      box-shadow $transitionFast,
-      background-color $transitionFast;
-
-    &:focus {
-      outline: none;
-      border-color: rgba($primaryColor, 0.85);
-      box-shadow: 0 0 0 3px rgba($primaryColor, 0.18);
-      background-color: rgba($darkGrayLighter, 1);
-    }
-  }
-}
-
-.invalid {
-  border-color: rgba($dangerColor, 0.72) !important;
 }
 
 .error,

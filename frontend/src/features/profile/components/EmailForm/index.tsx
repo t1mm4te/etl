@@ -8,6 +8,7 @@ import { authMeKey } from '../../../../shared/api/queryKeys';
 import type { User } from '../../../../shared/api/types';
 import { extractError } from '../../../../shared/lib/extractError';
 import { Button } from '../../../../shared/ui/Button';
+import { Input } from '../../../../shared/ui/Input';
 import { PasswordInput } from '../../../../shared/ui/PasswordInput';
 import styles from './index.module.scss';
 
@@ -85,9 +86,9 @@ export function EmailForm({ user }: EmailFormProps) {
       <form className={styles.form} onSubmit={onSubmit}>
         <label className={styles.label} htmlFor="new_email">
           Новый email
-          <input
+          <Input
             {...register('new_email')}
-            className={errors.new_email ? styles.invalid : ''}
+            isInvalid={Boolean(errors.new_email)}
             id="new_email"
             type="email"
             autoComplete="email"

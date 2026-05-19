@@ -5,6 +5,7 @@ import { useLocation } from 'react-router-dom';
 import { z } from 'zod';
 import { AuthShell } from '../../features/auth/components/AuthShell';
 import { Button } from '../../shared/ui/Button';
+import { Input } from '../../shared/ui/Input';
 import { extractError } from '../../shared/lib/extractError';
 import { useVerifyEmail } from '../../features/auth/hooks/useVerifyEmail';
 import { useResendCode } from '../../features/auth/hooks/useResendCode';
@@ -109,9 +110,9 @@ export function VerifyEmailPage() {
 
             <label className={styles.label} htmlFor="verify_email">
               Почта
-              <input
+              <Input
                 {...register('email')}
-                className={`${styles.input} ${errors.email ? styles.invalid : ''}`}
+                isInvalid={Boolean(errors.email)}
                 id="verify_email"
                 type="email"
                 autoComplete="email"
@@ -125,9 +126,9 @@ export function VerifyEmailPage() {
 
         <label className={styles.label} htmlFor="verify_code">
           Код
-          <input
+          <Input
             {...register('code')}
-            className={`${styles.input} ${errors.code ? styles.invalid : ''}`}
+            isInvalid={Boolean(errors.code)}
             id="verify_code"
             type="text"
             inputMode="numeric"

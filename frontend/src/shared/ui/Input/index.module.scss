@@ -27,6 +27,12 @@
     box-shadow: inset 0 0 0 1px $primaryColor;
   }
 
+  &:focus.invalid,
+  &:focus-visible.invalid {
+    border-color: $dangerColor;
+    box-shadow: none;
+  }
+
   &::placeholder {
     color: $labelColor;
   }
@@ -39,4 +45,10 @@
 
 .invalid {
   border-color: $dangerColor !important;
+
+  &:focus,
+  &:focus-visible {
+    border-color: $dangerColor !important;
+    box-shadow: none;
+  }
 }

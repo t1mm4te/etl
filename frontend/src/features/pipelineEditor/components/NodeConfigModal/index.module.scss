@@ -13,7 +13,7 @@
 
   .modal {
     width: clamp(860px, 90%, 1100px);
-    max-height: calc(100vh - clamp(72px, 10vh, 120px));
+    min-height: 682px;
     background: $darkGray;
     border: 1px solid $solidMutedColor;
     border-radius: $borderRadiusMedium;

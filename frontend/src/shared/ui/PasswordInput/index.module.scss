@@ -10,23 +10,7 @@
     position: relative;
 
     .input {
-      width: 100%;
-      min-height: 42px;
-      border: 1px solid $borderColor;
-      border-radius: $borderRadiusSmall;
       padding: 0 44px 0 12px;
-      background-color: $darkGrayLighter;
-      color: $defaultTextColor;
-      font-size: $defaultFontSize;
-
-      &:focus {
-        outline: none;
-        border-color: $primaryColor;
-      }
-    }
-
-    .invalid {
-      border-color: $dangerColor;
     }
 
     .toggle {

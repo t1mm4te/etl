@@ -150,18 +150,18 @@ export function useTransformNodePreviewActions({
 
             for (const incomingEdge of incomingEdges) {
               let preview = null;
-              const upstreamRun = getSuccessfulNodeRun(incomingEdge.source_node, runsOverride);
+              const upstreamNode = nodes?.find((item) => item.id === incomingEdge.source_node);
+              const upstreamDatasourceId = upstreamNode?.config?.datasource_id;
 
-              if (upstreamRun) {
-                preview = await previewNodeRun(upstreamRun.id, previewRowLimit);
+              if (typeof upstreamDatasourceId === 'string' && upstreamDatasourceId) {
+                const upstreamDatasource = await getDatasourceDetail(upstreamDatasourceId);
+                if (upstreamDatasource.status === 'ready') {
+                  preview = await previewDatasource(upstreamDatasourceId, previewRowLimit);
+                }
               } else {
-                const upstreamNode = nodes?.find((item) => item.id === incomingEdge.source_node);
-                const upstreamDatasourceId = upstreamNode?.config?.datasource_id;
-                if (typeof upstreamDatasourceId === 'string' && upstreamDatasourceId) {
-                  const upstreamDatasource = await getDatasourceDetail(upstreamDatasourceId);
-                  if (upstreamDatasource.status === 'ready') {
-                    preview = await previewDatasource(upstreamDatasourceId, previewRowLimit);
-                  }
+                const upstreamRun = getSuccessfulNodeRun(incomingEdge.source_node, runsOverride);
+                if (upstreamRun) {
+                  preview = await previewNodeRun(upstreamRun.id, previewRowLimit);
                 }
               }
 

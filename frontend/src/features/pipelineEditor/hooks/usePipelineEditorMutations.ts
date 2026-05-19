@@ -1,7 +1,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Connection } from 'reactflow';
 import { createEdge, createNode, patchNode, runPipeline } from '../../../shared/api/pipelines';
-import type { NodeConfig, NodeUpdatePayload, OperationItem } from '../../../shared/api/types';
+import type {
+  Node,
+  NodeConfig,
+  NodeUpdatePayload,
+  OperationItem,
+  PipelineDetail,
+} from '../../../shared/api/types';
 import { usePipelineEditorStore } from '../store/pipelineEditorStore';
 import { pipelineDetailKey } from '../../../shared/api/queryKeys';
 
@@ -21,8 +27,19 @@ export function usePipelineEditorMutations({ pipelineId }: UsePipelineEditorMuta
   const patchNodeMutation = useMutation({
     mutationFn: ({ nodeId, payload }: { nodeId: string; payload: NodeUpdatePayload }) =>
       patchNode(pipelineId, nodeId, payload),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: pipelineDetailKey(pipelineId) });
+    onSuccess: (updatedNode) => {
+      // update cached pipeline detail replacing the patched node
+      queryClient.setQueryData<PipelineDetail>(pipelineDetailKey(pipelineId), (old) => {
+        if (!old) return old;
+        const nextNodes = old.nodes.map((node: Node) =>
+          node.id === updatedNode.id ? updatedNode : node
+        );
+
+        return {
+          ...old,
+          nodes: nextNodes,
+        };
+      });
     },
   });
 
@@ -35,8 +52,15 @@ export function usePipelineEditorMutations({ pipelineId }: UsePipelineEditorMuta
         position_x: position.x,
         position_y: position.y,
       }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: pipelineDetailKey(pipelineId) });
+    onSuccess: (createdNode) => {
+      // append created node to cached pipeline detail
+      queryClient.setQueryData<PipelineDetail>(pipelineDetailKey(pipelineId), (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          nodes: [...old.nodes, createdNode],
+        };
+      });
     },
   });
 
@@ -48,8 +72,15 @@ export function usePipelineEditorMutations({ pipelineId }: UsePipelineEditorMuta
         source_port: payload.connection.sourceHandle ?? 'output',
         target_port: payload.connection.targetHandle ?? 'main',
       }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: pipelineDetailKey(pipelineId) });
+    onSuccess: (createdEdge) => {
+      // append created edge to cached pipeline detail
+      queryClient.setQueryData<PipelineDetail>(pipelineDetailKey(pipelineId), (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          edges: [...old.edges, createdEdge],
+        };
+      });
     },
   });
 

@@ -25,6 +25,10 @@ export function usePipelineEditorQueries(pipelineId: string) {
   const operationsQuery = useQuery({
     queryKey: operationsCatalogKey,
     queryFn: getOperationsCatalog,
+    // catalog rarely changes — keep it fresh in cache and avoid refetches
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   const runQuery = useQuery({

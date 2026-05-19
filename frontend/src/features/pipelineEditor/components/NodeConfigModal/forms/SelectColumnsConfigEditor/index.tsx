@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Checkbox } from '@base-ui/react';
 import {
   DndContext,
@@ -108,6 +109,23 @@ export function SelectColumnsConfigEditor({
     };
     onChange(nextConfig);
   };
+
+  useEffect(() => {
+    if (uniqueAvailableColumns.length === 0 || extraSelectedColumns.length === 0) {
+      return;
+    }
+
+    onChange({
+      ...typedConfig,
+      columns: selectedAvailableColumns,
+    });
+  }, [
+    extraSelectedColumns.length,
+    onChange,
+    selectedAvailableColumns,
+    typedConfig,
+    uniqueAvailableColumns.length,
+  ]);
 
   const onSelectAllToggle = (checked: boolean) => {
     if (!checked) {

@@ -1,3 +1,4 @@
+import { Checkbox } from '@base-ui/react';
 import styles from './index.module.scss';
 import type { OperationConfigEditorProps } from '../types';
 import { CustomSelect, type SelectOption } from '../../../../../../shared/ui/CustomSelect';
@@ -25,7 +26,6 @@ function getKeep(config: Record<string, unknown>) {
   if (raw === 'first' || raw === 'last' || raw === false) {
     return raw;
   }
-
   return 'first';
 }
 
@@ -37,17 +37,18 @@ export function DeduplicateConfigEditor({
   const typedConfig = config as Record<string, unknown>;
   const subset = getSubset(typedConfig);
   const keep = getKeep(typedConfig);
+
   const selectedSet = new Set(subset);
   const uniqueAvailableColumns = Array.from(new Set(availableColumns));
+
   const allSelectedManually =
     uniqueAvailableColumns.length > 0 &&
     uniqueAvailableColumns.every((column) => selectedSet.has(column));
+
   const allColumnsMode = subset.length === 0 || allSelectedManually;
 
   const updateSubset = (nextSubset: string[]) => {
-    const nextConfig: Record<string, unknown> = {
-      ...typedConfig,
-    };
+    const nextConfig: Record<string, unknown> = { ...typedConfig };
 
     if (nextSubset.length === 0) {
       delete nextConfig.subset;
@@ -60,8 +61,6 @@ export function DeduplicateConfigEditor({
 
   return (
     <div className={styles.root}>
-      <p className={styles.title}>Удаление дубликатов</p>
-
       <label className={styles.configLabel}>
         Какие строки оставлять
         <CustomSelect
@@ -85,39 +84,41 @@ export function DeduplicateConfigEditor({
       ) : (
         <>
           <label className={styles.checkboxAll}>
-            <input
-              className={styles.checkboxInput}
-              type="checkbox"
+            <Checkbox.Root
+              className={styles.checkboxRoot}
               checked={allColumnsMode}
-              onChange={(event) => {
-                if (event.currentTarget.checked) {
+              onCheckedChange={(checked) => {
+                if (checked) {
                   updateSubset([]);
-                  return;
+                } else {
+                  updateSubset(uniqueAvailableColumns);
                 }
-
-                updateSubset(uniqueAvailableColumns);
               }}
-            />
+              aria-label="Проверять дубликаты по всем столбцам"
+            >
+              <Checkbox.Indicator className={styles.checkboxIndicator}>✓</Checkbox.Indicator>
+            </Checkbox.Root>
             Проверять дубликаты по всем столбцам
           </label>
 
           <div className={styles.checkboxList}>
             {uniqueAvailableColumns.map((column) => (
               <label className={styles.checkboxItem} key={column}>
-                <input
-                  className={styles.checkboxInput}
-                  type="checkbox"
+                <Checkbox.Root
+                  className={styles.checkboxRoot}
                   checked={selectedSet.has(column)}
-                  onChange={(event) => {
-                    if (event.currentTarget.checked) {
+                  onCheckedChange={(checked) => {
+                    if (checked) {
                       updateSubset([...subset, column]);
-                      return;
+                    } else {
+                      updateSubset(subset.filter((item) => item !== column));
                     }
-
-                    updateSubset(subset.filter((item) => item !== column));
                   }}
-                />
-                {column}
+                  aria-label={`Выбрать столбец ${column}`}
+                >
+                  <Checkbox.Indicator className={styles.checkboxIndicator}>✓</Checkbox.Indicator>
+                </Checkbox.Root>
+                <span className={styles.checkboxText}>{column}</span>
               </label>
             ))}
           </div>

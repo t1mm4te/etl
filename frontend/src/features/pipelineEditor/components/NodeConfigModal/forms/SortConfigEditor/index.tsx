@@ -5,10 +5,7 @@ import { CustomSelect, type SelectOption } from '../../../../../../shared/ui/Cus
 
 function getSortBy(config: Record<string, unknown>) {
   const raw = config.by;
-  if (!Array.isArray(raw)) {
-    return [''];
-  }
-
+  if (!Array.isArray(raw)) return [''];
   const parsed = raw.map((item) => (typeof item === 'string' ? item : String(item ?? '')));
   return parsed.length > 0 ? parsed : [''];
 }
@@ -16,13 +13,11 @@ function getSortBy(config: Record<string, unknown>) {
 function getSortAscending(config: Record<string, unknown>, byLength: number) {
   const raw = config.ascending;
   if (Array.isArray(raw)) {
-    return Array.from({ length: byLength }, (_, index) => Boolean(raw[index] ?? true));
+    return Array.from({ length: byLength }, (_, i) => Boolean(raw[i] ?? true));
   }
-
   if (typeof raw === 'boolean') {
     return Array.from({ length: byLength }, () => raw);
   }
-
   return Array.from({ length: byLength }, () => true);
 }
 
@@ -34,6 +29,7 @@ export function SortConfigEditor({
   const typedConfig = config as Record<string, unknown>;
   const by = getSortBy(typedConfig);
   const ascending = getSortAscending(typedConfig, by.length);
+
   const columnOptions: SelectOption[] = availableColumns.map((column) => ({
     value: column,
     label: column,
@@ -57,67 +53,68 @@ export function SortConfigEditor({
       updateRows([''], [true]);
       return;
     }
-
-    const nextBy = by.filter((_, itemIndex) => itemIndex !== index);
-    const nextAscending = ascending.filter((_, itemIndex) => itemIndex !== index);
+    const nextBy = by.filter((_, i) => i !== index);
+    const nextAscending = ascending.filter((_, i) => i !== index);
     updateRows(nextBy, nextAscending);
+  };
+
+  const updateColumn = (index: number, value: string) => {
+    const nextBy = [...by];
+    nextBy[index] = value;
+    updateRows(nextBy, ascending);
+  };
+
+  const updateOrder = (index: number, isAsc: boolean) => {
+    const nextAscending = [...ascending];
+    nextAscending[index] = isAsc;
+    updateRows(by, nextAscending);
   };
 
   return (
     <div className={styles.root}>
-      <p className={styles.title}>Сортировка</p>
       {by.map((column, index) => (
-        <div className={styles.row} key={`sort-${index}`}>
-          <label className={styles.configLabel}>
-            Столбец
-            <CustomSelect
-              options={columnOptions}
-              value={
-                columnOptions.find((option) => option.value === column) ??
-                (column ? { value: column, label: column } : null)
-              }
-              placeholder="Выберите столбец для сортировки"
-              onChange={(option) => {
-                const selectedOption = option as SelectOption | null;
-                const nextBy = [...by];
-                nextBy[index] = selectedOption?.value ?? '';
-                updateRows(nextBy, ascending);
-              }}
-              isClearable
-            />
-          </label>
+        <div className={styles.sortBlock} key={`sort-${index}`}>
+          <button className={styles.closeButton} onClick={() => removeRow(index)} type="button">
+            ✕
+          </button>
 
-          <label className={styles.configLabel}>
-            Порядок
-            <CustomSelect
-              options={[
-                { value: 'asc', label: 'По возрастанию' },
-                { value: 'desc', label: 'По убыванию' },
-              ]}
-              value={
-                ascending[index]
-                  ? { value: 'asc', label: 'По возрастанию' }
-                  : { value: 'desc', label: 'По убыванию' }
-              }
-              onChange={(option) => {
-                const selectedOption = option as SelectOption | null;
-                const nextAscending = [...ascending];
-                nextAscending[index] = selectedOption?.value === 'asc';
-                updateRows(by, nextAscending);
-              }}
-              isSearchable={false}
-              isClearable={false}
-            />
-          </label>
+          <div className={styles.selectsRow}>
+            <div className={styles.selectWrapper}>
+              <CustomSelect
+                options={columnOptions}
+                value={
+                  columnOptions.find((opt) => opt.value === column) ??
+                  (column ? { value: column, label: column } : null)
+                }
+                placeholder="Выберите столбец"
+                onChange={(option) =>
+                  updateColumn(index, (option as SelectOption | null)?.value ?? '')
+                }
+                isClearable
+              />
+            </div>
 
-          <Button type="button" color="white" onClick={() => removeRow(index)}>
-            Удалить
-          </Button>
+            <div className={styles.selectWrapper}>
+              <CustomSelect
+                options={[
+                  { value: 'asc', label: 'A-Z' },
+                  { value: 'desc', label: 'Z-A' },
+                ]}
+                value={{
+                  value: ascending[index] ? 'asc' : 'desc',
+                  label: ascending[index] ? 'A-Z' : 'Z-A',
+                }}
+                onChange={(option) => updateOrder(index, (option as SelectOption)?.value === 'asc')}
+                isSearchable={false}
+                isClearable={false}
+              />
+            </div>
+          </div>
         </div>
       ))}
 
       <Button type="button" color="white" onClick={addRow}>
-        Добавить правило сортировки
+        + Добавить правило сортировки
       </Button>
     </div>
   );

@@ -169,8 +169,6 @@ export function SelectColumnsConfigEditor({
 
   return (
     <div className={styles.root}>
-      <p className={styles.title}>Выбор столбцов</p>
-
       {uniqueAvailableColumns.length === 0 ? (
         <p className={styles.muted}>Список входных столбцов пока недоступен.</p>
       ) : (
@@ -197,7 +195,7 @@ export function SelectColumnsConfigEditor({
             </button>
           </div>
 
-          <p className={styles.sectionTitle}>Выбранные (можно перетаскивать)</p>
+          <p className={styles.sectionTitle}>Выбранные столбцы можно менять местами</p>
 
           <DndContext
             sensors={sensors}

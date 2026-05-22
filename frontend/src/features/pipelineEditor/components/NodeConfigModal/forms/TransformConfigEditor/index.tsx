@@ -138,22 +138,6 @@ export function TransformConfigEditor({
           onChange={onConfigChange}
         />
       ) : null}
-
-      {operationType !== 'sort' &&
-      operationType !== 'filter_rows' &&
-      operationType !== 'deduplicate' &&
-      operationType !== 'select_columns' &&
-      operationType !== 'rename_columns' &&
-      operationType !== 'split_column' &&
-      operationType !== 'merge_columns' &&
-      operationType !== 'join' &&
-      operationType !== 'aggregate' &&
-      operationType !== 'cast_types' &&
-      operationType !== 'computed_column' &&
-      operationType !== 'fill_missing' &&
-      operationType !== 'export_file' ? (
-        <p className={styles.muted}>Форма для этой операции пока не реализована.</p>
-      ) : null}
     </div>
   );
 }

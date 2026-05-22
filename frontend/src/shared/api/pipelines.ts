@@ -121,14 +121,6 @@ export const getDatasourceDetail = async (datasourceId: string) => {
   return response.data;
 };
 
-export const setDatasourceSheet = async (datasourceId: string, sheetName: string) => {
-  const response = await apiClient.put<DataSourceDetail>(
-    `/datasources/${datasourceId}/set-sheet/`,
-    { sheet_name: sheetName }
-  );
-  return response.data;
-};
-
 export const previewDatasource = async (datasourceId: string, limit?: number) => {
   const response = await apiClient.get<PreviewResponse>(`/datasources/${datasourceId}/preview/`, {
     params: limit ? { limit } : undefined,
@@ -136,7 +128,7 @@ export const previewDatasource = async (datasourceId: string, limit?: number) =>
   return response.data;
 };
 
-export const previewNodeRun = async (nodeRunId: string, limit = 10) => {
+export const previewNodeRun = async (nodeRunId: string, limit = 15) => {
   const response = await apiClient.get<PreviewResponse>(`/node-runs/${nodeRunId}/preview/`, {
     params: { limit },
   });

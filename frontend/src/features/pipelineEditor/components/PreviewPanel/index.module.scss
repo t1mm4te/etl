@@ -10,7 +10,7 @@
     align-items: center;
     justify-content: space-between;
     gap: $spacingMedium;
-    padding: 8px 10px;
+    padding-bottom: 4px;
     background: $darkGray;
 
     .metadata {
@@ -43,6 +43,7 @@
       font-size: $defaultFontSize;
       background-color: $darkGray;
       border-bottom: none;
+      height: 44px;
     }
 
     .tabActive {

@@ -41,7 +41,7 @@ export function CustomSelect({
   const OPTION_SELECTED_HOVER = '#142c20';
 
   const customStyles: StylesConfig<SelectOption, boolean> = {
-    control: (base, { isFocused }) => ({
+    control: (base, { isFocused, selectProps }) => ({
       ...base,
       backgroundColor: isDark ? CONTROL_BG : '#ffffff',
       borderColor: isFocused ? '#2eaf71' : isDark ? CONTROL_BORDER : '#d1d5db',
@@ -52,11 +52,25 @@ export function CustomSelect({
       '&:hover': {
         borderColor: isFocused ? '#2eaf71' : isDark ? CONTROL_BORDER : '#9ca3af',
       },
-      minHeight: '42px',
+      minHeight: '44px',
+      ...(selectProps.isMulti ? {} : { height: '44px' }),
       paddingTop: '0px',
       paddingBottom: '0px',
     }),
-
+    valueContainer: (base, { selectProps }) => ({
+      ...base,
+      paddingTop: '0px',
+      paddingBottom: '0px',
+      ...(selectProps.isMulti
+        ? {
+            minHeight: '44px',
+            flexWrap: 'wrap',
+          }
+        : {
+            height: '44px',
+            overflow: 'hidden',
+          }),
+    }),
     menu: (base) => ({
       ...base,
       backgroundColor: isDark ? MENU_BG : '#ffffff',
@@ -95,6 +109,9 @@ export function CustomSelect({
     multiValue: (base) => ({
       ...base,
       backgroundColor: OPTION_SELECTED,
+      borderColor: CONTROL_BORDER,
+      borderWidth: '1px',
+      borderStyle: 'solid',
       borderRadius: '6px',
       padding: '1px',
     }),

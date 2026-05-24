@@ -6,10 +6,53 @@
   gap: 10px;
 }
 
-.title {
-  margin: 0;
+.expressionInput {
+  background: $darkGray;
+  border: 1px solid $borderColor;
+  border-radius: $borderRadiusSmall;
+  padding: 12px 14px;
   color: $white;
-  font-size: 16px;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 14px;
+  resize: vertical;
+  height: 60px; /* начальная высота */
+  resize: vertical; /* разрешаем менять высоту (только вниз/вверх) */
+  overflow-y: auto; /* чтобы скролл при необходимости появился */
+  min-height: 46px; /* минимальная высота — не даст сжать меньше */
+  max-height: 75px; /* максимальная высота — не даст разрастись слишком сильно */
+
+  &:focus {
+    border-color: $primaryColor;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba($primaryColor, 0.15);
+  }
+}
+
+.builderPanel {
+  background: $darkGrayLighter;
+  border: 1px solid $borderColor;
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  max-height: 320px;
+  overflow-y: auto;
+  width: 100%;
+
+  .columnsList {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+
+    gap: 6px;
+  }
+
+  .operators {
+    display: grid;
+    gap: 4px;
+    grid-template-columns: repeat(9, 1fr);
+    width: 100%;
+  }
 }
 
 .configLabel {
@@ -17,9 +60,4 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-
-.muted {
-  color: $labelColor;
-  margin: 0;
 }

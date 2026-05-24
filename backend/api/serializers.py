@@ -8,6 +8,7 @@ from djoser.serializers import (
 from rest_framework import serializers
 
 from .tasks import send_verification_email
+from .services.db_utils import normalize_db_options, resolve_db_engine
 from .utils import Base64ImageField
 from core.models import (
     DataSource,
@@ -153,7 +154,7 @@ class DataSourceDBSerializer(serializers.ModelSerializer):
             'id', 'name',
             'db_engine', 'db_host', 'db_port',
             'db_name', 'db_user', 'db_password',
-            'db_schema', 'db_table',
+            'db_schema', 'db_table', 'db_options',
         )
         extra_kwargs = {
             'db_engine': {'required': True},
@@ -164,6 +165,31 @@ class DataSourceDBSerializer(serializers.ModelSerializer):
             'db_password': {'required': True, 'write_only': True},
             'db_table': {'required': True},
         }
+
+    def validate_db_engine(self, value):
+        try:
+            resolve_db_engine(value)
+        except ValueError as exc:
+            raise serializers.ValidationError(str(exc)) from exc
+        return value
+
+    def create(self, validated_data):
+        validated_data.pop('db_password', None)
+        validated_data.setdefault('db_password', '')
+        return super().create(validated_data)
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        try:
+            attrs['db_options'] = normalize_db_options(
+                attrs.get('db_engine'),
+                attrs.get('db_options'),
+            )
+        except ValueError as exc:
+            raise serializers.ValidationError(
+                {'db_options': str(exc)}
+            ) from exc
+        return attrs
 
 
 class EdgeSerializer(serializers.ModelSerializer):

@@ -205,6 +205,12 @@ class DataSource(UUIDPrimaryKeyModelMixin, TimestampedModelMixin):
         max_length=settings.DB_SPECS_MAX_LENGTH,
         blank=True
     )
+    db_options = models.JSONField(
+        'Опции подключения',
+        default=dict,
+        blank=True,
+        help_text='Дополнительные параметры подключения (например, sslmode).'
+    )
 
     # Результат
     parquet_file = models.FileField(

@@ -285,10 +285,10 @@ class Test02DataSourceAPI:
         valid_connect_db_payload,
         monkeypatch,
     ):
-        called_ids = []
+        called_args = []
 
-        def _delay_mock(datasource_id):
-            called_ids.append(datasource_id)
+        def _delay_mock(datasource_id, db_password):
+            called_args.append((datasource_id, db_password))
 
         monkeypatch.setattr('api.views.process_datasource.delay', _delay_mock)
 
@@ -305,7 +305,40 @@ class Test02DataSourceAPI:
         assert ds.owner.pk == user.pk
         assert ds.source_type == DataSource.SourceType.DATABASE
         assert ds.db_table == valid_connect_db_payload['db_table']
-        assert called_ids == [str(ds.id)]
+        assert ds.db_options == valid_connect_db_payload['db_options']
+        assert ds.db_password == ''
+        assert called_args == [
+            (str(ds.id), valid_connect_db_payload['db_password'])
+        ]
+
+    def test_02_datasources_connect_db_invalid_option_returns_400(
+        self,
+        user_client,
+        valid_connect_db_payload,
+        monkeypatch,
+    ):
+        called_args = []
+
+        def _delay_mock(datasource_id, db_password):
+            called_args.append((datasource_id, db_password))
+
+        monkeypatch.setattr('api.views.process_datasource.delay', _delay_mock)
+
+        invalid_payload = valid_connect_db_payload.copy()
+        invalid_payload['db_options'] = {
+            **valid_connect_db_payload['db_options'],
+            'unknown_param': '1',
+        }
+
+        response = user_client.post(
+            self.URL_DATASOURCES_CONNECT_DB,
+            data=invalid_payload,
+            format='json',
+        )
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert 'db_options' in response.json()
+        assert called_args == []
 
     def test_02_datasources_connect_db_missing_required_field_returns_400(
         self,
@@ -313,10 +346,10 @@ class Test02DataSourceAPI:
         valid_connect_db_payload,
         monkeypatch,
     ):
-        called_ids = []
+        called_args = []
 
-        def _delay_mock(datasource_id):
-            called_ids.append(datasource_id)
+        def _delay_mock(datasource_id, db_password):
+            called_args.append((datasource_id, db_password))
 
         monkeypatch.setattr('api.views.process_datasource.delay', _delay_mock)
 
@@ -331,7 +364,7 @@ class Test02DataSourceAPI:
 
         assert response.status_code == HTTPStatus.BAD_REQUEST
         assert 'db_host' in response.json()
-        assert called_ids == []
+        assert called_args == []
 
     def test_02_datasources_preview_ready_success(
         self,

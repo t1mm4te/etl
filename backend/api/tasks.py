@@ -4,6 +4,7 @@ from celery import shared_task
 from django.core.mail import send_mail
 from django.conf import settings
 
+from .services.db_ingest import process_db_source
 from .services.file_processing import process_uploaded_file
 from .services.pipeline_executor import (
     execute_pipeline,
@@ -37,14 +38,17 @@ def send_verification_email(self, email: str, code: str) -> dict:
 
 
 @shared_task(bind=True, max_retries=0)
-def process_datasource(self, datasource_id: str) -> dict:
+def process_datasource(self, datasource_id: str, db_password: str | None = None) -> dict:
     """
-    Асинхронная обработка загруженного файла:
-    валидация → конвертация в Parquet -> сохранение метаданных.
+    Асинхронная обработка источника данных:
+    файл → Parquet или БД → Parquet.
     """
     datasource = DataSource.objects.get(pk=datasource_id)
     try:
-        process_uploaded_file(datasource)
+        if datasource.source_type == DataSource.SourceType.DATABASE:
+            process_db_source(datasource, db_password or '')
+        else:
+            process_uploaded_file(datasource)
         return {'status': 'ok', 'datasource_id': str(datasource_id)}
     except Exception as exc:
         logger.exception('Задача process_datasource провалена: %s', exc)

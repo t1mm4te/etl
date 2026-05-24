@@ -5,6 +5,7 @@ import styles from './index.module.scss';
 import type { OperationConfigEditorProps } from '../types';
 
 const TYPE_OPTIONS = ['int64', 'float64', 'str', 'bool', 'datetime64[ns]', 'category'] as const;
+
 const TYPE_SELECT_OPTIONS: SelectOption[] = TYPE_OPTIONS.map((dtype) => ({
   value: dtype,
   label: dtype,
@@ -47,6 +48,7 @@ export function CastTypesConfigEditor({
 }: OperationConfigEditorProps) {
   const typedConfig = config as Record<string, unknown>;
   const [rows, setRows] = useState<MappingRow[]>(() => rowsFromConfig(typedConfig));
+
   const columnOptions: SelectOption[] = availableColumns.map((column) => ({
     value: column,
     label: column,
@@ -69,62 +71,80 @@ export function CastTypesConfigEditor({
       updateRows([{ column: '', dtype: 'str' }]);
       return;
     }
+    updateRows(rows.filter((_, i) => i !== index));
+  };
 
-    updateRows(rows.filter((_, rowIndex) => rowIndex !== index));
+  const updateColumn = (index: number, value: string) => {
+    const nextRows = [...rows];
+    nextRows[index] = { ...nextRows[index], column: value };
+    updateRows(nextRows);
+  };
+
+  const updateType = (index: number, value: string) => {
+    const nextRows = [...rows];
+    nextRows[index] = { ...nextRows[index], dtype: value };
+    updateRows(nextRows);
+  };
+
+  // Защита от повторного выбора одного столбца
+  const getAvailableColumnOptions = (currentIndex: number) => {
+    const usedColumns = new Set(
+      rows
+        .filter((_, i) => i !== currentIndex)
+        .map((r) => r.column)
+        .filter(Boolean)
+    );
+    return columnOptions.filter((opt) => !usedColumns.has(opt.value));
   };
 
   return (
     <div className={styles.root}>
-      <p className={styles.title}>Приведение типов</p>
-
       {rows.map((row, index) => (
-        <div className={styles.row} key={`cast-types-${index}`}>
-          <label className={styles.configLabel}>
-            Столбец
-            <CustomSelect
-              options={columnOptions}
-              value={
-                columnOptions.find((option) => option.value === row.column) ??
-                (row.column ? { value: row.column, label: row.column } : null)
-              }
-              placeholder="Выберите столбец"
-              onChange={(option) => {
-                const selectedOption = option as SelectOption | null;
-                const nextRows = [...rows];
-                nextRows[index] = { ...row, column: selectedOption?.value ?? '' };
-                updateRows(nextRows);
-              }}
-              isClearable
-            />
-          </label>
+        <div className={styles.castBlock} key={`cast-types-${index}`}>
+          <button className={styles.closeButton} onClick={() => removeRow(index)} type="button">
+            ✕
+          </button>
 
-          <label className={styles.configLabel}>
-            Новый тип
-            <CustomSelect
-              options={TYPE_SELECT_OPTIONS}
-              value={
-                TYPE_SELECT_OPTIONS.find((option) => option.value === row.dtype) ??
-                TYPE_SELECT_OPTIONS[2]
-              }
-              onChange={(option) => {
-                const selectedOption = option as SelectOption | null;
-                const nextRows = [...rows];
-                nextRows[index] = { ...row, dtype: selectedOption?.value ?? 'str' };
-                updateRows(nextRows);
-              }}
-              isSearchable={false}
-              isClearable={false}
-            />
-          </label>
+          <div className={styles.selectsRow}>
+            <div className={styles.selectWrapper}>
+              <label className={styles.configLabel}>
+                Столбец
+                <CustomSelect
+                  options={getAvailableColumnOptions(index)}
+                  value={
+                    columnOptions.find((opt) => opt.value === row.column) ??
+                    (row.column ? { value: row.column, label: row.column } : null)
+                  }
+                  placeholder="Выберите столбец"
+                  onChange={(option) =>
+                    updateColumn(index, (option as SelectOption | null)?.value ?? '')
+                  }
+                  isClearable
+                />
+              </label>
+            </div>
 
-          <Button type="button" color="white" onClick={() => removeRow(index)}>
-            Удалить
-          </Button>
+            <div className={styles.selectWrapper}>
+              <label className={styles.configLabel}>
+                Новый тип
+                <CustomSelect
+                  options={TYPE_SELECT_OPTIONS}
+                  value={
+                    TYPE_SELECT_OPTIONS.find((option) => option.value === row.dtype) ??
+                    TYPE_SELECT_OPTIONS[2]
+                  }
+                  onChange={(option) => updateType(index, (option as SelectOption)?.value ?? 'str')}
+                  isSearchable={false}
+                  isClearable={false}
+                />
+              </label>
+            </div>
+          </div>
         </div>
       ))}
 
       <Button type="button" color="white" onClick={addRow}>
-        Добавить преобразование
+        + Добавить преобразование типа
       </Button>
     </div>
   );

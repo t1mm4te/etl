@@ -67,8 +67,6 @@ export function JoinConfigEditor({
 
   return (
     <div className={styles.root}>
-      <p className={styles.title}>Сопоставление двух таблиц</p>
-
       <label className={styles.configLabel}>
         Из «{fromLeftLabel}»
         <CustomSelect
@@ -148,10 +146,6 @@ export function JoinConfigEditor({
           isClearable
         />
       </label>
-
-      <p className={styles.muted}>
-        Если столбца нет в подсказке, можно ввести его в CustomSelect выше.
-      </p>
     </div>
   );
 }

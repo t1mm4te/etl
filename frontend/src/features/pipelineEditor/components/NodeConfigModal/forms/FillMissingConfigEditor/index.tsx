@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
+import { Checkbox } from '@base-ui/react';
 import styles from './index.module.scss';
 import type { OperationConfigEditorProps } from '../types';
 import { CustomSelect, type SelectOption } from '../../../../../../shared/ui/CustomSelect';
@@ -8,9 +9,9 @@ const STRATEGY_OPTIONS = [
   { value: 'value', label: 'Заменить значением' },
   { value: 'ffill', label: 'Протянуть вперед (ffill)' },
   { value: 'bfill', label: 'Протянуть назад (bfill)' },
-  { value: 'mean', label: 'Среднее (mean)' },
-  { value: 'median', label: 'Медиана (median)' },
-  { value: 'mode', label: 'Мода (mode)' },
+  { value: 'mean', label: 'Среднее значение' },
+  { value: 'median', label: 'Медиана' },
+  { value: 'mode', label: 'Мода' },
   { value: 'drop', label: 'Удалить строки с пропусками' },
 ] as const;
 
@@ -18,31 +19,21 @@ const VALUE_BASED_STRATEGY = 'value';
 
 function parseFillValue(raw: string): unknown {
   const trimmed = raw.trim();
-  if (trimmed === '') {
-    return '';
-  }
-
-  if (trimmed === 'true') {
-    return true;
-  }
-  if (trimmed === 'false') {
-    return false;
-  }
+  if (trimmed === '') return '';
+  if (trimmed === 'true') return true;
+  if (trimmed === 'false') return false;
 
   const asNumber = Number(trimmed);
-  if (!Number.isNaN(asNumber)) {
-    return asNumber;
-  }
+  if (!Number.isNaN(asNumber)) return asNumber;
 
   return raw;
 }
 
-function getSelectedColumns(config: Record<string, unknown>) {
+function getSubset(config: Record<string, unknown>) {
   const raw = config.columns;
   if (!Array.isArray(raw)) {
     return [];
   }
-
   return raw
     .map((item) => (typeof item === 'string' ? item : String(item ?? '')))
     .map((item) => item.trim())
@@ -56,34 +47,45 @@ export function FillMissingConfigEditor({
 }: OperationConfigEditorProps) {
   const typedConfig = config as Record<string, unknown>;
   const strategy = typeof typedConfig.strategy === 'string' ? typedConfig.strategy : 'drop';
-  const selectedColumns = useMemo(() => getSelectedColumns(typedConfig), [typedConfig]);
-  const selectedSet = new Set(selectedColumns);
-  const strategyOptions: SelectOption[] = STRATEGY_OPTIONS.map((item) => ({
-    value: item.value,
-    label: item.label,
-  }));
+  const subset = getSubset(typedConfig);
+
   const [fillValueInput, setFillValueInput] = useState(
     typeof typedConfig.fill_value === 'string'
       ? typedConfig.fill_value
       : String(typedConfig.fill_value ?? '')
   );
 
-  const updateColumns = (nextColumns: string[]) => {
-    const nextConfig: Record<string, unknown> = { ...typedConfig };
-    if (nextColumns.length === 0) {
+  const selectedSet = new Set(subset);
+  const uniqueAvailableColumns = Array.from(new Set(availableColumns));
+
+  const allSelectedManually =
+    uniqueAvailableColumns.length > 0 &&
+    uniqueAvailableColumns.every((column) => selectedSet.has(column));
+
+  const allColumnsMode = subset.length === 0 || allSelectedManually;
+
+  const strategyOptions: SelectOption[] = STRATEGY_OPTIONS.map((item) => ({
+    value: item.value,
+    label: item.label,
+  }));
+
+  const updateSubset = (nextSubset: string[]) => {
+    const nextConfig: Record<string, unknown> = { ...typedConfig, strategy };
+
+    if (nextSubset.length === 0) {
       delete nextConfig.columns;
     } else {
-      nextConfig.columns = nextColumns;
+      nextConfig.columns = nextSubset;
     }
+
     onChange(nextConfig);
   };
 
   return (
     <div className={styles.root}>
-      <p className={styles.title}>Заполнение пропусков</p>
-
+      {/* Стратегия — как в Deduplicate */}
       <label className={styles.configLabel}>
-        Стратегия
+        Стратегия заполнения пропусков
         <CustomSelect
           options={strategyOptions}
           value={strategyOptions.find((item) => item.value === strategy) ?? strategyOptions[6]}
@@ -106,12 +108,13 @@ export function FillMissingConfigEditor({
         />
       </label>
 
-      {strategy === VALUE_BASED_STRATEGY ? (
+      {/* Поле значения (показывается только при стратегии 'value') */}
+      {strategy === VALUE_BASED_STRATEGY && (
         <label className={styles.configLabel}>
-          Значение заполнения
+          Значение для заполнения
           <Input
             value={fillValueInput}
-            placeholder="Например: 0"
+            placeholder="Например: 0, Unknown или 2025-01-01"
             onChange={(event) => {
               const nextValue = event.target.value;
               setFillValueInput(nextValue);
@@ -123,37 +126,55 @@ export function FillMissingConfigEditor({
             }}
           />
         </label>
-      ) : null}
+      )}
 
-      {availableColumns.length > 0 ? (
-        <div className={styles.columnsBlock}>
-          <p className={styles.muted}>Столбцы (пусто = все):</p>
+      {/* Блок выбора столбцов — полностью как в Deduplicate */}
+      {uniqueAvailableColumns.length > 0 && (
+        <>
+          <label className={styles.checkboxAll}>
+            <Checkbox.Root
+              className={styles.checkboxRoot}
+              checked={allColumnsMode}
+              onCheckedChange={(checked) => {
+                if (checked) {
+                  updateSubset([]);
+                } else {
+                  updateSubset(uniqueAvailableColumns);
+                }
+              }}
+              aria-label="Применить ко всем столбцам"
+            >
+              <Checkbox.Indicator className={styles.checkboxIndicator}>✓</Checkbox.Indicator>
+            </Checkbox.Root>
+            Применить ко всем столбцам
+          </label>
+
           <div className={styles.checkboxList}>
-            {availableColumns.map((column) => (
+            {uniqueAvailableColumns.map((column) => (
               <label className={styles.checkboxItem} key={column}>
-                <input
-                  className={styles.checkboxInput}
-                  type="checkbox"
+                <Checkbox.Root
+                  className={styles.checkboxRoot}
                   checked={selectedSet.has(column)}
-                  onChange={(event) => {
-                    const checked = event.currentTarget.checked;
+                  onCheckedChange={(checked) => {
                     if (checked) {
-                      if (selectedSet.has(column)) {
-                        return;
-                      }
-                      updateColumns([...selectedColumns, column]);
+                      updateSubset([...subset, column]);
                     } else {
-                      updateColumns(selectedColumns.filter((item) => item !== column));
+                      updateSubset(subset.filter((item) => item !== column));
                     }
                   }}
-                />
-                {column}
+                  aria-label={`Выбрать столбец ${column}`}
+                >
+                  <Checkbox.Indicator className={styles.checkboxIndicator}>✓</Checkbox.Indicator>
+                </Checkbox.Root>
+                <span className={styles.checkboxText}>{column}</span>
               </label>
             ))}
           </div>
-        </div>
-      ) : (
-        <p className={styles.muted}>Список столбцов пока недоступен.</p>
+        </>
+      )}
+
+      {uniqueAvailableColumns.length === 0 && (
+        <p className={styles.muted}>Список входных столбцов пока недоступен.</p>
       )}
     </div>
   );

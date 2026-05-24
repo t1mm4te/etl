@@ -3,23 +3,47 @@
 .root {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
-.title {
-  margin: 0;
+.castBlock {
+  position: relative;
+  background: rgba($white, 0.03);
+  border-radius: 8px;
+  padding: 8px 28px 14px 14px;
+}
+
+.closeButton {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background-color: $errorGrey;
+  border: 1px solid $borderColor;
+  border-radius: 999px;
   color: $white;
-  font-size: 16px;
+  width: 30px;
+  height: 30px;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 2px;
+  line-height: 1;
+  transition:
+    border-color $transitionFast,
+    background $transitionFast;
+
+  &:hover {
+    background-color: $errorBorderGrey;
+  }
 }
 
-.row {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.selectsRow {
+  display: grid;
+  grid-template-columns: 60% 40%;
+  gap: 16px;
+}
 
-  @media (max-width: 760px) {
-    flex-direction: column;
-  }
+.selectWrapper {
+  flex: 1;
 }
 
 .configLabel {

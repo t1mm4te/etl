@@ -48,10 +48,8 @@ export function MergeColumnsConfigEditor({
 
   return (
     <div className={styles.root}>
-      <p className={styles.title}>Объединение столбцов</p>
-
       <label className={styles.configLabel}>
-        Столбцы для объединения
+        Столбцы для объединения (минимум 2)
         <CustomSelect
           options={columnOptions}
           value={selectedValues}
@@ -68,7 +66,7 @@ export function MergeColumnsConfigEditor({
       </label>
 
       <label className={styles.configLabel}>
-        Разделитель
+        Разделитель (по умолчанию — пробел)
         <Input
           value={typeof typedConfig.separator === 'string' ? typedConfig.separator : ' '}
           placeholder="Пробел"
@@ -94,8 +92,6 @@ export function MergeColumnsConfigEditor({
           }
         />
       </label>
-
-      <p className={styles.muted}>Для операции требуется минимум два столбца.</p>
     </div>
   );
 }

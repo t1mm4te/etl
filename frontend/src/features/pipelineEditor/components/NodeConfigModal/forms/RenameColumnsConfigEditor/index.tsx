@@ -42,6 +42,7 @@ export function RenameColumnsConfigEditor({
 }: OperationConfigEditorProps) {
   const typedConfig = config as Record<string, unknown>;
   const [rows, setRows] = useState<RenameRow[]>(() => rowsFromConfig(typedConfig));
+
   const sourceOptions: SelectOption[] = availableColumns.map((column) => ({
     value: column,
     label: column,
@@ -65,56 +66,72 @@ export function RenameColumnsConfigEditor({
       updateRows([{ source: '', target: '' }]);
       return;
     }
+    updateRows(rows.filter((_, i) => i !== index));
+  };
 
-    updateRows(rows.filter((_, itemIndex) => itemIndex !== index));
+  const updateSource = (index: number, value: string) => {
+    const nextRows = [...rows];
+    nextRows[index] = { ...nextRows[index], source: value };
+    updateRows(nextRows);
+  };
+
+  const updateTarget = (index: number, value: string) => {
+    const nextRows = [...rows];
+    nextRows[index] = { ...nextRows[index], target: value };
+    updateRows(nextRows);
+  };
+
+  // Запрет повторного выбора одного и того же исходного столбца
+  const getAvailableSourceOptions = (currentIndex: number) => {
+    const usedSources = new Set(
+      rows
+        .filter((_, i) => i !== currentIndex)
+        .map((r) => r.source)
+        .filter(Boolean)
+    );
+
+    return sourceOptions.filter((option) => !usedSources.has(option.value));
   };
 
   return (
     <div className={styles.root}>
-      <p className={styles.title}>Переименование столбцов</p>
-
       {rows.map((row, index) => (
-        <div className={styles.row} key={`rename-${index}`}>
-          <label className={styles.configLabel}>
-            Исходное имя
-            <CustomSelect
-              options={sourceOptions}
-              value={
-                sourceOptions.find((option) => option.value === row.source) ??
-                (row.source ? { value: row.source, label: row.source } : null)
-              }
-              placeholder="Выберите столбец"
-              onChange={(option) => {
-                const selectedOption = option as SelectOption | null;
-                const nextRows = [...rows];
-                nextRows[index] = { ...row, source: selectedOption?.value ?? '' };
-                updateRows(nextRows);
-              }}
-              isClearable
-            />
-          </label>
+        <div className={styles.renameBlock} key={`rename-${index}`}>
+          <button className={styles.closeButton} onClick={() => removeRow(index)} type="button">
+            ✕
+          </button>
 
-          <label className={styles.configLabel}>
-            Новое имя
-            <Input
-              value={row.target}
-              placeholder="Например: full_name"
-              onChange={(event) => {
-                const nextRows = [...rows];
-                nextRows[index] = { ...row, target: event.target.value };
-                updateRows(nextRows);
-              }}
-            />
-          </label>
+          <div className={styles.fields}>
+            <label className={styles.configLabel}>
+              Исходное имя
+              <CustomSelect
+                options={getAvailableSourceOptions(index)}
+                value={
+                  sourceOptions.find((opt) => opt.value === row.source) ??
+                  (row.source ? { value: row.source, label: row.source } : null)
+                }
+                placeholder="Выберите столбец"
+                onChange={(option) =>
+                  updateSource(index, (option as SelectOption | null)?.value ?? '')
+                }
+                isClearable
+              />
+            </label>
 
-          <Button type="button" color="white" onClick={() => removeRow(index)}>
-            Удалить
-          </Button>
+            <label className={styles.configLabel}>
+              Новое имя
+              <Input
+                value={row.target}
+                placeholder="Новое имя"
+                onChange={(e) => updateTarget(index, e.target.value)}
+              />
+            </label>
+          </div>
         </div>
       ))}
 
       <Button type="button" color="white" onClick={addRow}>
-        Добавить переименование
+        + Добавить переименование
       </Button>
     </div>
   );

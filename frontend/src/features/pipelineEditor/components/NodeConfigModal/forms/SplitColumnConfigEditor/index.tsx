@@ -39,8 +39,6 @@ export function SplitColumnConfigEditor({
 
   return (
     <div className={styles.root}>
-      <p className={styles.title}>Разделение столбца</p>
-
       <label className={styles.configLabel}>
         Столбец
         <CustomSelect
@@ -64,10 +62,10 @@ export function SplitColumnConfigEditor({
       </label>
 
       <label className={styles.configLabel}>
-        Разделитель
+        Разделитель (по умолчанию - пробел)
         <Input
-          value={typeof typedConfig.separator === 'string' ? typedConfig.separator : ','}
-          placeholder=","
+          value={typeof typedConfig.separator === 'string' ? typedConfig.separator : ' '}
+          placeholder=" "
           onChange={(event) =>
             onChange({
               ...typedConfig,
@@ -102,7 +100,7 @@ export function SplitColumnConfigEditor({
       </label>
 
       <p className={styles.muted}>
-        Если не указать новые имена, бэкенд сгенерирует их автоматически.
+        Если вы не укажете имена новых столбцов, они будут сгенерированы автоматически.
       </p>
     </div>
   );

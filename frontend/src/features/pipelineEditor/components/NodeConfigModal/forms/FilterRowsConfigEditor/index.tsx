@@ -72,8 +72,6 @@ export function FilterRowsConfigEditor({
 
   return (
     <div className={styles.root}>
-      <p className={styles.title}>Фильтрация строк</p>
-
       <label className={styles.configLabel}>
         Оставить строки, у которых:
         <CustomSelect

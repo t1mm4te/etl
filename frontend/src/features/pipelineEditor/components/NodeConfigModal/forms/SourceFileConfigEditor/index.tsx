@@ -54,8 +54,7 @@ export function SourceFileConfigEditor({
 
   return (
     <div className={styles.root}>
-      <p className={styles.configLabel}>Файл CSV/XLSX</p>
-
+      <p className={styles.configLabel}>Доступные форматы: csv/xlsx</p>
       <div
         {...getRootProps()}
         className={styles.dropzone}

@@ -344,11 +344,12 @@ class DataSourceViewSet(
     def connect_db(self, request):
         serializer = DataSourceDBSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        db_password = serializer.validated_data.pop('db_password', '')
         ds = serializer.save(
             owner=request.user,
             source_type=DataSource.SourceType.DATABASE,
         )
-        process_datasource.delay(str(ds.pk))
+        process_datasource.delay(str(ds.pk), db_password)
         return Response(
             DataSourceDetailSerializer(ds).data,
             status=status.HTTP_201_CREATED,

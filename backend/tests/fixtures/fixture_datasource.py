@@ -211,6 +211,10 @@ def valid_connect_db_payload():
         'db_password': 'etl_password',
         'db_schema': 'public',
         'db_table': 'orders',
+        'db_options': {
+            'sslmode': 'require',
+            'channel_binding': 'require',
+        },
     }
 
 

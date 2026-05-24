@@ -61,19 +61,12 @@ def source_db(inputs: dict[str, pd.DataFrame], config: dict) -> pd.DataFrame:
     Загрузка из внешней БД.
     config: {"datasource_id": "<uuid>"}
     """
-    from sqlalchemy import create_engine
-
     from core.models import DataSource
 
     ds = DataSource.objects.get(pk=config['datasource_id'])
-    url = (
-        f'{ds.db_engine}://{ds.db_user}:{ds.db_password}'
-        f'@{ds.db_host}:{ds.db_port}/{ds.db_name}'
-    )
-    engine = create_engine(url)
-    table = ds.db_table
-    schema = ds.db_schema or None
-    return pd.read_sql_table(table, engine, schema=schema)
+    if ds.status != DataSource.Status.READY or not ds.parquet_file:
+        raise ValueError('Источник данных не готов.')
+    return pd.read_parquet(ds.parquet_file.path, engine='pyarrow')
 
 
 # Transform-операции

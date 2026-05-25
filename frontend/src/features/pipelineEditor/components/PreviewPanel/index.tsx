@@ -3,8 +3,7 @@ import type { PreviewResponse } from '../../../../shared/api/types';
 import { CustomSelect, type SelectOption } from '../../../../shared/ui/CustomSelect';
 import { PreviewTable } from '../PreviewTable';
 import styles from './index.module.scss';
-
-type PreviewTab = 'input' | 'left_input' | 'right_input' | 'result';
+import type { NodeKind, PreviewTab } from '../../types/nodeConfigModalTypes';
 
 type PreviewPanelProps = {
   previewState: {
@@ -14,12 +13,14 @@ type PreviewPanelProps = {
     resultPreview: PreviewResponse | null;
     isPreviewLoading: boolean;
   };
-  nodeKind: 'source' | 'transform' | 'sink';
+  nodeKind: NodeKind;
   hasIncomingData?: boolean;
   isJoin?: boolean;
   inputNodeLabelsByPort?: Record<string, string>;
   previewRowLimit: number;
   onPreviewRowLimitChange: (value: number) => void;
+  activePreviewTab?: PreviewTab;
+  onActivePreviewTabChange?: (tab: PreviewTab) => void;
 };
 
 export function PreviewPanel({
@@ -30,15 +31,23 @@ export function PreviewPanel({
   inputNodeLabelsByPort,
   previewRowLimit,
   onPreviewRowLimitChange,
+  activePreviewTab,
+  onActivePreviewTabChange,
 }: PreviewPanelProps) {
-  const [activePreviewTab, setActivePreviewTab] = useState<PreviewTab>('input');
+  const [localPreviewTab, setLocalPreviewTab] = useState<PreviewTab>('input');
+  const currentPreviewTab = activePreviewTab ?? localPreviewTab;
+
+  const setTab = (tab: PreviewTab) => {
+    setLocalPreviewTab(tab);
+    onActivePreviewTabChange?.(tab);
+  };
 
   const { inputPreview, leftInputPreview, rightInputPreview, resultPreview, isPreviewLoading } =
     previewState;
 
   const rowLimitOptions: SelectOption[] = [
-    { value: '10', label: '10 строк' },
-    { value: '25', label: '25 строк' },
+    { value: '15', label: '15 строк' },
+    { value: '30', label: '30 строк' },
     { value: '50', label: '50 строк' },
     { value: '100', label: '100 строк' },
     { value: '500', label: '500 строк' },
@@ -53,7 +62,7 @@ export function PreviewPanel({
           <>
             <div className={styles.metadataRow}>
               <p className={styles.metadata}>
-                Всего строк: {resultPreview.total_rows} | Столбцов: {resultPreview.columns.length}
+                Всего {resultPreview.total_rows} строк, {resultPreview.columns.length} столбцов
               </p>
               <CustomSelect
                 options={rowLimitOptions}
@@ -94,13 +103,13 @@ export function PreviewPanel({
           {(inputPreview || leftInputPreview || rightInputPreview || resultPreview) && (
             <div className={styles.metadataRow}>
               <p className={styles.metadata}>
-                {activePreviewTab === 'input'
-                  ? `Всего строк: ${inputPreview?.total_rows ?? 0} | Столбцов: ${inputPreview?.columns.length ?? 0}`
-                  : activePreviewTab === 'left_input'
-                    ? `Всего строк: ${leftInputPreview?.total_rows ?? 0} | Столбцов: ${leftInputPreview?.columns.length ?? 0}`
-                    : activePreviewTab === 'right_input'
-                      ? `Всего строк: ${rightInputPreview?.total_rows ?? 0} | Столбцов: ${rightInputPreview?.columns.length ?? 0}`
-                      : `Всего строк: ${resultPreview?.total_rows ?? 0} | Столбцов: ${resultPreview?.columns.length ?? 0}`}
+                {currentPreviewTab === 'input'
+                  ? `Всего ${inputPreview?.total_rows ?? 0} строк, ${inputPreview?.columns.length ?? 0} столбцов`
+                  : currentPreviewTab === 'left_input'
+                    ? `Всего ${leftInputPreview?.total_rows ?? 0} строк, ${leftInputPreview?.columns.length ?? 0} столбцов`
+                    : currentPreviewTab === 'right_input'
+                      ? `Всего ${rightInputPreview?.total_rows ?? 0} строк, ${rightInputPreview?.columns.length ?? 0} столбцов`
+                      : `Всего ${resultPreview?.total_rows ?? 0} строк, ${resultPreview?.columns.length ?? 0} столбцов`}
               </p>
               <CustomSelect
                 options={rowLimitOptions}
@@ -122,8 +131,8 @@ export function PreviewPanel({
           <div className={styles.tabRow}>
             <button
               type="button"
-              className={activePreviewTab === 'result' ? styles.tabActive : styles.tab}
-              onClick={() => setActivePreviewTab('result')}
+              className={currentPreviewTab === 'result' ? styles.tabActive : styles.tab}
+              onClick={() => setTab('result')}
             >
               Результат узла
             </button>
@@ -132,15 +141,15 @@ export function PreviewPanel({
               <>
                 <button
                   type="button"
-                  className={activePreviewTab === 'left_input' ? styles.tabActive : styles.tab}
-                  onClick={() => setActivePreviewTab('left_input')}
+                  className={currentPreviewTab === 'left_input' ? styles.tabActive : styles.tab}
+                  onClick={() => setTab('left_input')}
                 >
                   {inputNodeLabelsByPort?.left ?? inputNodeLabelsByPort?.main ?? 'Вход 1'}
                 </button>
                 <button
                   type="button"
-                  className={activePreviewTab === 'right_input' ? styles.tabActive : styles.tab}
-                  onClick={() => setActivePreviewTab('right_input')}
+                  className={currentPreviewTab === 'right_input' ? styles.tabActive : styles.tab}
+                  onClick={() => setTab('right_input')}
                 >
                   {inputNodeLabelsByPort?.right ?? 'Вход 2'}
                 </button>
@@ -148,8 +157,8 @@ export function PreviewPanel({
             ) : (
               <button
                 type="button"
-                className={activePreviewTab === 'input' ? styles.tabActive : styles.tab}
-                onClick={() => setActivePreviewTab('input')}
+                className={currentPreviewTab === 'input' ? styles.tabActive : styles.tab}
+                onClick={() => setTab('input')}
               >
                 Входные данные
               </button>
@@ -158,19 +167,19 @@ export function PreviewPanel({
 
           {isPreviewLoading ? <p className={styles.muted}>Загружаем предпросмотр...</p> : null}
 
-          {activePreviewTab === 'input' ? (
+          {currentPreviewTab === 'input' ? (
             inputPreview ? (
               <PreviewTable preview={inputPreview} />
             ) : (
               <p className={styles.muted}>Входной предпросмотр недоступен.</p>
             )
-          ) : activePreviewTab === 'left_input' ? (
+          ) : currentPreviewTab === 'left_input' ? (
             leftInputPreview ? (
               <PreviewTable preview={leftInputPreview} />
             ) : (
               <p className={styles.muted}>Предпросмотр первого входа недоступен.</p>
             )
-          ) : activePreviewTab === 'right_input' ? (
+          ) : currentPreviewTab === 'right_input' ? (
             rightInputPreview ? (
               <PreviewTable preview={rightInputPreview} />
             ) : (

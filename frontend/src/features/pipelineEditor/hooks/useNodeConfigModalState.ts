@@ -7,12 +7,23 @@ import type {
   PreviewResponse,
   SourceFile,
 } from '../../../shared/api/types';
-import { getDatasourceDetail, getSourceFileDetail } from '../../../shared/api/pipelines';
+import {
+  getDatasourceDetail,
+  getSourceFileDetail,
+  listPipelineRuns,
+  getPipelineRun,
+  runPipelinePreview,
+} from '../../../shared/api/pipelines';
 import { useNodeColumns } from './useNodeColumns';
-import { useSourceNodePreviewActions } from './useSourceNodePreviewActions';
-import { useTransformNodePreviewActions } from './useTransformNodePreviewActions';
-
-export type NodeKind = 'source' | 'transform' | 'sink';
+import { useSourceNodePreviewActions } from './useSourceNodePreviewActions.ts';
+import {
+  fetchTransformPreviewFromRuns,
+  runTransformPreview,
+} from './useTransformNodePreviewActions';
+import { usePipelineEditorStore } from '../store/pipelineEditorStore';
+import { buildNextNodeConfig } from '../utils/nodePreviewUtils';
+import { type PreviewTab } from '../types/nodeConfigModalTypes';
+import { getNodeKind } from '../utils/getNodeKind.ts';
 
 type UseNodeConfigModalStateParams = {
   pipelineId: string;
@@ -28,16 +39,6 @@ type UseNodeConfigModalStateParams = {
   ) => Promise<void>;
 };
 
-function getNodeKind(operationType: string): NodeKind {
-  if (operationType === 'source_file' || operationType === 'source_db') {
-    return 'source';
-  }
-  if (operationType === 'export_file') {
-    return 'sink';
-  }
-  return 'transform';
-}
-
 export function useNodeConfigModalState({
   pipelineId,
   editingNodeId,
@@ -50,7 +51,6 @@ export function useNodeConfigModalState({
   const editingNode = nodes?.find((node) => node.id === editingNodeId) ?? null;
   const nodeKind = editingNode ? getNodeKind(editingNode.operation_type) : 'source';
 
-  // Modal state
   const [config, setConfig] = useState<NodeConfig>({});
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedFileName, setSelectedFileName] = useState<string | undefined>();
@@ -63,13 +63,36 @@ export function useNodeConfigModalState({
   const [sourceFileUploadProgress, setSourceFileUploadProgress] = useState<number | null>(null);
   const [modalError, setModalError] = useState<string | undefined>();
 
-  // Preview state
+  const resetSourceState = useCallback(() => {
+    setSelectedFile(null);
+    setSelectedFileName(undefined);
+    setSelectedSheetName(undefined);
+    setExcelSheetNames([]);
+    setSourceFileId('');
+    setSourceFileMetadata(null);
+    setUploadedDatasourceId('');
+    setIsSourceFileUploading(false);
+    setSourceFileUploadProgress(null);
+  }, []);
+
+  // Preview state (local)
   const [inputPreview, setInputPreview] = useState<PreviewResponse | null>(null);
   const [leftInputPreview, setLeftInputPreview] = useState<PreviewResponse | null>(null);
   const [rightInputPreview, setRightInputPreview] = useState<PreviewResponse | null>(null);
   const [resultPreview, setResultPreview] = useState<PreviewResponse | null>(null);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
-  const [previewRowLimit, setPreviewRowLimit] = useState(10);
+  const [previewRowLimit, setPreviewRowLimit] = useState(15);
+  const [activePreviewTab, setActivePreviewTab] = useState<PreviewTab>('input');
+
+  const resetPreviewState = useCallback(() => {
+    setInputPreview(null);
+    setLeftInputPreview(null);
+    setRightInputPreview(null);
+    setResultPreview(null);
+    setIsPreviewLoading(false);
+    setPreviewRowLimit(15);
+    setActivePreviewTab('input');
+  }, []);
 
   const {
     availableColumns,
@@ -107,7 +130,6 @@ export function useNodeConfigModalState({
     excelSheetNames,
     previewRowLimit,
     saveNodeConfig,
-    loadAvailableColumns,
     closeModal,
     setConfig,
     setSelectedFile,
@@ -128,31 +150,129 @@ export function useNodeConfigModalState({
     setModalError,
   });
 
-  const {
-    resolveNodeRunsForPreview,
-    fetchNodePreviewsFromRuns,
-    onSaveNodeConfig: onSaveTransformNodeConfig,
-    onApplyPreview,
-    onPreviewRowLimitChange: onTransformPreviewRowLimitChange,
-  } = useTransformNodePreviewActions({
-    pipelineId,
-    nodeRuns,
-    nodes,
-    edges,
+  const setRunId = usePipelineEditorStore((s) => s.setRunId);
+
+  const getNextConfig = useCallback(
+    () => buildNextNodeConfig(config, uploadedDatasourceId),
+    [config, uploadedDatasourceId]
+  );
+
+  const resolveNodeRunsForPreview = useCallback(async () => {
+    if (nodeRuns && nodeRuns.length > 0) {
+      return nodeRuns;
+    }
+
+    const runs = await listPipelineRuns(pipelineId);
+    const latestCompletedRun = runs.find(
+      (run) => run.status === 'success' || run.status === 'failed'
+    );
+
+    if (!latestCompletedRun) {
+      return null;
+    }
+
+    setRunId(latestCompletedRun.id);
+    const runDetail = await getPipelineRun(latestCompletedRun.id);
+    return runDetail.node_runs;
+  }, [nodeRuns, pipelineId, setRunId]);
+
+  const fetchNodePreviewsFromRuns = useCallback(
+    async (node: ApiNode, runsOverride?: NodeRun[], rowLimit = previewRowLimit) => {
+      setIsPreviewLoading(true);
+      setModalError(undefined);
+
+      try {
+        const previews = await fetchTransformPreviewFromRuns({
+          node,
+          nodes,
+          edges,
+          nodeRuns: runsOverride ?? nodeRuns ?? null,
+          rowLimit,
+        });
+
+        setInputPreview(previews.inputPreview);
+        setLeftInputPreview(previews.leftInputPreview);
+        setRightInputPreview(previews.rightInputPreview);
+        setResultPreview(previews.resultPreview);
+      } catch (error) {
+        setInputPreview(null);
+        setLeftInputPreview(null);
+        setRightInputPreview(null);
+        setResultPreview(null);
+        setModalError(String(error));
+      } finally {
+        setIsPreviewLoading(false);
+      }
+    },
+    [
+      edges,
+      nodes,
+      nodeRuns,
+      previewRowLimit,
+      setInputPreview,
+      setIsPreviewLoading,
+      setLeftInputPreview,
+      setResultPreview,
+      setRightInputPreview,
+      setModalError,
+    ]
+  );
+
+  const onSaveTransformNodeConfig = useCallback(async () => {
+    if (!editingNode) return;
+    setModalError(undefined);
+    try {
+      const nextConfig = getNextConfig();
+      await saveNodeConfig(editingNode.id, nextConfig);
+    } catch (error) {
+      setModalError(String(error));
+    }
+  }, [editingNode, getNextConfig, saveNodeConfig, setModalError]);
+
+  const onApplyPreview = useCallback(async () => {
+    if (!editingNode || nodeKind === 'source') return;
+
+    setModalError(undefined);
+    setActivePreviewTab('result');
+    setIsPreviewLoading(true);
+
+    try {
+      const { startedRun, completedRun } = await runTransformPreview({
+        pipelineId,
+        editingNode,
+        getNextConfig,
+        saveNodeConfig,
+        runPipelinePreview,
+        getPipelineRun,
+      });
+
+      setRunId(startedRun.id);
+      await fetchNodePreviewsFromRuns(editingNode, completedRun.node_runs);
+    } catch (error) {
+      setModalError(String(error));
+      setIsPreviewLoading(false);
+    }
+  }, [
     editingNode,
     nodeKind,
-    config,
-    uploadedDatasourceId,
-    setPreviewRowLimit,
-    previewRowLimit,
+    pipelineId,
+    getNextConfig,
     saveNodeConfig,
-    setInputPreview,
-    setLeftInputPreview,
-    setRightInputPreview,
-    setResultPreview,
+    fetchNodePreviewsFromRuns,
+    setActivePreviewTab,
     setIsPreviewLoading,
-    setModalError,
-  });
+    setRunId,
+  ]);
+
+  const onTransformPreviewRowLimitChange = useCallback(
+    (limit: number) => {
+      setPreviewRowLimit(limit);
+      if (editingNode && nodeKind !== 'source') {
+        void fetchNodePreviewsFromRuns(editingNode, undefined, limit);
+      }
+    },
+    [editingNode, nodeKind, setPreviewRowLimit, fetchNodePreviewsFromRuns]
+  );
 
   const openNodeModal = useCallback(
     async (nodeId: string) => {
@@ -162,20 +282,10 @@ export function useNodeConfigModalState({
       }
 
       setConfig(node.config ?? {});
-      setSelectedFile(null);
-      setSelectedFileName(undefined);
-      setSelectedSheetName(undefined);
-      setExcelSheetNames([]);
-      setSourceFileId('');
-      setSourceFileMetadata(null);
-      setUploadedDatasourceId('');
-      setIsSourceFileUploading(false);
-      setSourceFileUploadProgress(null);
+      resetSourceState();
+      resetPreviewState();
+      setActivePreviewTab('input');
       setModalError(undefined);
-      setInputPreview(null);
-      setLeftInputPreview(null);
-      setRightInputPreview(null);
-      setResultPreview(null);
       await loadAvailableColumns(node.id);
 
       const kind = getNodeKind(node.operation_type);
@@ -219,6 +329,8 @@ export function useNodeConfigModalState({
     [
       fetchNodePreviewsFromRuns,
       fetchSourcePreview,
+      resetSourceState,
+      resetPreviewState,
       loadAvailableColumns,
       nodes,
       resolveNodeRunsForPreview,
@@ -250,6 +362,7 @@ export function useNodeConfigModalState({
       inputNodeLabelsByPort,
       modalError,
       previewRowLimit,
+      activePreviewTab,
     },
     previewState: {
       inputPreview,
@@ -272,6 +385,7 @@ export function useNodeConfigModalState({
     previewCallbacks: {
       onSetExcelSheetNames: setExcelSheetNames,
       onSetSelectedSheetName: setSelectedSheetName,
+      onSetActivePreviewTab: setActivePreviewTab,
     },
   };
 }

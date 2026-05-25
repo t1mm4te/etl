@@ -1,291 +1,166 @@
-import { useCallback, useEffect } from 'react';
 import {
   getDatasourceDetail,
-  getPipelineRun,
-  listPipelineRuns,
   previewDatasource,
   previewNodeRun,
-  runPipelinePreview,
 } from '../../../shared/api/pipelines';
 import type {
   Edge,
   Node as ApiNode,
-  NodeConfig,
   NodeRun,
   PreviewResponse,
+  NodeConfig,
+  PipelineRunDetail,
 } from '../../../shared/api/types';
 import { extractError } from '../../../shared/lib/extractError';
-import { usePipelineEditorStore } from '../store/pipelineEditorStore';
-import { buildNextNodeConfig } from './nodePreviewUtils';
-import type { NodeKind } from './useNodeConfigModalState';
+import { getNodeKind } from '../utils/getNodeKind';
 
-type UseTransformNodePreviewActionsParams = {
+type FetchTransformPreviewParams = {
+  node: ApiNode;
+  nodes?: ApiNode[];
+  edges?: Edge[];
+  nodeRuns?: NodeRun[] | null;
+  rowLimit?: number;
+};
+
+type TransformPreviews = {
+  inputPreview: PreviewResponse | null;
+  leftInputPreview: PreviewResponse | null;
+  rightInputPreview: PreviewResponse | null;
+  resultPreview: PreviewResponse | null;
+};
+
+export async function fetchTransformPreviewFromRuns({
+  node,
+  nodes,
+  edges,
+  nodeRuns,
+  rowLimit = 15,
+}: FetchTransformPreviewParams): Promise<TransformPreviews> {
+  try {
+    let inputPreview: PreviewResponse | null = null;
+    let leftInputPreview: PreviewResponse | null = null;
+    let rightInputPreview: PreviewResponse | null = null;
+    let resultPreview: PreviewResponse | null = null;
+
+    if (getNodeKind(node.operation_type) !== 'source') {
+      const incomingEdges = (edges ?? []).filter((edge) => edge.target_node === node.id);
+
+      if (incomingEdges.length > 0) {
+        const previewsByPort: Record<string, PreviewResponse | null> = {};
+
+        for (const incomingEdge of incomingEdges) {
+          let preview: PreviewResponse | null = null;
+          const upstreamNode = nodes?.find((item) => item.id === incomingEdge.source_node);
+          const upstreamDatasourceId = upstreamNode?.config?.datasource_id;
+
+          if (typeof upstreamDatasourceId === 'string' && upstreamDatasourceId) {
+            const upstreamDatasource = await getDatasourceDetail(upstreamDatasourceId);
+            if (upstreamDatasource.status === 'ready') {
+              preview = await previewDatasource(upstreamDatasourceId, rowLimit);
+            }
+          } else {
+            const upstreamRun =
+              nodeRuns?.find(
+                (run) => run.node === incomingEdge.source_node && run.status === 'success'
+              ) ?? null;
+            if (upstreamRun) {
+              preview = await previewNodeRun(upstreamRun.id, rowLimit);
+            }
+          }
+
+          const port = incomingEdge.target_port || 'main';
+          previewsByPort[port] = preview;
+        }
+
+        inputPreview = previewsByPort.main ?? null;
+        leftInputPreview = previewsByPort.left ?? previewsByPort.main ?? null;
+        rightInputPreview = previewsByPort.right ?? null;
+      }
+    }
+
+    const ownRun =
+      nodeRuns?.find((run) => run.node === node.id && run.status === 'success') ?? null;
+    if (ownRun) {
+      resultPreview = await previewNodeRun(ownRun.id, rowLimit);
+    }
+
+    return { inputPreview, leftInputPreview, rightInputPreview, resultPreview };
+  } catch (error) {
+    throw new Error(extractError(error, 'Не удалось получить предпросмотр по последнему запуску'));
+  }
+}
+
+type RunTransformPreviewParams = {
   pipelineId: string;
-  nodeRuns: NodeRun[] | undefined;
-  nodes: ApiNode[] | undefined;
-  edges: Edge[] | undefined;
-  editingNode: ApiNode | null;
-  nodeKind: NodeKind;
-  config: NodeConfig;
-  uploadedDatasourceId: string;
-  setPreviewRowLimit: (value: number) => void;
-  previewRowLimit: number;
+  editingNode: ApiNode;
+  getNextConfig: () => NodeConfig;
   saveNodeConfig: (
     nodeId: string,
     config: NodeConfig,
     options?: { label?: string }
   ) => Promise<void>;
-  setInputPreview: (value: PreviewResponse | null) => void;
-  setLeftInputPreview: (value: PreviewResponse | null) => void;
-  setRightInputPreview: (value: PreviewResponse | null) => void;
-  setResultPreview: (value: PreviewResponse | null) => void;
-  setIsPreviewLoading: (value: boolean) => void;
-  setModalError: (value?: string) => void;
+  runPipelinePreview: (pipelineId: string, nodeId: string) => Promise<{ id: string }>;
+  getPipelineRun: (runId: string) => Promise<PipelineRunDetail>;
+  waitTimeoutMs?: number;
 };
 
-function getNodeKind(operationType: string): NodeKind {
-  if (operationType === 'source_file' || operationType === 'source_db') {
-    return 'source';
-  }
-  if (operationType === 'export_file') {
-    return 'sink';
-  }
-  return 'transform';
-}
+type RunTransformPreviewResult = {
+  startedRun: { id: string };
+  completedRun: PipelineRunDetail;
+};
 
-export function useTransformNodePreviewActions({
+export async function runTransformPreview({
   pipelineId,
-  nodeRuns,
-  nodes,
-  edges,
   editingNode,
-  nodeKind,
-  config,
-  uploadedDatasourceId,
-  setPreviewRowLimit,
-  previewRowLimit,
+  getNextConfig,
   saveNodeConfig,
-  setInputPreview,
-  setLeftInputPreview,
-  setRightInputPreview,
-  setResultPreview,
-  setIsPreviewLoading,
-  setModalError,
-}: UseTransformNodePreviewActionsParams) {
-  const setRunId = usePipelineEditorStore((state) => state.setRunId);
+  runPipelinePreview,
+  getPipelineRun,
+  waitTimeoutMs = 1500,
+}: RunTransformPreviewParams): Promise<RunTransformPreviewResult> {
+  if (!editingNode) {
+    throw new Error('No editing node provided');
+  }
 
-  const clearTransformPreviews = useCallback(() => {
-    setInputPreview(null);
-    setLeftInputPreview(null);
-    setRightInputPreview(null);
-    setResultPreview(null);
-  }, [setInputPreview, setLeftInputPreview, setResultPreview, setRightInputPreview]);
+  try {
+    const nextConfig = getNextConfig();
+    await saveNodeConfig(editingNode.id, nextConfig);
 
-  const getNextConfig = useCallback(
-    () => buildNextNodeConfig(config, uploadedDatasourceId),
-    [config, uploadedDatasourceId]
-  );
+    const startedRun = await runPipelinePreview(pipelineId, editingNode.id);
 
-  const getSuccessfulNodeRun = useCallback(
-    (nodeId: string, runs: NodeRun[] | undefined = nodeRuns) =>
-      runs?.find((run) => run.node === nodeId && run.status === 'success') ?? null,
-    [nodeRuns]
-  );
-
-  const waitForRunCompletion = useCallback(async (runId: string) => {
     const maxAttempts = 40;
+    let completedRun: PipelineRunDetail | null = null;
 
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-      const runDetail = await getPipelineRun(runId);
+      const runDetail = await getPipelineRun(startedRun.id);
       if (
         runDetail.status === 'success' ||
         runDetail.status === 'failed' ||
         runDetail.status === 'cancelled'
       ) {
-        return runDetail;
+        completedRun = runDetail;
+        break;
       }
 
-      await new Promise((resolve) => {
-        setTimeout(resolve, 1500);
-      });
+      await new Promise((resolve) => setTimeout(resolve, waitTimeoutMs));
     }
 
-    throw new Error('Не дождались завершения фонового запуска пайплайна для предпросмотра');
-  }, []);
-
-  const resolveNodeRunsForPreview = useCallback(async () => {
-    if (nodeRuns && nodeRuns.length > 0) {
-      return nodeRuns;
+    if (!completedRun) {
+      throw new Error('Не дождались завершения фонового запуска пайплайна для предпросмотра');
     }
 
-    const runs = await listPipelineRuns(pipelineId);
-    const latestCompletedRun = runs.find(
-      (run) => run.status === 'success' || run.status === 'failed'
-    );
-
-    if (!latestCompletedRun) {
-      return null;
+    if (completedRun.status === 'failed') {
+      throw new Error(
+        completedRun.error_message || 'Локальный запуск предпросмотра завершился с ошибкой'
+      );
     }
 
-    setRunId(latestCompletedRun.id);
-    const runDetail = await getPipelineRun(latestCompletedRun.id);
-    return runDetail.node_runs;
-  }, [nodeRuns, pipelineId, setRunId]);
-
-  const fetchNodePreviewsFromRuns = useCallback(
-    async (node: ApiNode, runsOverride?: NodeRun[]) => {
-      setIsPreviewLoading(true);
-      setModalError(undefined);
-
-      try {
-        if (getNodeKind(node.operation_type) !== 'source') {
-          const incomingEdges = (edges ?? []).filter((edge) => edge.target_node === node.id);
-
-          if (incomingEdges.length === 0) {
-            setInputPreview(null);
-            setLeftInputPreview(null);
-            setRightInputPreview(null);
-          } else {
-            const previewsByPort: Record<string, PreviewResponse | null> = {};
-
-            for (const incomingEdge of incomingEdges) {
-              let preview = null;
-              const upstreamNode = nodes?.find((item) => item.id === incomingEdge.source_node);
-              const upstreamDatasourceId = upstreamNode?.config?.datasource_id;
-
-              if (typeof upstreamDatasourceId === 'string' && upstreamDatasourceId) {
-                const upstreamDatasource = await getDatasourceDetail(upstreamDatasourceId);
-                if (upstreamDatasource.status === 'ready') {
-                  preview = await previewDatasource(upstreamDatasourceId, previewRowLimit);
-                }
-              } else {
-                const upstreamRun = getSuccessfulNodeRun(incomingEdge.source_node, runsOverride);
-                if (upstreamRun) {
-                  preview = await previewNodeRun(upstreamRun.id, previewRowLimit);
-                }
-              }
-
-              const port = incomingEdge.target_port || 'main';
-              previewsByPort[port] = preview;
-            }
-
-            setInputPreview(previewsByPort.main ?? null);
-            setLeftInputPreview(previewsByPort.left ?? previewsByPort.main ?? null);
-            setRightInputPreview(previewsByPort.right ?? null);
-          }
-        }
-
-        const ownRun = getSuccessfulNodeRun(node.id, runsOverride);
-        if (ownRun) {
-          const ownPreview = await previewNodeRun(ownRun.id, previewRowLimit);
-          setResultPreview(ownPreview);
-        } else {
-          setResultPreview(null);
-        }
-      } catch (error) {
-        clearTransformPreviews();
-        setModalError(
-          extractError(error, 'Не удалось получить предпросмотр по последнему запуску')
-        );
-      } finally {
-        setIsPreviewLoading(false);
-      }
-    },
-    [
-      clearTransformPreviews,
-      edges,
-      getSuccessfulNodeRun,
-      nodes,
-      previewRowLimit,
-      setInputPreview,
-      setIsPreviewLoading,
-      setLeftInputPreview,
-      setModalError,
-      setResultPreview,
-      setRightInputPreview,
-    ]
-  );
-
-  const onSaveNodeConfig = useCallback(async () => {
-    if (!editingNode) {
-      return;
+    if (completedRun.status === 'cancelled') {
+      throw new Error('Локальный запуск предпросмотра был отменен');
     }
 
-    setModalError(undefined);
-
-    try {
-      const nextConfig = getNextConfig();
-      await saveNodeConfig(editingNode.id, nextConfig);
-    } catch (error) {
-      setModalError(extractError(error, 'Не удалось сохранить конфигурацию ноды'));
-    }
-  }, [editingNode, getNextConfig, saveNodeConfig, setModalError]);
-
-  const onApplyPreview = useCallback(async () => {
-    if (!editingNode || nodeKind === 'source') {
-      return;
-    }
-
-    setModalError(undefined);
-    setIsPreviewLoading(true);
-
-    try {
-      const nextConfig = getNextConfig();
-      await saveNodeConfig(editingNode.id, nextConfig);
-
-      const startedRun = await runPipelinePreview(pipelineId, editingNode.id);
-      setRunId(startedRun.id);
-      const completedRun = await waitForRunCompletion(startedRun.id);
-
-      if (completedRun.status === 'failed') {
-        throw new Error(
-          completedRun.error_message || 'Локальный запуск предпросмотра завершился с ошибкой'
-        );
-      }
-
-      if (completedRun.status === 'cancelled') {
-        throw new Error('Локальный запуск предпросмотра был отменен');
-      }
-
-      await fetchNodePreviewsFromRuns(editingNode, completedRun.node_runs);
-    } catch (error) {
-      setModalError(extractError(error, 'Не удалось применить настройки для предпросмотра'));
-      setIsPreviewLoading(false);
-    }
-  }, [
-    editingNode,
-    fetchNodePreviewsFromRuns,
-    getNextConfig,
-    nodeKind,
-    pipelineId,
-    saveNodeConfig,
-    setIsPreviewLoading,
-    setModalError,
-    setRunId,
-    waitForRunCompletion,
-  ]);
-
-  // Refetch previews when row limit changes
-  useEffect(() => {
-    if (!editingNode || nodeKind === 'source') {
-      return;
-    }
-
-    fetchNodePreviewsFromRuns(editingNode);
-  }, [editingNode, nodeKind, previewRowLimit, fetchNodePreviewsFromRuns]);
-
-  const onPreviewRowLimitChange = useCallback(
-    (limit: number) => {
-      setPreviewRowLimit(limit);
-    },
-    [setPreviewRowLimit]
-  );
-
-  return {
-    resolveNodeRunsForPreview,
-    fetchNodePreviewsFromRuns,
-    onSaveNodeConfig,
-    onApplyPreview,
-    onPreviewRowLimitChange,
-  };
+    return { startedRun, completedRun };
+  } catch (error) {
+    throw new Error(extractError(error, 'Не удалось запустить предпросмотр'));
+  }
 }

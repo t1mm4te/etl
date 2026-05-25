@@ -8,8 +8,7 @@ import { Button } from '../../../../shared/ui/Button';
 import { SourceDbConfigEditor, SourceFileConfigEditor, TransformConfigEditor } from './forms';
 import { PreviewPanel } from '../PreviewPanel';
 import styles from './index.module.scss';
-
-type NodeKind = 'source' | 'transform' | 'sink';
+import type { NodeKind, PreviewTab } from '../../types/nodeConfigModalTypes';
 
 type NodeConfigModalProps = {
   modalState: {
@@ -30,6 +29,7 @@ type NodeConfigModalProps = {
     inputNodeLabelsByPort?: Record<string, string>;
     modalError?: string;
     previewRowLimit: number;
+    activePreviewTab: PreviewTab;
   };
   previewState: {
     inputPreview: PreviewResponse | null;
@@ -51,6 +51,7 @@ type NodeConfigModalProps = {
   previewCallbacks?: {
     onSetExcelSheetNames: (names: string[]) => void;
     onSetSelectedSheetName: (name: string) => void;
+    onSetActivePreviewTab: (tab: PreviewTab) => void;
   };
   onSheetNameChange?: (sheetName: string) => Promise<void> | void;
 };
@@ -79,6 +80,7 @@ export function NodeConfigModal({
     sourceFileMetadata,
     modalError,
     previewRowLimit,
+    activePreviewTab,
   } = modalState;
   const { onClose, onConfigChange, onFileChange, onSaveConfig, onPreviewRowLimitChange } =
     modalActions;
@@ -130,6 +132,8 @@ export function NodeConfigModal({
                 nodeKind="source"
                 previewRowLimit={previewRowLimit}
                 onPreviewRowLimitChange={onPreviewRowLimitChange}
+                activePreviewTab={activePreviewTab}
+                onActivePreviewTabChange={previewCallbacks?.onSetActivePreviewTab}
               />
             </div>
           ) : null}
@@ -159,6 +163,8 @@ export function NodeConfigModal({
                 inputNodeLabelsByPort={inputNodeLabelsByPort}
                 previewRowLimit={previewRowLimit}
                 onPreviewRowLimitChange={onPreviewRowLimitChange}
+                activePreviewTab={activePreviewTab}
+                onActivePreviewTabChange={previewCallbacks?.onSetActivePreviewTab}
               />
             </div>
           ) : null}
@@ -186,6 +192,8 @@ export function NodeConfigModal({
                 hasIncomingData={hasIncomingData}
                 previewRowLimit={previewRowLimit}
                 onPreviewRowLimitChange={onPreviewRowLimitChange}
+                activePreviewTab={activePreviewTab}
+                onActivePreviewTabChange={previewCallbacks?.onSetActivePreviewTab}
               />
             </div>
           ) : null}

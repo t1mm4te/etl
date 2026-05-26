@@ -370,10 +370,11 @@ export function useNodeConfigModalController({
     try {
       const nextConfig = getNextConfig();
       await saveNodeConfig(editingNode.id, nextConfig);
+      closeModal();
     } catch (error) {
       setModalError(String(error));
     }
-  }, [editingNode, getNextConfig, saveNodeConfig, setModalError]);
+  }, [closeModal, editingNode, getNextConfig, saveNodeConfig]);
 
   const onApplyPreview = useCallback(async () => {
     if (!editingNode || nodeKind === 'source') return;
@@ -479,6 +480,34 @@ export function useNodeConfigModalController({
     ]
   );
 
+  const onSourceDbConnected = useCallback(
+    async (datasourceId: string, datasourceName: string) => {
+      if (!editingNode) {
+        return;
+      }
+
+      const nextConfig: NodeConfig = {
+        ...config,
+        datasource_id: datasourceId,
+      };
+
+      setModalError(undefined);
+      setConfig(nextConfig);
+      setUploadedDatasourceId(datasourceId);
+
+      try {
+        await saveNodeConfig(editingNode.id, nextConfig, {
+          label: datasourceName,
+        });
+        await fetchSourcePreview(datasourceId, previewRowLimit);
+      } catch (error) {
+        setModalError(extractError(error, 'Не удалось сохранить подключение к БД'));
+        throw error;
+      }
+    },
+    [config, editingNode, fetchSourcePreview, previewRowLimit, saveNodeConfig]
+  );
+
   return {
     editingNode,
     nodeKind,
@@ -515,6 +544,7 @@ export function useNodeConfigModalController({
       onClose: closeModal,
       onConfigChange: setConfig,
       onFileChange: onSourceFileChange,
+      onSourceDbConnected,
       onSaveConfig: nodeKind === 'source' ? onSaveSourceNodeConfig : onSaveTransformNodeConfig,
       onPreviewRowLimitChange:
         nodeKind === 'source' ? onSourcePreviewRowLimitChange : onTransformPreviewRowLimitChange,

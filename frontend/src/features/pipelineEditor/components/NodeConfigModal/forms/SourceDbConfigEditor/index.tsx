@@ -1,161 +1,351 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Controller, useForm, useWatch } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Input } from '../../../../../../shared/ui/Input';
 import { PasswordInput } from '../../../../../../shared/ui/PasswordInput';
 import { CustomSelect, type SelectOption } from '../../../../../../shared/ui/CustomSelect';
 import { Button } from '../../../../../../shared/ui/Button';
+import { Textarea } from '../../../../../../shared/ui/Textarea';
 import styles from './index.module.scss';
 import type { SourceDbConfigEditorProps } from '../types';
-import { apiClient } from '../../../../../../shared/api/client';
-import { getDatasourceDetail } from '../../../../../../shared/api/pipelines';
-import type { DataSourceDetail } from '../../../../../../shared/api/types';
+import { connectDatasourceDb } from '../../../../../../shared/api/pipelines';
+import type { DataSourceDBRequest } from '../../../../../../shared/api/types';
+import { extractError } from '../../../../../../shared/lib/extractError';
 
-const ENGINE_OPTIONS: SelectOption[] = [
-  { value: 'postgresql', label: 'PostgreSQL' },
-  { value: 'mysql', label: 'MySQL' },
-  { value: 'sqlite', label: 'SQLite' },
+type EngineOption = SelectOption & { defaultPort: number };
+
+const ENGINE_OPTIONS: EngineOption[] = [
+  { value: 'postgresql', label: 'PostgreSQL', defaultPort: 5432 },
+  { value: 'mysql', label: 'MySQL', defaultPort: 3306 },
 ];
 
-export function SourceDbConfigEditor({ datasourceId }: SourceDbConfigEditorProps) {
-  const [name, setName] = useState('');
-  const [dbEngine, setDbEngine] = useState<SelectOption | null>(ENGINE_OPTIONS[0]);
-  const [host, setHost] = useState('');
-  const [port, setPort] = useState<string>('');
-  const [dbName, setDbName] = useState('');
-  const [user, setUser] = useState('');
-  const [password, setPassword] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<DataSourceDetail | null>(null);
+const DB_OPTION_KEYS = {
+  postgresql: ['sslmode', 'channel_binding', 'connect_timeout'] as const,
+  mysql: ['ssl_ca', 'ssl_verify_cert', 'connect_timeout'] as const,
+};
 
-  const loadDatasource = useCallback(async () => {
-    if (!datasourceId) return;
+const sourceDbSchema = z
+  .object({
+    name: z.string().trim().min(1),
+    dbEngine: z.enum(['postgresql', 'mysql']),
+    host: z.string().trim().min(1),
+    port: z
+      .string()
+      .trim()
+      .min(1)
+      .refine((value) => {
+        const parsed = Number(value);
+        return Number.isInteger(parsed) && parsed > 0;
+      }),
+    dbName: z.string().trim().min(1),
+    user: z.string().trim().min(1),
+    password: z.string().min(1),
+    dbSchema: z.string().optional(),
+    dbTable: z.string().trim().min(1),
+    dbOptions: z
+      .string()
+      .trim()
+      .refine((value) => {
+        if (!value) return true;
+
+        try {
+          const parsed = JSON.parse(value) as unknown;
+          return Boolean(parsed) && typeof parsed === 'object' && !Array.isArray(parsed);
+        } catch {
+          return false;
+        }
+      }),
+  })
+  .superRefine((values, context) => {
+    const rawOptions = values.dbOptions.trim();
+    if (!rawOptions) return;
+
     try {
-      const data = await getDatasourceDetail(datasourceId);
-      setResult(data);
-      setName(data.name ?? '');
+      const parsed = JSON.parse(rawOptions) as Record<string, unknown>;
+      const allowedKeys = DB_OPTION_KEYS[values.dbEngine] as readonly string[];
+      const unknownKeys = Object.keys(parsed).filter((key) => !allowedKeys.includes(key));
+
+      if (unknownKeys.length > 0) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['dbOptions'],
+          message: `Неподдерживаемые ключи: ${unknownKeys.join(', ')}.`,
+        });
+      }
     } catch {
-      // ignore
+      // already handled above
     }
-  }, [datasourceId]);
+  });
+
+type SourceDbFormValues = z.infer<typeof sourceDbSchema>;
+
+function getDefaultPort(engine?: string) {
+  return ENGINE_OPTIONS.find((option) => option.value === engine)?.defaultPort ?? 5432;
+}
+
+function getDbOptionsTemplate(engine: string) {
+  if (engine === 'mysql') {
+    return JSON.stringify(
+      {
+        ssl_ca: '/path/to/ca.pem',
+        ssl_verify_cert: true,
+        connect_timeout: 10,
+      },
+      null,
+      2
+    );
+  }
+
+  return JSON.stringify(
+    {
+      sslmode: 'require',
+      channel_binding: 'require',
+      connect_timeout: 10,
+    },
+    null,
+    2
+  );
+}
+
+function parseDbOptions(value: string): Record<string, string> | undefined {
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) {
+    return undefined;
+  }
+
+  const parsed = JSON.parse(trimmedValue) as unknown;
+
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('db_options должен быть JSON-объектом.');
+  }
+
+  return Object.fromEntries(
+    Object.entries(parsed as Record<string, unknown>).map(([key, item]) => [key, String(item)])
+  );
+}
+
+export function SourceDbConfigEditor({ onConnected }: SourceDbConfigEditorProps) {
+  const {
+    control,
+    register,
+    handleSubmit,
+    getValues,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<SourceDbFormValues>({
+    resolver: zodResolver(sourceDbSchema),
+    mode: 'onTouched',
+    defaultValues: {
+      name: 'Подключение к базе данных',
+      dbEngine: 'postgresql',
+      host: '',
+      port: String(ENGINE_OPTIONS[0].defaultPort),
+      dbName: '',
+      user: '',
+      password: '',
+      dbSchema: '',
+      dbTable: '',
+      dbOptions: getDbOptionsTemplate('postgresql'),
+    },
+  });
+
+  const [errorText, setErrorText] = useState<string | null>(null);
+  const previousEngineRef = useRef<SourceDbFormValues['dbEngine']>('postgresql');
+  const selectedEngine = useWatch({ control, name: 'dbEngine' }) ?? 'postgresql';
+  const dbOptionsTemplate = useMemo(() => getDbOptionsTemplate(selectedEngine), [selectedEngine]);
+  const selectClassName = `${styles.selectWrapper} ${errors.dbEngine ? styles.selectInvalid : ''}`;
 
   useEffect(() => {
-    void loadDatasource();
-  }, [loadDatasource]);
+    const previousEngine = previousEngineRef.current;
 
-  const handleConnect = useCallback(async () => {
-    setIsSubmitting(true);
-    setError(null);
-    setResult(null);
+    if (previousEngine === selectedEngine) {
+      return;
+    }
 
-    const payload = {
-      name: name || undefined,
-      db_engine: dbEngine?.value,
-      db_host: host || undefined,
-      db_port: port ? Number(port) : undefined,
-      db_name: dbName || undefined,
-      db_user: user || undefined,
-      db_password: password || undefined,
-    } as Record<string, unknown>;
+    const currentPort = getValues('port');
+    const previousPort = String(getDefaultPort(previousEngine));
+    if (!currentPort.trim() || currentPort === previousPort) {
+      setValue('port', String(getDefaultPort(selectedEngine)), {
+        shouldDirty: true,
+        shouldTouch: true,
+        shouldValidate: true,
+      });
+    }
+
+    const currentOptions = getValues('dbOptions');
+    const previousTemplate = getDbOptionsTemplate(previousEngine);
+    if (!currentOptions.trim() || currentOptions === previousTemplate) {
+      setValue('dbOptions', getDbOptionsTemplate(selectedEngine), {
+        shouldDirty: false,
+        shouldTouch: false,
+        shouldValidate: true,
+      });
+    }
+
+    previousEngineRef.current = selectedEngine;
+  }, [getValues, selectedEngine, setValue]);
+
+  const onSubmit = handleSubmit(async (values) => {
+    setErrorText(null);
 
     try {
-      const response = await apiClient.post<DataSourceDetail>('/datasources/connect-db/', payload, {
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const payload: DataSourceDBRequest = {
+        name: values.name.trim(),
+        db_engine: values.dbEngine,
+        db_host: values.host.trim(),
+        db_port: Number(values.port),
+        db_name: values.dbName.trim(),
+        db_user: values.user.trim(),
+        db_password: values.password,
+        db_schema: values.dbSchema?.trim() || undefined,
+        db_table: values.dbTable.trim(),
+        db_options: parseDbOptions(values.dbOptions),
+      };
 
-      setResult(response.data);
+      const datasource = await connectDatasourceDb(payload);
+
+      if (onConnected) {
+        await onConnected(datasource);
+      }
     } catch (err) {
-      const errorDetail =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
-        'Ошибка подключения';
-      setError(errorDetail);
-    } finally {
-      setIsSubmitting(false);
+      setErrorText(extractError(err, 'Ошибка подключения'));
     }
-  }, [name, dbEngine, host, port, dbName, user, password]);
+  });
 
   return (
     <div className={styles.root}>
-      <p className={styles.configLabel}>Подключение к БД</p>
-
-      <label className={styles.field}>
-        <span className={styles.label}>Название</span>
-        <Input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Произвольное имя"
-        />
+      <label className={styles.label}>
+        Название
+        <Input {...register('name')} placeholder="Произвольное имя для узла" isInvalid={Boolean(errors.name)} />
       </label>
 
       <div className={styles.row}>
-        <label className={styles.field}>
-          <span className={styles.label}>Движок</span>
-          <CustomSelect
-            options={ENGINE_OPTIONS}
-            value={dbEngine}
-            onChange={(opt) => setDbEngine((opt as SelectOption) ?? null)}
-            isClearable={false}
-            isSearchable={false}
+        <label className={styles.label}>
+          Движок
+          <Controller
+            control={control}
+            name="dbEngine"
+            render={({ field }) => (
+              <CustomSelect
+                options={ENGINE_OPTIONS}
+                value={ENGINE_OPTIONS.find((option) => option.value === field.value) ?? null}
+                onChange={(opt) => {
+                  const nextOption = Array.isArray(opt) ? opt[0] : opt;
+                  field.onChange((nextOption as SelectOption | null)?.value ?? 'postgresql');
+                }}
+                isClearable={false}
+                isSearchable={false}
+                className={selectClassName}
+              />
+            )}
           />
         </label>
 
-        <label className={styles.field}>
-          <span className={styles.label}>Хост</span>
-          <Input value={host} onChange={(e) => setHost(e.target.value)} placeholder="localhost" />
+        <label className={styles.label}>
+          Хост
+          <Input {...register('host')} placeholder="localhost" isInvalid={Boolean(errors.host)} />
         </label>
       </div>
 
       <div className={styles.row}>
-        <label className={styles.field}>
-          <span className={styles.label}>Порт</span>
-          <Input value={port} onChange={(e) => setPort(e.target.value)} placeholder="5432" />
+        <label className={styles.label}>
+          Порт
+          <Input {...register('port')} placeholder="5432" isInvalid={Boolean(errors.port)} />
         </label>
 
-        <label className={styles.field}>
-          <span className={styles.label}>Имя БД</span>
-          <Input value={dbName} onChange={(e) => setDbName(e.target.value)} placeholder="db_name" />
+        <label className={styles.label}>
+          Имя БД
+          <Input {...register('dbName')} placeholder="db_name" isInvalid={Boolean(errors.dbName)} />
         </label>
       </div>
 
       <div className={styles.row}>
-        <label className={styles.field}>
-          <span className={styles.label}>Пользователь</span>
-          <Input value={user} onChange={(e) => setUser(e.target.value)} placeholder="user" />
+        <label className={styles.label}>
+          Пользователь
+          <Input {...register('user')} placeholder="user" isInvalid={Boolean(errors.user)} />
         </label>
 
         <label className={styles.fieldPassword}>
           <PasswordInput
             id="db-password"
             label="Пароль"
-            value={password}
-            onChange={(e) => setPassword((e.target as HTMLInputElement).value)}
             autoComplete="new-password"
+            {...register('password')}
+            isInvalid={Boolean(errors.password)}
           />
         </label>
       </div>
 
-      {datasourceId ? <p className={styles.muted}>DataSource ID: {datasourceId}</p> : null}
+      <div className={styles.row}>
+        <label className={styles.label}>
+          Схема
+          <Input {...register('dbSchema')} placeholder="public" />
+        </label>
 
-      {result ? (
-        <div className={styles.result}>
-          <p className={styles.muted}>
-            Создан источник: {result.name} ({result.id})
-          </p>
+        <label className={styles.label}>
+          Таблица
+          <Input {...register('dbTable')} placeholder="table_name" isInvalid={Boolean(errors.dbTable)} />
+        </label>
+      </div>
+
+      <details className={styles.optionsDisclosure}>
+        <summary className={styles.optionsSummary}>
+          <span>Дополнительные опции подключения</span>
+          <span
+            className={styles.questionIcon}
+            title="Это JSON-объект с дополнительными параметрами драйвера. Обычно нужны SSL, таймауты и специфичные настройки соединения."
+            aria-label="Что такое дополнительные опции подключения"
+          >
+            ?
+          </span>
+        </summary>
+
+        <ul className={styles.helpList}>
+          {selectedEngine === 'mysql' ? (
+            <>
+              <li>
+                <strong>ssl_ca</strong> — путь к CA-сертификату.
+              </li>
+              <li>
+                <strong>ssl_verify_cert</strong> — проверять сертификат сервера.
+              </li>
+              <li>
+                <strong>connect_timeout</strong> — таймаут подключения в секундах.
+              </li>
+            </>
+          ) : (
+            <>
+              <li>
+                <strong>sslmode</strong> — режим SSL-соединения, например <code>require</code>.
+              </li>
+              <li>
+                <strong>channel_binding</strong> — дополнительная защита аутентификации.
+              </li>
+              <li>
+                <strong>connect_timeout</strong> — таймаут подключения в секундах.
+              </li>
+            </>
+          )}
+        </ul>
+
+        <div className={styles.optionList}>
+          <Textarea
+            {...register('dbOptions')}
+            rows={10}
+            placeholder={dbOptionsTemplate}
+            className={styles.dbOptionsInput}
+            isInvalid={Boolean(errors.dbOptions)}
+          />
         </div>
-      ) : null}
+      </details>
 
-      {error ? <p className={styles.error}>{error}</p> : null}
+      {errorText ? <p className={styles.error}>{errorText}</p> : null}
 
       <div className={styles.actions}>
-        <Button
-          type="button"
-          color="white"
-          onClick={loadDatasource}
-          disabled={!datasourceId || isSubmitting}
-        >
-          Обновить
-        </Button>
-        <Button type="button" onClick={handleConnect} disabled={isSubmitting}>
-          {isSubmitting ? 'Подключение...' : 'Подключить / создать'}
+        <Button type="button" onClick={onSubmit} disabled={isSubmitting}>
+          {isSubmitting ? 'Подключение...' : 'Подключить'}
         </Button>
       </div>
     </div>

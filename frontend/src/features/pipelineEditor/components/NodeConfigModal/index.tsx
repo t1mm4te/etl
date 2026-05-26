@@ -35,6 +35,7 @@ type NodeConfigModalProps = {
     onClose: () => void;
     onConfigChange: (value: NodeConfig) => void;
     onFileChange: (file: File | null, sheetName?: string) => void;
+    onSourceDbConnected: (datasourceId: string, datasourceName: string) => Promise<void> | void;
     onSaveConfig: () => void;
     onPreviewRowLimitChange: (value: number) => void;
   };
@@ -74,14 +75,18 @@ export function NodeConfigModal({
     previewRowLimit,
     activePreviewTab,
   } = modalState;
-  const { onClose, onConfigChange, onFileChange, onSaveConfig, onPreviewRowLimitChange } =
-    modalActions;
+  const {
+    onClose,
+    onConfigChange,
+    onFileChange,
+    onSourceDbConnected,
+    onSaveConfig,
+    onPreviewRowLimitChange,
+  } = modalActions;
 
   if (!node) {
     return null;
   }
-
-  const datasourceId = typeof config.datasource_id === 'string' ? config.datasource_id : undefined;
 
   const isSourceFile = node.operation_type === 'source_file';
   const isSourceDb = node.operation_type === 'source_db';
@@ -115,7 +120,13 @@ export function NodeConfigModal({
                   />
                 ) : null}
 
-                {isSourceDb ? <SourceDbConfigEditor datasourceId={datasourceId} /> : null}
+                {isSourceDb ? (
+                  <SourceDbConfigEditor
+                    onConnected={async (datasource: { id: string; name: string }) => {
+                      await onSourceDbConnected(datasource.id, datasource.name);
+                    }}
+                  />
+                ) : null}
               </aside>
 
               <PreviewPanel

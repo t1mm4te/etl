@@ -7,6 +7,7 @@ interface PasswordInputProps {
   id: string;
   label: string;
   error?: string;
+  isInvalid?: boolean;
   autoComplete?: string;
   disabled?: boolean;
   value?: string;
@@ -19,6 +20,7 @@ export function PasswordInput({
   label,
   id,
   error,
+  isInvalid,
   disabled,
   autoComplete,
   ...props
@@ -36,7 +38,7 @@ export function PasswordInput({
           type={visible ? 'text' : 'password'}
           autoComplete={autoComplete}
           disabled={disabled}
-          isInvalid={Boolean(error)}
+          isInvalid={Boolean(error) || Boolean(isInvalid)}
         />
         <button
           className={styles.toggle}
@@ -51,7 +53,7 @@ export function PasswordInput({
           />
         </button>
       </div>
-      {error ? <span className={styles.error}>{error}</span> : null}
+      {error && !isInvalid ? <span className={styles.error}>{error}</span> : null}
     </label>
   );
 }

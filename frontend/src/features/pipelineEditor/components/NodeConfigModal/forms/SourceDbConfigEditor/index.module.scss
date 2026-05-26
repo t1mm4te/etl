@@ -7,34 +7,61 @@
 .root {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-}
-
-.configLabel {
-  font-weight: 600;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
   gap: 6px;
-  flex: 1;
-}
-
-.fieldPassword {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  flex: 1;
-
-  :global(.label) {
-    gap: 6px;
-  }
 }
 
 .label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   color: $labelColor;
-  font-size: 13px;
+  flex: 1;
+}
+
+.optionsDisclosure {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 0px;
+}
+
+.optionsDisclosure[open] .optionsSummary {
+  margin-bottom: 2px;
+}
+
+.optionsSummary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  list-style: none;
+  color: $labelColor;
+}
+
+.questionIcon {
+  border-radius: 999px;
+  border: 1px solid $labelColor;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: $labelColor;
+}
+
+.optionsSummary::-webkit-details-marker {
+  display: none;
+}
+
+.helpList {
+  margin-bottom: 10px;
+  // padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: $labelColor;
+  font-size: 14px;
 }
 
 .row {
@@ -49,17 +76,33 @@
 }
 
 .actions {
+  width: 100%;
   display: flex;
-  gap: 8px;
-  margin-top: 8px;
 }
 
-.result {
-  padding: 8px 10px;
-  background: rgba(46, 175, 113, 0.06);
-  border-radius: 6px;
+.actions > button {
+  width: 100%;
+}
+
+.selectWrapper :global(.custom-select__control) {
+  min-height: 44px;
+}
+
+.selectInvalid :global(.custom-select__control) {
+  border-color: $dangerColor !important;
+  box-shadow: inset 0 0 0 1px $dangerColor !important;
+}
+
+.selectInvalid :global(.custom-select__control:hover) {
+  border-color: $dangerColor !important;
 }
 
 .error {
   color: $dangerColor;
+}
+
+.dbOptionsInput {
+  min-height: 125px;
+  height: 125px;
+  max-height: 125px;
 }

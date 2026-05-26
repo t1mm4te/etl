@@ -2,6 +2,7 @@ import type { AxiosProgressEvent } from 'axios';
 import { apiClient } from './client';
 import type {
   DataSourceDetail,
+  DataSourceDBRequest,
   Edge,
   EdgeCreatePayload,
   Node,
@@ -118,6 +119,14 @@ export const uploadDatasource = async (file: File, name?: string, sheetName?: st
 
 export const getDatasourceDetail = async (datasourceId: string) => {
   const response = await apiClient.get<DataSourceDetail>(`/datasources/${datasourceId}/`);
+  return response.data;
+};
+
+export const connectDatasourceDb = async (payload: DataSourceDBRequest) => {
+  const response = await apiClient.post<DataSourceDetail>('/datasources/connect-db/', payload, {
+    headers: { 'Content-Type': 'application/json' },
+  });
+
   return response.data;
 };
 

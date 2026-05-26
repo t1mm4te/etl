@@ -231,6 +231,27 @@ export interface DataSourceDetail {
   error_message: string;
   created_at: string;
   updated_at: string;
+  db_engine?: string;
+  db_host?: string;
+  db_port?: number | null;
+  db_name?: string;
+  db_user?: string;
+  db_schema?: string;
+  db_table?: string;
+  db_options?: Record<string, string>;
+}
+
+export interface DataSourceDBRequest {
+  name: string;
+  db_engine: string;
+  db_host: string;
+  db_port: number;
+  db_name: string;
+  db_user: string;
+  db_password: string;
+  db_schema?: string;
+  db_table: string;
+  db_options?: Record<string, string>;
 }
 
 export interface SheetMetadata {

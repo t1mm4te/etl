@@ -1,4 +1,5 @@
 import type { NodeConfig } from '../../../../../shared/api/types';
+import type { DataSourceDetail } from '../../../../../shared/api/types';
 
 export type OperationConfigEditorProps = {
   config: NodeConfig;
@@ -20,5 +21,5 @@ export type SourceFileConfigEditorProps = {
 };
 
 export type SourceDbConfigEditorProps = {
-  datasourceId?: string;
+  onConnected?: (datasource: DataSourceDetail) => Promise<void> | void;
 };

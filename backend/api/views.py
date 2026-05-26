@@ -310,7 +310,7 @@ class DataSourceViewSet(
 
         source_file_id = serializer.validated_data['source_file_id']
         name = serializer.validated_data.get('name')
-        sheet_name = serializer.validated_data.get('sheet_name', '')
+        sheet_name = serializer.validated_data.get('sheet_name') or ''
 
         try:
             source_file = SourceFile.objects.get(
@@ -318,9 +318,23 @@ class DataSourceViewSet(
         except SourceFile.DoesNotExist:
             return Response({"error": "Исходный файл не найден."}, status=status.HTTP_404_NOT_FOUND)
 
+        sheet_name_clean = sheet_name.strip()
+        sheets_metadata = source_file.sheets_metadata or []
+        has_multiple_sheets = len(sheets_metadata) > 1
+        include_sheet_in_name = (
+            has_multiple_sheets
+            and sheet_name_clean
+            and sheet_name_clean.lower() != 'default'
+        )
+        default_name = (
+            f"{source_file.original_filename} - {sheet_name_clean}"
+            if include_sheet_in_name
+            else source_file.original_filename
+        )
+
         ds = DataSource.objects.create(
             owner=request.user,
-            name=name or f"{source_file.original_filename} - {sheet_name}",
+            name=name or default_name,
             source_type=DataSource.SourceType.FILE,
             source_file=source_file,
             sheet_name=sheet_name

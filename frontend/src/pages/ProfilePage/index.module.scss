@@ -39,6 +39,12 @@
   }
 }
 
+.loadingState {
+  min-height: 280px;
+  border: 1px solid rgba($borderColor, 0.55);
+  background: linear-gradient(180deg, rgba($darkGray, 0.54), rgba($darkGrayLighter, 0.66));
+}
+
 @media (max-width: 920px) {
   .page {
     width: min(860px, 96%);

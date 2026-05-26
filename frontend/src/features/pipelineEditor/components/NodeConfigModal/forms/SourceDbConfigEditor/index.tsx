@@ -218,7 +218,11 @@ export function SourceDbConfigEditor({ onConnected }: SourceDbConfigEditorProps)
     <div className={styles.root}>
       <label className={styles.label}>
         Название
-        <Input {...register('name')} placeholder="Произвольное имя для узла" isInvalid={Boolean(errors.name)} />
+        <Input
+          {...register('name')}
+          placeholder="Произвольное имя для узла"
+          isInvalid={Boolean(errors.name)}
+        />
       </label>
 
       <div className={styles.row}>
@@ -286,7 +290,11 @@ export function SourceDbConfigEditor({ onConnected }: SourceDbConfigEditorProps)
 
         <label className={styles.label}>
           Таблица
-          <Input {...register('dbTable')} placeholder="table_name" isInvalid={Boolean(errors.dbTable)} />
+          <Input
+            {...register('dbTable')}
+            placeholder="table_name"
+            isInvalid={Boolean(errors.dbTable)}
+          />
         </label>
       </div>
 

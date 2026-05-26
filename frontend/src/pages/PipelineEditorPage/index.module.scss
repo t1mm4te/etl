@@ -25,6 +25,13 @@
   min-height: 0;
 }
 
+.loadingState {
+  height: 100%;
+  min-height: 560px;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba($darkGray, 0.74), rgba($darkGrayLighter, 0.78));
+}
+
 .muted {
   color: $labelColor;
 }

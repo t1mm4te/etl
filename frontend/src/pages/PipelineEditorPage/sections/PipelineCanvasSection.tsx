@@ -5,6 +5,7 @@ import { usePipelineCanvasState } from '../../../features/pipelineEditor/hooks/u
 import { usePipelineEditorMutations } from '../../../features/pipelineEditor/hooks/usePipelineEditorMutations';
 import { usePipelineEditorQueries } from '../../../features/pipelineEditor/hooks/usePipelineEditorQueries';
 import { usePipelineEditorStore } from '../../../features/pipelineEditor/store/pipelineEditorStore';
+import { LoadingState } from '../../../shared/ui/LoadingState';
 import styles from '../index.module.scss';
 import 'reactflow/dist/style.css';
 
@@ -59,34 +60,36 @@ export function PipelineCanvasSection({
     <>
       {canvasError ? <p className={styles.error}>{canvasError}</p> : null}
       <div className={styles.canvas} ref={canvasRef}>
-        {pipelineQuery.isLoading ? <p className={styles.muted}>Загружаем пайплайн...</p> : null}
-
-        <ReactFlow
-          edges={edges}
-          nodes={nodes}
-          nodeTypes={NODE_TYPES}
-          onInit={setFlowInstance}
-          onConnect={(connection) => {
-            void onConnect(connection);
-          }}
-          onEdgesChange={onEdgesChange}
-          onEdgesDelete={(items) => {
-            void onDeleteEdges(items);
-          }}
-          onNodesDelete={(items) => {
-            void onDeleteNodes(items);
-          }}
-          onNodeDoubleClick={handleNodeDoubleClick}
-          onNodeDragStop={(_event: ReactMouseEvent, node) => {
-            void onNodeDragStop(_event, node);
-          }}
-          onNodesChange={onNodesChange}
-          fitView
-        >
-          <Background />
-          <Controls />
-          <MiniMap />
-        </ReactFlow>
+        {pipelineQuery.isLoading ? (
+          <LoadingState className={styles.loadingState} spinnerSize={32} />
+        ) : (
+          <ReactFlow
+            edges={edges}
+            nodes={nodes}
+            nodeTypes={NODE_TYPES}
+            onInit={setFlowInstance}
+            onConnect={(connection) => {
+              void onConnect(connection);
+            }}
+            onEdgesChange={onEdgesChange}
+            onEdgesDelete={(items) => {
+              void onDeleteEdges(items);
+            }}
+            onNodesDelete={(items) => {
+              void onDeleteNodes(items);
+            }}
+            onNodeDoubleClick={handleNodeDoubleClick}
+            onNodeDragStop={(_event: ReactMouseEvent, node) => {
+              void onNodeDragStop(_event, node);
+            }}
+            onNodesChange={onNodesChange}
+            fitView
+          >
+            <Background />
+            <Controls />
+            <MiniMap />
+          </ReactFlow>
+        )}
       </div>
     </>
   );

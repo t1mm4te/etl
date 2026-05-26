@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { PreviewResponse } from '../../../../shared/api/types';
 import { CustomSelect, type SelectOption } from '../../../../shared/ui/CustomSelect';
+import { LoadingState } from '../../../../shared/ui/LoadingState';
 import { PreviewTable } from '../PreviewTable';
 import styles from './index.module.scss';
 import type { NodeKind, PreviewTab } from '../../types/nodeConfigModalTypes';
@@ -56,39 +57,40 @@ export function PreviewPanel({
   if (nodeKind === 'source') {
     return (
       <section className={styles.previewPanel}>
-        {isPreviewLoading ? <p className={styles.muted}>Загружаем предпросмотр...</p> : null}
+        <div className={styles.metadataRow}>
+          <p className={styles.metadata}>
+            {resultPreview
+              ? `Всего ${resultPreview.total_rows} строк, ${resultPreview.columns.length} столбцов`
+              : 'Предпросмотр источника'}
+          </p>
+          <CustomSelect
+            options={rowLimitOptions}
+            value={rowLimitOptions.find((opt) => opt.value === String(previewRowLimit))}
+            onChange={(option) => {
+              const selectedOption = Array.isArray(option) ? option[0] : option;
 
-        {resultPreview ? (
-          <>
-            <div className={styles.metadataRow}>
-              <p className={styles.metadata}>
-                Всего {resultPreview.total_rows} строк, {resultPreview.columns.length} столбцов
-              </p>
-              <CustomSelect
-                options={rowLimitOptions}
-                value={rowLimitOptions.find((opt) => opt.value === String(previewRowLimit))}
-                onChange={(option) => {
-                  const selectedOption = Array.isArray(option) ? option[0] : option;
-
-                  if (selectedOption) {
-                    onPreviewRowLimitChange(Number(selectedOption.value));
-                  }
-                }}
-                isSearchable={false}
-                isClearable={false}
-                className={styles.rowLimitSelect}
-              />
-            </div>
-            <div className={styles.tabRow}>
-              <button type="button" className={styles.tabActive}>
-                Результат узла
-              </button>
-            </div>
-            <PreviewTable preview={resultPreview} />
-          </>
-        ) : (
-          <p className={styles.muted}>Предпросмотр источника пока недоступен.</p>
-        )}
+              if (selectedOption) {
+                onPreviewRowLimitChange(Number(selectedOption.value));
+              }
+            }}
+            isSearchable={false}
+            isClearable={false}
+            className={styles.rowLimitSelect}
+          />
+        </div>
+        <div className={styles.tabRow}>
+          <button type="button" className={styles.tabActive}>
+            Результат узла
+          </button>
+        </div>
+        <div className={styles.previewBody}>
+          {resultPreview ? <PreviewTable preview={resultPreview} /> : null}
+          {isPreviewLoading ? (
+            <LoadingState className={styles.loadingState} spinnerSize={30} />
+          ) : resultPreview ? null : (
+            <p className={styles.muted}>Предпросмотр источника пока недоступен.</p>
+          )}
+        </div>
       </section>
     );
   }
@@ -165,31 +167,41 @@ export function PreviewPanel({
             )}
           </div>
 
-          {isPreviewLoading ? <p className={styles.muted}>Загружаем предпросмотр...</p> : null}
+          <div className={styles.previewBody}>
+            {currentPreviewTab === 'input' ? (
+              inputPreview ? (
+                <PreviewTable preview={inputPreview} />
+              ) : null
+            ) : currentPreviewTab === 'left_input' ? (
+              leftInputPreview ? (
+                <PreviewTable preview={leftInputPreview} />
+              ) : null
+            ) : currentPreviewTab === 'right_input' ? (
+              rightInputPreview ? (
+                <PreviewTable preview={rightInputPreview} />
+              ) : null
+            ) : resultPreview ? (
+              <PreviewTable preview={resultPreview} />
+            ) : null}
 
-          {currentPreviewTab === 'input' ? (
-            inputPreview ? (
-              <PreviewTable preview={inputPreview} />
-            ) : (
-              <p className={styles.muted}>Входной предпросмотр недоступен.</p>
-            )
-          ) : currentPreviewTab === 'left_input' ? (
-            leftInputPreview ? (
-              <PreviewTable preview={leftInputPreview} />
-            ) : (
-              <p className={styles.muted}>Предпросмотр первого входа недоступен.</p>
-            )
-          ) : currentPreviewTab === 'right_input' ? (
-            rightInputPreview ? (
-              <PreviewTable preview={rightInputPreview} />
-            ) : (
-              <p className={styles.muted}>Предпросмотр второго входа недоступен.</p>
-            )
-          ) : resultPreview ? (
-            <PreviewTable preview={resultPreview} />
-          ) : (
-            <p className={styles.muted}>Результат пока недоступен. Нажмите «Применить».</p>
-          )}
+            {isPreviewLoading ? (
+              <LoadingState className={styles.loadingState} spinnerSize={30} />
+            ) : currentPreviewTab === 'input' ? (
+              inputPreview ? null : (
+                <p className={styles.muted}>Входной предпросмотр недоступен.</p>
+              )
+            ) : currentPreviewTab === 'left_input' ? (
+              leftInputPreview ? null : (
+                <p className={styles.muted}>Предпросмотр первого входа недоступен.</p>
+              )
+            ) : currentPreviewTab === 'right_input' ? (
+              rightInputPreview ? null : (
+                <p className={styles.muted}>Предпросмотр второго входа недоступен.</p>
+              )
+            ) : resultPreview ? null : (
+              <p className={styles.muted}>Результат пока недоступен. Нажмите «Применить».</p>
+            )}
+          </div>
         </>
       )}
     </section>

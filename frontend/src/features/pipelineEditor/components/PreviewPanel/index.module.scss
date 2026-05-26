@@ -54,6 +54,20 @@
   }
 }
 
+.previewBody {
+  position: relative;
+  min-height: 640px;
+}
+
+.loadingState {
+  position: absolute;
+  inset: 0;
+  height: auto;
+  border: 1px solid $borderColor;
+  border-radius: 0 $borderRadiusSmall 0 0;
+  background-color: $darkGrayLighter;
+}
+
 .muted {
   color: $labelColor;
 }

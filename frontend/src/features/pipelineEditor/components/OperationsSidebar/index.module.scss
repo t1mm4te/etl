@@ -160,3 +160,11 @@
     }
   }
 }
+
+.loadingState {
+  min-height: 220px;
+  margin-top: 8px;
+  border: 1px solid rgba($borderColor, 0.55);
+  border-radius: $borderRadiusLarge;
+  background: linear-gradient(180deg, rgba($darkGray, 0.48), rgba($darkGrayLighter, 0.65));
+}

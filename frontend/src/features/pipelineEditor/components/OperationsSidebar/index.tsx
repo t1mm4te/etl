@@ -3,6 +3,7 @@ import { usePipelineEditorMutations } from '../../hooks/usePipelineEditorMutatio
 import { usePipelineEditorQueries } from '../../hooks/usePipelineEditorQueries';
 import { calculateNewNodePosition } from '../../utils/getNewNodePosition';
 import { usePipelineEditorStore } from '../../store/pipelineEditorStore';
+import { LoadingState } from '../../../../shared/ui/LoadingState';
 import calculateIcon from '../../../../assets/node-icons/calculate.svg';
 import columnsIcon from '../../../../assets/node-icons/columns.svg';
 import databaseIcon from '../../../../assets/node-icons/database.svg';
@@ -58,7 +59,7 @@ export function OperationsSidebar({ pipelineId }: OperationsSidebarProps) {
     <aside className={styles.sidebar}>
       <h2 className={styles.title}>Операции</h2>
       <p className={styles.subtitle}>Добавьте ноду в пайплайн одним кликом</p>
-      {isLoading ? <p className={styles.muted}>Загрузка каталога...</p> : null}
+      {isLoading ? <LoadingState className={styles.loadingState} spinnerSize={28} /> : null}
 
       {sortedCategories.map(([categoryId, category], index) => {
         const categoryOperations = operations.filter((item) => item.category === categoryId);

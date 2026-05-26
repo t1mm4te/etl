@@ -5,6 +5,14 @@
   min-width: 0;
 }
 
+.loadingState {
+  min-height: 240px;
+  margin-bottom: 16px;
+  border: 1px solid rgba($borderColor, 0.6);
+  border-radius: $borderRadiusLarge;
+  background: linear-gradient(180deg, rgba($darkGray, 0.6), rgba($darkGrayLighter, 0.7));
+}
+
 .muted {
   margin-left: 4px;
   margin-top: 10px;

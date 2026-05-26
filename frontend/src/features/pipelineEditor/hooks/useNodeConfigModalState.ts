@@ -15,7 +15,6 @@ import {
   runPipelinePreview,
 } from '../../../shared/api/pipelines';
 import { useNodeColumns } from './useNodeColumns';
-import { useSourceNodePreviewActions } from './useSourceNodePreviewActions.ts';
 import {
   fetchTransformPreviewFromRuns,
   runTransformPreview,
@@ -24,6 +23,14 @@ import { usePipelineEditorStore } from '../store/pipelineEditorStore';
 import { buildNextNodeConfig } from '../utils/nodePreviewUtils';
 import { type PreviewTab } from '../types/nodeConfigModalTypes';
 import { getNodeKind } from '../utils/getNodeKind.ts';
+import {
+  createDatasourceForSheet,
+  fetchSourcePreviewData,
+  uploadSourceAndCreateDatasource,
+} from '../helpers/sourcePreviewHelpers.ts';
+import { extractError } from '../../../shared/lib/extractError.ts';
+import type { AxiosProgressEvent } from 'axios';
+import { getSourceLabel, resolveSourceFileName } from '../utils/sourceNodePreviewUtils.ts';
 
 type UseNodeConfigModalStateParams = {
   pipelineId: string;
@@ -113,42 +120,191 @@ export function useNodeConfigModalState({
     onClose();
   }, [onClose, resetAvailableColumns]);
 
-  const {
-    fetchSourcePreview,
-    onSaveNodeConfig: onSaveSourceNodeConfig,
-    onFileChange: onSourceFileChange,
-    onPreviewRowLimitChange: onSourcePreviewRowLimitChange,
-    onSheetNameChange: onSourceSheetNameChange,
-  } = useSourceNodePreviewActions({
-    editingNode,
-    config,
-    uploadedDatasourceId,
-    sourceFileId,
-    sourceFileMetadata,
-    selectedFileName,
-    selectedSheetName,
-    excelSheetNames,
-    previewRowLimit,
-    saveNodeConfig,
+  const clearSourcePreviews = useCallback(() => {
+    setInputPreview(null);
+    setLeftInputPreview(null);
+    setRightInputPreview(null);
+    setResultPreview(null);
+  }, [setInputPreview, setLeftInputPreview, setResultPreview, setRightInputPreview]);
+
+  const fetchSourcePreview = useCallback(
+    async (datasourceId: string, limit = previewRowLimit) => {
+      setIsPreviewLoading(true);
+      setModalError(undefined);
+      clearSourcePreviews();
+
+      try {
+        const result = await fetchSourcePreviewData({
+          datasourceId,
+          rowLimit: limit,
+        });
+
+        if (result.error) {
+          setResultPreview(null);
+          setModalError(result.error);
+          return;
+        }
+
+        setResultPreview(result.preview);
+      } catch (error) {
+        setModalError(String(error));
+      } finally {
+        setIsPreviewLoading(false);
+      }
+    },
+    [clearSourcePreviews, previewRowLimit]
+  );
+
+  const onSaveSourceNodeConfig = useCallback(async () => {
+    if (!editingNode) {
+      return;
+    }
+
+    setModalError(undefined);
+
+    try {
+      const nextConfig = buildNextNodeConfig(config, uploadedDatasourceId, {
+        selectedSheetName,
+        excelSheetNames,
+      });
+      await saveNodeConfig(editingNode.id, nextConfig);
+      closeModal();
+    } catch (error) {
+      setModalError(extractError(error, 'Не удалось сохранить конфигурацию ноды'));
+    }
+  }, [
     closeModal,
-    setConfig,
-    setSelectedFile,
-    setSelectedFileName,
-    setIsSourceFileUploading,
-    setSourceFileUploadProgress,
-    setSelectedSheetName,
-    setExcelSheetNames,
-    setUploadedDatasourceId,
-    setSourceFileId,
-    setSourceFileMetadata,
-    setPreviewRowLimit,
-    setInputPreview,
-    setLeftInputPreview,
-    setRightInputPreview,
-    setResultPreview,
-    setIsPreviewLoading,
+    config,
+    editingNode,
+    excelSheetNames,
+    saveNodeConfig,
+    selectedSheetName,
     setModalError,
-  });
+    uploadedDatasourceId,
+  ]);
+
+  const onUploadProgress = useCallback((progressEvent: AxiosProgressEvent) => {
+    if (!progressEvent.total) return;
+    const percent = Math.min(100, Math.round((progressEvent.loaded / progressEvent.total) * 100));
+    setSourceFileUploadProgress(percent);
+  }, []);
+
+  const onSourceFileChange = useCallback(
+    async (file: File | null) => {
+      if (!editingNode || !file) {
+        return;
+      }
+
+      if (editingNode.operation_type !== 'source_file') {
+        setModalError('Автозагрузка файла доступна только для источника из файла');
+        return;
+      }
+
+      setSelectedFile(file);
+      setSelectedFileName(file.name);
+      setModalError(undefined);
+      setIsSourceFileUploading(true);
+      setSourceFileUploadProgress(0);
+
+      try {
+        const result = await uploadSourceAndCreateDatasource({
+          file,
+          config,
+          onUploadProgress,
+        });
+        const newConfig = result.readyConfig ?? result.uploadedConfig;
+
+        setConfig(newConfig);
+        setSelectedFileName(result.sourceFileName);
+        setExcelSheetNames(result.sheetNames);
+        setSelectedSheetName(result.defaultSheetName);
+        setUploadedDatasourceId(result.datasourceId ?? '');
+        setInputPreview(null);
+        setLeftInputPreview(null);
+        setRightInputPreview(null);
+        setResultPreview(null);
+
+        await saveNodeConfig(editingNode.id, newConfig, {
+          label: getSourceLabel(result.sourceFileName, result.defaultSheetName, result.sheetNames),
+        });
+        await fetchSourcePreview(result.datasourceId ?? '', previewRowLimit);
+      } catch (error) {
+        setModalError(extractError(error));
+      } finally {
+        setIsSourceFileUploading(false);
+        setSourceFileUploadProgress(null);
+      }
+    },
+    [config, editingNode, fetchSourcePreview, onUploadProgress, previewRowLimit, saveNodeConfig]
+  );
+
+  const onSourceSheetNameChange = useCallback(
+    async (sheetName: string) => {
+      setModalError(undefined);
+      setSelectedSheetName(sheetName);
+
+      if (!editingNode) {
+        return;
+      }
+
+      const effectiveSourceFileId =
+        sourceFileId || (typeof config.source_file_id === 'string' ? config.source_file_id : '');
+
+      if (!effectiveSourceFileId) {
+        setModalError('Сначала загрузите файл, затем выберите лист.');
+        return;
+      }
+
+      try {
+        const result = await createDatasourceForSheet({
+          sourceFileId: effectiveSourceFileId,
+          sheetName,
+          config,
+          excelSheetNames,
+        });
+
+        setUploadedDatasourceId(result.datasourceId);
+        setConfig(result.nextConfig);
+        const sourceLabelFileName = resolveSourceFileName(
+          undefined,
+          sourceFileMetadata?.filename || selectedFileName,
+          sheetName
+        );
+
+        await saveNodeConfig(editingNode.id, result.nextConfig, {
+          label: getSourceLabel(sourceLabelFileName, sheetName, excelSheetNames),
+        });
+        fetchSourcePreview(result.datasourceId, previewRowLimit);
+      } catch (error) {
+        setModalError(String(error));
+      }
+    },
+    [
+      config,
+      editingNode,
+      excelSheetNames,
+      fetchSourcePreview,
+      previewRowLimit,
+      saveNodeConfig,
+      selectedFileName,
+      setConfig,
+      setModalError,
+      setSelectedSheetName,
+      setUploadedDatasourceId,
+      sourceFileId,
+      sourceFileMetadata,
+    ]
+  );
+
+  const onSourcePreviewRowLimitChange = useCallback(
+    (limit: number) => {
+      setPreviewRowLimit(limit);
+      if (uploadedDatasourceId) {
+        void fetchSourcePreview(uploadedDatasourceId, limit);
+      }
+    },
+    [fetchSourcePreview, setPreviewRowLimit, uploadedDatasourceId]
+  );
 
   const setRunId = usePipelineEditorStore((s) => s.setRunId);
 

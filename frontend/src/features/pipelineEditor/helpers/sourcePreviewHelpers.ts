@@ -1,11 +1,14 @@
 import type { AxiosProgressEvent } from 'axios';
 import {
+  createDatasourceFromSheet,
   getDatasourceDetail,
   previewDatasource,
   uploadSourceFile,
 } from '../../../shared/api/pipelines';
 import type { NodeConfig, PreviewResponse, SourceFile } from '../../../shared/api/types';
 import { extractError } from '../../../shared/lib/extractError';
+import { getFileExtension } from '../utils/sourceNodePreviewUtils';
+import { buildNextNodeConfig } from '../utils/nodePreviewUtils';
 
 type FetchSourcePreviewDataParams = {
   datasourceId: string;
@@ -73,21 +76,111 @@ export async function uploadSourceFileHelper({
   fileName,
   onUploadProgress,
 }: UploadSourceFileParams): Promise<UploadSourceFileResult> {
-  try {
-    const uploaded = await uploadSourceFile(file, fileName, { onUploadProgress });
-    const sourceFileIdValue = uploaded.id;
-    const sheetNames = (uploaded.sheets_metadata || []).map((sheet) => sheet.sheet_name);
+  const uploaded = await uploadSourceFile(file, fileName, { onUploadProgress });
+  const sourceFileIdValue = uploaded.id;
+  const sheetNames = (uploaded.sheets_metadata || []).map((sheet) => sheet.sheet_name);
 
-    const config: NodeConfig = {
-      source_file_id: sourceFileIdValue,
-    };
+  const config: NodeConfig = {
+    source_file_id: sourceFileIdValue,
+  };
 
-    return {
-      sourceFile: uploaded,
-      sheetNames,
-      config,
-    };
-  } catch (error) {
-    throw new Error(extractError(error, 'Не удалось загрузить файл'));
-  }
+  return {
+    sourceFile: uploaded,
+    sheetNames,
+    config,
+  };
+}
+
+type UploadSourceAndCreateDatasourceParams = {
+  file: File;
+  config: NodeConfig;
+  onUploadProgress?: (progressEvent: AxiosProgressEvent) => void;
+};
+
+type UploadSourceAndCreateDatasourceResult = {
+  sourceFileId: string;
+  sourceFileName: string;
+  sheetNames: string[];
+  defaultSheetName?: string;
+  uploadedConfig: NodeConfig;
+  datasourceId?: string;
+  readyConfig?: NodeConfig;
+};
+
+export async function uploadSourceAndCreateDatasource({
+  file,
+  config,
+  onUploadProgress,
+}: UploadSourceAndCreateDatasourceParams): Promise<UploadSourceAndCreateDatasourceResult> {
+  const uploadResult = await uploadSourceFileHelper({
+    file,
+    fileName: file.name,
+    onUploadProgress,
+  });
+
+  const sourceFileIdValue = uploadResult.sourceFile.id;
+  const sourceFileName = uploadResult.sourceFile.filename || file.name;
+  const sheetNames = uploadResult.sheetNames;
+  const uploadedConfig = {
+    ...config,
+    ...uploadResult.config,
+  };
+
+  const isCsv = getFileExtension(sourceFileName) === 'csv';
+  const defaultSheetName = sheetNames[0] ?? (isCsv ? 'default' : undefined);
+  const datasourceResult = await createDatasourceFromSheet(sourceFileIdValue, defaultSheetName);
+
+  const readyConfig: NodeConfig = {
+    ...uploadedConfig,
+    datasource_id: datasourceResult.id,
+    selected_sheet_name: defaultSheetName,
+  };
+
+  return {
+    sourceFileId: sourceFileIdValue,
+    sourceFileName,
+    sheetNames,
+    defaultSheetName,
+    uploadedConfig,
+    readyConfig,
+    datasourceId: datasourceResult.id,
+  };
+}
+
+type createDatasourceForSheetParams = {
+  sourceFileId: string;
+  sheetName: string;
+  config: NodeConfig;
+  excelSheetNames: string[];
+};
+
+type createDatasourceForSheetResult = {
+  datasourceId: string;
+  nextConfig: NodeConfig;
+};
+
+export async function createDatasourceForSheet({
+  sourceFileId,
+  sheetName,
+  config,
+  excelSheetNames,
+}: createDatasourceForSheetParams): Promise<createDatasourceForSheetResult> {
+  const datasource = await createDatasourceFromSheet(sourceFileId, sheetName);
+
+  const nextConfig = buildNextNodeConfig(
+    {
+      ...config,
+      source_file_id: sourceFileId,
+    },
+    datasource.id,
+    {
+      selectedSheetName: sheetName,
+      excelSheetNames,
+    }
+  );
+
+  return {
+    datasourceId: datasource.id,
+    nextConfig,
+  };
 }

@@ -185,14 +185,6 @@ export function SelectColumnsConfigEditor({
               </Checkbox.Root>
               Отметить все
             </label>
-
-            <button
-              type="button"
-              className={styles.controlButton}
-              onClick={() => updateColumns([])}
-            >
-              Очистить
-            </button>
           </div>
 
           <p className={styles.sectionTitle}>Выбранные столбцы можно менять местами</p>

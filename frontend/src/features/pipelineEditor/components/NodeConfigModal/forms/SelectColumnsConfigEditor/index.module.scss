@@ -37,24 +37,6 @@
   font-weight: 600;
 }
 
-.controlButton {
-  border: 1px solid $borderColor;
-  background: transparent;
-  color: $labelColor;
-  border-radius: $borderRadiusSmall;
-  padding: 6px 10px;
-  font-size: 13px;
-  cursor: pointer;
-  transition:
-    border-color $transitionFast,
-    color $transitionFast;
-
-  &:hover {
-    color: $white;
-    border-color: $white;
-  }
-}
-
 .sectionTitle {
   margin: 2px 0 -2px;
   color: $labelColor;

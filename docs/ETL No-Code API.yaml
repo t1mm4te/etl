@@ -21,6 +21,41 @@ info:
     7. **Отслеживать статус** — `GET /pipeline-runs/{id}/`
     8. **Посмотреть результат** — `GET /node-runs/{id}/preview/`
 paths:
+  /api/v1/auth/resend-code/:
+    post:
+      operationId: v1_auth_resend_code_create
+      description: Генерирует и отправляет новый 6-значный код подтверждения.
+      summary: Повторная отправка кода
+      tags:
+      - Пользователи
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResendEmailRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ResendEmailRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ResendEmailRequestRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResendEmailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResendEmailError'
+          description: ''
   /api/v1/auth/token/login/:
     post:
       operationId: v1_auth_token_login_create
@@ -59,6 +94,41 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/v1/auth/verify-email/:
+    post:
+      operationId: v1_auth_verify_email_create
+      description: Проверка 6-значного кода и активация пользователя.
+      summary: Подтверждение email
+      tags:
+      - Пользователи
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyEmailRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/VerifyEmailRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VerifyEmailRequestRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyEmailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyEmailError'
+          description: ''
   /api/v1/datasources/:
     get:
       operationId: v1_datasources_list
@@ -95,6 +165,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaginatedDataSourceListList'
+          description: ''
+    post:
+      operationId: v1_datasources_create
+      description: Инициирует создание источника данных из конкретного листа загруженного
+        файла. Начинает асинхронную обработку.
+      summary: Создание источника данных
+      tags:
+      - Источники данных
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataSourceCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DataSourceCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DataSourceCreateRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataSourceDetail'
           description: ''
   /api/v1/datasources/{id}/:
     get:
@@ -201,24 +299,57 @@ paths:
               schema:
                 $ref: '#/components/schemas/DataSourceDetail'
           description: ''
-  /api/v1/datasources/upload/:
-    post:
-      operationId: v1_datasources_upload_create
-      description: |-
-        Загружает файл формата CSV или XLSX и ставит его в очередь на обработку (Celery). После обработки источник переходит в статус `ready`, а данные конвертируются в Parquet.
-
-        **Ограничения:** макс. размер файла — 100 МБ (MAX_FILE_SIZE), макс. число строк — 5 000 (DATASOURCE_MAX_ROWS).
-      summary: Загрузка файла (CSV / XLSX)
+  /api/v1/files/:
+    get:
+      operationId: v1_files_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
       tags:
-      - Источники данных
+      - Файлы источников
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSourceFileList'
+          description: ''
+    post:
+      operationId: v1_files_create
+      description: Загружает файл (CSV/XLSX), сохраняет на диск и синхронно генерирует
+        список листов.
+      summary: Загрузка исходного файла
+      tags:
+      - Файлы источников
       requestBody:
         content:
-          multipart/form-data:
+          application/json:
             schema:
-              $ref: '#/components/schemas/DataSourceUploadRequest'
+              $ref: '#/components/schemas/SourceFileUploadRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/DataSourceUploadRequest'
+              $ref: '#/components/schemas/SourceFileUploadRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SourceFileUploadRequest'
         required: true
       security:
       - tokenAuth: []
@@ -227,8 +358,47 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataSourceDetail'
+                $ref: '#/components/schemas/SourceFile'
           description: ''
+  /api/v1/files/{id}/:
+    get:
+      operationId: v1_files_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Исходный файл.
+        required: true
+      tags:
+      - Файлы источников
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceFile'
+          description: ''
+    delete:
+      operationId: v1_files_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Исходный файл.
+        required: true
+      tags:
+      - Файлы источников
+      security:
+      - tokenAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/node-runs/{id}/preview/:
     get:
       operationId: v1_node_runs_preview_retrieve
@@ -1413,6 +1583,21 @@ components:
       required:
       - token
       - uid
+    DataSourceCreateRequest:
+      type: object
+      properties:
+        source_file_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        sheet_name:
+          type: string
+          maxLength: 255
+      required:
+      - source_file_id
     DataSourceDBRequest:
       type: object
       properties:
@@ -1457,6 +1642,9 @@ components:
           type: string
           title: Таблица
           maxLength: 255
+        db_options:
+          title: Опции подключения
+          description: Дополнительные параметры подключения (например, sslmode).
       required:
       - db_engine
       - db_host
@@ -1503,10 +1691,12 @@ components:
           x-spec-enum-id: 829bb9b715c63436
           readOnly: true
           title: Статус
-        original_filename:
+        source_file:
           type: string
+          format: uuid
           readOnly: true
-          title: Имя файла
+          nullable: true
+          title: Исходный файл
         sheet_name:
           type: string
           readOnly: true
@@ -1552,9 +1742,9 @@ components:
       - file_size_bytes
       - id
       - name
-      - original_filename
       - row_count
       - sheet_name
+      - source_file
       - source_type
       - status
       - updated_at
@@ -1595,10 +1785,16 @@ components:
           x-spec-enum-id: 829bb9b715c63436
           readOnly: true
           title: Статус
-        original_filename:
+        source_file:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+          title: Исходный файл
+        sheet_name:
           type: string
           readOnly: true
-          title: Имя файла
+          title: Лист (для XLSX)
         row_count:
           type: integer
           readOnly: true
@@ -1624,26 +1820,12 @@ components:
       - created_at
       - id
       - name
-      - original_filename
       - row_count
+      - sheet_name
+      - source_file
       - source_type
       - status
       - updated_at
-    DataSourceUploadRequest:
-      type: object
-      properties:
-        file:
-          type: string
-          format: binary
-        name:
-          type: string
-          minLength: 1
-          maxLength: 255
-        sheet_name:
-          type: string
-          maxLength: 255
-      required:
-      - file
     Edge:
       type: object
       properties:
@@ -2037,6 +2219,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PipelineRunList'
+    PaginatedSourceFileList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceFile'
     PaginatedUserList:
       type: object
       required:
@@ -2480,6 +2685,29 @@ components:
       - dtypes
       - preview_rows
       - total_rows
+    ResendEmailError:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+      - error
+    ResendEmailRequestRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+      required:
+      - email
+    ResendEmailResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
     SendEmailReset:
       type: object
       properties:
@@ -2547,6 +2775,39 @@ components:
       required:
       - current_password
       - new_email
+    SourceFile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        original_filename:
+          type: string
+          readOnly: true
+          title: Имя файла
+        sheets_metadata:
+          readOnly: true
+          title: Метаданные листов
+          description: '[{"sheet_name": "Sheet1", "index": 0}, ...]'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Создано
+      required:
+      - created_at
+      - id
+      - original_filename
+      - sheets_metadata
+    SourceFileUploadRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+      required:
+      - file
     TokenCreate:
       type: object
       properties:
@@ -2714,6 +2975,34 @@ components:
           maxLength: 254
       required:
       - new_email
+    VerifyEmailError:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+      - error
+    VerifyEmailRequestRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        code:
+          type: string
+          minLength: 1
+          maxLength: 6
+      required:
+      - code
+      - email
+    VerifyEmailResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
   securitySchemes:
     tokenAuth:
       type: apiKey

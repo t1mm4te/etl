@@ -103,8 +103,9 @@ type UploadSourceAndCreateDatasourceResult = {
   sheetNames: string[];
   defaultSheetName?: string;
   uploadedConfig: NodeConfig;
-  datasourceId?: string;
   readyConfig?: NodeConfig;
+  datasourceId?: string;
+  datasourceName: string;
 };
 
 export async function uploadSourceAndCreateDatasource({
@@ -144,6 +145,7 @@ export async function uploadSourceAndCreateDatasource({
     uploadedConfig,
     readyConfig,
     datasourceId: datasourceResult.id,
+    datasourceName: datasourceResult.name,
   };
 }
 
@@ -156,6 +158,7 @@ type createDatasourceForSheetParams = {
 
 type createDatasourceForSheetResult = {
   datasourceId: string;
+  datasourceName: string;
   nextConfig: NodeConfig;
 };
 
@@ -181,6 +184,7 @@ export async function createDatasourceForSheet({
 
   return {
     datasourceId: datasource.id,
+    datasourceName: datasource.name,
     nextConfig,
   };
 }

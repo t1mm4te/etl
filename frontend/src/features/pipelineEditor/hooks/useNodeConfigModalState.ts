@@ -30,7 +30,7 @@ import {
 } from '../helpers/sourcePreviewHelpers.ts';
 import { extractError } from '../../../shared/lib/extractError.ts';
 import type { AxiosProgressEvent } from 'axios';
-import { getSourceLabel, resolveSourceFileName } from '../utils/sourceNodePreviewUtils.ts';
+import { getSourceLabel } from '../utils/sourceNodePreviewUtils.ts';
 
 type UseNodeConfigModalStateParams = {
   pipelineId: string;
@@ -225,7 +225,7 @@ export function useNodeConfigModalState({
         setResultPreview(null);
 
         await saveNodeConfig(editingNode.id, newConfig, {
-          label: getSourceLabel(result.sourceFileName, result.defaultSheetName, result.sheetNames),
+          label: getSourceLabel(result.datasourceName),
         });
         await fetchSourcePreview(result.datasourceId ?? '', previewRowLimit);
       } catch (error) {
@@ -265,14 +265,9 @@ export function useNodeConfigModalState({
 
         setUploadedDatasourceId(result.datasourceId);
         setConfig(result.nextConfig);
-        const sourceLabelFileName = resolveSourceFileName(
-          undefined,
-          sourceFileMetadata?.filename || selectedFileName,
-          sheetName
-        );
 
         await saveNodeConfig(editingNode.id, result.nextConfig, {
-          label: getSourceLabel(sourceLabelFileName, sheetName, excelSheetNames),
+          label: getSourceLabel(result.datasourceName),
         });
         fetchSourcePreview(result.datasourceId, previewRowLimit);
       } catch (error) {
@@ -286,13 +281,11 @@ export function useNodeConfigModalState({
       fetchSourcePreview,
       previewRowLimit,
       saveNodeConfig,
-      selectedFileName,
       setConfig,
       setModalError,
       setSelectedSheetName,
       setUploadedDatasourceId,
       sourceFileId,
-      sourceFileMetadata,
     ]
   );
 

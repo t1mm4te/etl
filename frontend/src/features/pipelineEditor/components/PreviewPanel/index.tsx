@@ -22,6 +22,7 @@ type PreviewPanelProps = {
   onPreviewRowLimitChange: (value: number) => void;
   activePreviewTab?: PreviewTab;
   onActivePreviewTabChange?: (tab: PreviewTab) => void;
+  noIncomingDataHeightPx?: number;
 };
 
 export function PreviewPanel({
@@ -34,6 +35,7 @@ export function PreviewPanel({
   onPreviewRowLimitChange,
   activePreviewTab,
   onActivePreviewTabChange,
+  noIncomingDataHeightPx = 740,
 }: PreviewPanelProps) {
   const [localPreviewTab, setLocalPreviewTab] = useState<PreviewTab>('input');
   const currentPreviewTab = activePreviewTab ?? localPreviewTab;
@@ -54,6 +56,12 @@ export function PreviewPanel({
     { value: '500', label: '500 строк' },
   ];
 
+  const renderEmptyState = (message: string) => (
+    <div className={styles.emptyState}>
+      <p className={styles.emptyStateText}>{message}</p>
+    </div>
+  );
+
   if (nodeKind === 'source') {
     return (
       <section className={styles.previewPanel}>
@@ -61,7 +69,7 @@ export function PreviewPanel({
           <p className={styles.metadata}>
             {resultPreview
               ? `Всего ${resultPreview.total_rows} строк, ${resultPreview.columns.length} столбцов`
-              : 'Предпросмотр источника'}
+              : ''}
           </p>
           <CustomSelect
             options={rowLimitOptions}
@@ -88,7 +96,7 @@ export function PreviewPanel({
           {isPreviewLoading ? (
             <LoadingState className={styles.loadingState} spinnerSize={30} />
           ) : resultPreview ? null : (
-            <p className={styles.muted}>Предпросмотр источника пока недоступен.</p>
+            renderEmptyState('Предпросмотр источника пока недоступен.')
           )}
         </div>
       </section>
@@ -99,7 +107,16 @@ export function PreviewPanel({
   return (
     <section className={styles.previewPanel}>
       {!hasIncomingData ? (
-        <p className={styles.muted}>Нет входных данных. Подведите стрелку к входу узла.</p>
+        <div
+          className={`${styles.previewBody} ${styles.previewBodyStandalone}`}
+          style={{ minHeight: `${noIncomingDataHeightPx}px` }}
+        >
+          <div className={styles.emptyState} style={{ minHeight: `${noIncomingDataHeightPx}px` }}>
+            <p className={styles.emptyStateText}>
+              Нет входных данных. Подведите стрелку к входу узла.
+            </p>
+          </div>
+        </div>
       ) : (
         <>
           {(inputPreview || leftInputPreview || rightInputPreview || resultPreview) && (
@@ -188,18 +205,18 @@ export function PreviewPanel({
               <LoadingState className={styles.loadingState} spinnerSize={30} />
             ) : currentPreviewTab === 'input' ? (
               inputPreview ? null : (
-                <p className={styles.muted}>Входной предпросмотр недоступен.</p>
+                renderEmptyState('Входной предпросмотр недоступен.')
               )
             ) : currentPreviewTab === 'left_input' ? (
               leftInputPreview ? null : (
-                <p className={styles.muted}>Предпросмотр первого входа недоступен.</p>
+                renderEmptyState('Предпросмотр первого входа недоступен.')
               )
             ) : currentPreviewTab === 'right_input' ? (
               rightInputPreview ? null : (
-                <p className={styles.muted}>Предпросмотр второго входа недоступен.</p>
+                renderEmptyState('Предпросмотр второго входа недоступен.')
               )
             ) : resultPreview ? null : (
-              <p className={styles.muted}>Результат пока недоступен. Нажмите «Применить».</p>
+              renderEmptyState('Результат пока недоступен. Нажмите «Применить».')
             )}
           </div>
         </>

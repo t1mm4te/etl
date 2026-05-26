@@ -222,9 +222,8 @@ export interface DataSourceDetail {
   name: string;
   source_type: string;
   status: string;
-  original_filename: string;
+  source_file: string;
   sheet_name: string;
-  source_file_id?: string;
   row_count: number;
   column_count: number;
   columns_meta: Array<Record<string, unknown>>;
@@ -242,8 +241,8 @@ export interface SheetMetadata {
 
 export interface SourceFile {
   id: string;
-  filename: string;
-  size_bytes?: number;
+  original_filename: string;
+  // size_bytes?: number;
   sheets_metadata: SheetMetadata[];
   created_at?: string;
 }

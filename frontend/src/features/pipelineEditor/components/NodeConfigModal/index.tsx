@@ -1,9 +1,4 @@
-import type {
-  Node as ApiNode,
-  NodeConfig,
-  PreviewResponse,
-  SourceFile,
-} from '../../../../shared/api/types';
+import type { Node as ApiNode, NodeConfig, PreviewResponse } from '../../../../shared/api/types';
 import { Button } from '../../../../shared/ui/Button';
 import { SourceDbConfigEditor, SourceFileConfigEditor, TransformConfigEditor } from './forms';
 import { PreviewPanel } from '../PreviewPanel';
@@ -22,8 +17,6 @@ type NodeConfigModalProps = {
     excelSheetNames: string[];
     isSourceFileUploading: boolean;
     sourceFileUploadProgress: number | null;
-    sourceFileId?: string;
-    sourceFileMetadata?: SourceFile | null;
     availableColumns: string[];
     availableColumnsByPort?: Record<string, string[]>;
     inputNodeLabelsByPort?: Record<string, string>;
@@ -77,7 +70,6 @@ export function NodeConfigModal({
     availableColumns,
     availableColumnsByPort,
     inputNodeLabelsByPort,
-    sourceFileMetadata,
     modalError,
     previewRowLimit,
     activePreviewTab,
@@ -111,7 +103,6 @@ export function NodeConfigModal({
                   <SourceFileConfigEditor
                     selectedFile={selectedFile}
                     selectedFileName={selectedFileName}
-                    sourceFileMetadata={sourceFileMetadata}
                     selectedSheetName={selectedSheetName}
                     excelSheetNames={excelSheetNames}
                     isUploading={isSourceFileUploading}

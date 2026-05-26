@@ -3,11 +3,11 @@ import { useDropzone } from 'react-dropzone';
 import styles from './index.module.scss';
 import type { SourceFileConfigEditorProps } from '../types';
 import { CustomSelect, type SelectOption } from '../../../../../../shared/ui/CustomSelect';
+import { getFileExtension } from '../../../../utils/sourceNodePreviewUtils';
 
 export function SourceFileConfigEditor({
   selectedFile,
   selectedFileName,
-  sourceFileMetadata,
   selectedSheetName,
   excelSheetNames,
   isUploading = false,
@@ -16,17 +16,17 @@ export function SourceFileConfigEditor({
   onSheetNameChange,
 }: SourceFileConfigEditorProps) {
   const currentFileName = selectedFile?.name ?? selectedFileName;
-  const sheetNames =
-    sourceFileMetadata?.sheets_metadata.map((sheet) => sheet.sheet_name) ?? excelSheetNames;
-  const sheetOptions: SelectOption[] = sheetNames.map((sheetName) => ({
+  const fileExtension = currentFileName ? getFileExtension(currentFileName) : '';
+  const sheetOptions: SelectOption[] = excelSheetNames.map((sheetName) => ({
     value: sheetName,
     label: sheetName,
   }));
 
-  const isCsvFile = currentFileName?.toLowerCase().endsWith('.csv') ?? false;
+  const isExcelFile = fileExtension === 'xls' || fileExtension === 'xlsx';
+
   const selectedOption = sheetOptions.find((option) => option.value === selectedSheetName) ?? null;
 
-  const showSheetSelector = !isCsvFile && sheetOptions.length > 1;
+  const showSheetSelector = isExcelFile && sheetOptions.length > 1;
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
@@ -109,7 +109,7 @@ export function SourceFileConfigEditor({
             }}
           />
         </div>
-      ) : !isCsvFile && sheetOptions.length === 1 ? (
+      ) : isExcelFile && sheetOptions.length === 1 ? (
         <p className={styles.muted}>Найден один лист Excel. Он будет выбран автоматически.</p>
       ) : null}
     </div>

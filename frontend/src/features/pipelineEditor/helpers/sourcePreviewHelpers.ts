@@ -120,7 +120,7 @@ export async function uploadSourceAndCreateDatasource({
   });
 
   const sourceFileIdValue = uploadResult.sourceFile.id;
-  const sourceFileName = uploadResult.sourceFile.filename || file.name;
+  const sourceFileName = uploadResult.sourceFile.original_filename || file.name;
   const sheetNames = uploadResult.sheetNames;
   const uploadedConfig = {
     ...config,

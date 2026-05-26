@@ -5,7 +5,6 @@ import type {
   NodeConfig,
   NodeRun,
   PreviewResponse,
-  SourceFile,
 } from '../../../shared/api/types';
 import {
   getDatasourceDetail,
@@ -63,8 +62,6 @@ export function useNodeConfigModalState({
   const [selectedFileName, setSelectedFileName] = useState<string | undefined>();
   const [selectedSheetName, setSelectedSheetName] = useState<string | undefined>();
   const [excelSheetNames, setExcelSheetNames] = useState<string[]>([]);
-  const [sourceFileId, setSourceFileId] = useState<string>('');
-  const [sourceFileMetadata, setSourceFileMetadata] = useState<SourceFile | null>(null);
   const [uploadedDatasourceId, setUploadedDatasourceId] = useState<string>('');
   const [isSourceFileUploading, setIsSourceFileUploading] = useState(false);
   const [sourceFileUploadProgress, setSourceFileUploadProgress] = useState<number | null>(null);
@@ -75,8 +72,6 @@ export function useNodeConfigModalState({
     setSelectedFileName(undefined);
     setSelectedSheetName(undefined);
     setExcelSheetNames([]);
-    setSourceFileId('');
-    setSourceFileMetadata(null);
     setUploadedDatasourceId('');
     setIsSourceFileUploading(false);
     setSourceFileUploadProgress(null);
@@ -248,7 +243,11 @@ export function useNodeConfigModalState({
       }
 
       const effectiveSourceFileId =
-        sourceFileId || (typeof config.source_file_id === 'string' ? config.source_file_id : '');
+        typeof config.source_file_id === 'string'
+          ? config.source_file_id
+          : typeof config.datasource_id === 'string'
+            ? config.datasource_id
+            : '';
 
       if (!effectiveSourceFileId) {
         setModalError('Сначала загрузите файл, затем выберите лист.');
@@ -285,7 +284,6 @@ export function useNodeConfigModalState({
       setModalError,
       setSelectedSheetName,
       setUploadedDatasourceId,
-      sourceFileId,
     ]
   );
 
@@ -447,10 +445,8 @@ export function useNodeConfigModalState({
 
       if (kind === 'source' && resolvedSourceFileId) {
         try {
-          setSourceFileId(resolvedSourceFileId);
           const sourceFile = await getSourceFileDetail(resolvedSourceFileId);
-          setSourceFileMetadata(sourceFile);
-          setSelectedFileName(sourceFile.filename);
+          setSelectedFileName(sourceFile.original_filename);
           setExcelSheetNames(sourceFile.sheets_metadata.map((sheet) => sheet.sheet_name));
         } catch {
           // Best effort only; a datasource preview may still be available below.
@@ -504,8 +500,6 @@ export function useNodeConfigModalState({
       excelSheetNames,
       isSourceFileUploading,
       sourceFileUploadProgress,
-      sourceFileId,
-      sourceFileMetadata,
       availableColumns,
       availableColumnsByPort,
       inputNodeLabelsByPort,

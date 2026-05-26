@@ -1,7 +1,9 @@
 import {
   getDatasourceDetail,
+  getPipelineRun,
   previewDatasource,
   previewNodeRun,
+  runPipelinePreview,
 } from '../../../shared/api/pipelines';
 import type {
   Edge,
@@ -99,8 +101,6 @@ type RunTransformPreviewParams = {
     config: NodeConfig,
     options?: { label?: string }
   ) => Promise<void>;
-  runPipelinePreview: (pipelineId: string, nodeId: string) => Promise<{ id: string }>;
-  getPipelineRun: (runId: string) => Promise<PipelineRunDetail>;
   waitTimeoutMs?: number;
 };
 
@@ -114,8 +114,6 @@ export async function runTransformPreview({
   editingNode,
   getNextConfig,
   saveNodeConfig,
-  runPipelinePreview,
-  getPipelineRun,
   waitTimeoutMs = 1500,
 }: RunTransformPreviewParams): Promise<RunTransformPreviewResult> {
   if (!editingNode) {

@@ -11,13 +11,12 @@ import {
   getSourceFileDetail,
   listPipelineRuns,
   getPipelineRun,
-  runPipelinePreview,
 } from '../../../shared/api/pipelines.ts';
 import { useNodeColumns } from './useNodeColumns.ts';
 import {
   fetchTransformPreviewFromRuns,
   runTransformPreview,
-} from './useTransformNodePreviewActions.ts';
+} from '../services/transformPreviewService.ts';
 import { usePipelineEditorStore } from '../store/pipelineEditorStore.ts';
 import { buildNextNodeConfig } from '../utils/nodePreviewUtils.ts';
 import { type PreviewTab } from '../types/nodeConfigModalTypes.ts';
@@ -389,8 +388,6 @@ export function useNodeConfigModalController({
         editingNode,
         getNextConfig,
         saveNodeConfig,
-        runPipelinePreview,
-        getPipelineRun,
       });
 
       setRunId(startedRun.id);

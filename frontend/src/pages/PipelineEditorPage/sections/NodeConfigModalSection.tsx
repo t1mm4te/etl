@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { NodeConfigModal } from '../../../features/pipelineEditor/components/NodeConfigModal';
-import { useNodeConfigModalState } from '../../../features/pipelineEditor/hooks/useNodeConfigModalState';
+import { useNodeConfigModalController } from '../../../features/pipelineEditor/hooks/useNodeConfigModalController';
 import { usePipelineEditorQueries } from '../../../features/pipelineEditor/hooks/usePipelineEditorQueries';
 import { usePipelineEditorMutations } from '../../../features/pipelineEditor/hooks/usePipelineEditorMutations';
 
@@ -27,7 +27,7 @@ export function NodeConfigModalSection({
     previewCallbacks,
     openNodeModal,
     onSheetNameChange,
-  } = useNodeConfigModalState({
+  } = useNodeConfigModalController({
     pipelineId,
     editingNodeId,
     onClose,

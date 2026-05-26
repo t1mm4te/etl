@@ -5,33 +5,33 @@ import type {
   NodeConfig,
   NodeRun,
   PreviewResponse,
-} from '../../../shared/api/types';
+} from '../../../shared/api/types.ts';
 import {
   getDatasourceDetail,
   getSourceFileDetail,
   listPipelineRuns,
   getPipelineRun,
   runPipelinePreview,
-} from '../../../shared/api/pipelines';
-import { useNodeColumns } from './useNodeColumns';
+} from '../../../shared/api/pipelines.ts';
+import { useNodeColumns } from './useNodeColumns.ts';
 import {
   fetchTransformPreviewFromRuns,
   runTransformPreview,
-} from './useTransformNodePreviewActions';
-import { usePipelineEditorStore } from '../store/pipelineEditorStore';
-import { buildNextNodeConfig } from '../utils/nodePreviewUtils';
-import { type PreviewTab } from '../types/nodeConfigModalTypes';
+} from './useTransformNodePreviewActions.ts';
+import { usePipelineEditorStore } from '../store/pipelineEditorStore.ts';
+import { buildNextNodeConfig } from '../utils/nodePreviewUtils.ts';
+import { type PreviewTab } from '../types/nodeConfigModalTypes.ts';
 import { getNodeKind } from '../utils/getNodeKind.ts';
 import {
   createDatasourceForSheet,
-  fetchSourcePreviewData,
   uploadSourceAndCreateDatasource,
-} from '../helpers/sourcePreviewHelpers.ts';
+} from '../services/sourceNodeService.ts';
 import { extractError } from '../../../shared/lib/extractError.ts';
 import type { AxiosProgressEvent } from 'axios';
 import { getSourceLabel } from '../utils/sourceNodePreviewUtils.ts';
+import { fetchSourcePreviewData } from '../services/sourcePreviewService.ts';
 
-type UseNodeConfigModalStateParams = {
+type UseNodeConfigModalControllerParams = {
   pipelineId: string;
   editingNodeId: string | null;
   onClose: () => void;
@@ -45,7 +45,7 @@ type UseNodeConfigModalStateParams = {
   ) => Promise<void>;
 };
 
-export function useNodeConfigModalState({
+export function useNodeConfigModalController({
   pipelineId,
   editingNodeId,
   onClose,
@@ -53,7 +53,7 @@ export function useNodeConfigModalState({
   edges,
   nodeRuns,
   saveNodeConfig,
-}: UseNodeConfigModalStateParams) {
+}: UseNodeConfigModalControllerParams) {
   const editingNode = nodes?.find((node) => node.id === editingNodeId) ?? null;
   const nodeKind = editingNode ? getNodeKind(editingNode.operation_type) : 'source';
 

@@ -1,17 +1,151 @@
+@use 'sass:color';
 @use '../../../../styles/_vars.scss' as *;
 
 .runsCard {
-  border: 1px solid $borderColor;
-  border-radius: $borderRadiusMedium;
-  background: $darkGray;
-  padding: $spacingMedium;
+  display: flex;
+  flex-direction: column;
+  gap: $spacingMedium;
+  color: $white;
+}
 
-  h2 {
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: $spacingMedium;
+}
+
+.kicker {
+  margin: 0;
+  color: rgba($white, 0.68);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 4px 0 0;
+  font-size: 24px;
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+
+  span {
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba($white, 0.08);
+    color: rgba($white, 0.9);
+    font-size: 13px;
+  }
+}
+
+.meta {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+
+  div {
+    padding: 12px 14px;
+    border-radius: $borderRadiusSmall;
+    background: rgba($white, 0.04);
+    border: 1px solid rgba($white, 0.08);
+  }
+
+  dt {
+    color: rgba($white, 0.62);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+
+  dd {
+    margin: 0;
     color: $white;
-    margin-bottom: 10px;
+    font-size: 14px;
   }
+}
 
-  li {
-    color: $labelColor;
+.error {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: $borderRadiusSmall;
+  background: rgba($dangerColor, 0.14);
+  border: 1px solid rgba($dangerColor, 0.28);
+  color: color.adjust($dangerColor, $lightness: 14%);
+  line-height: 1.5;
+}
+
+.nodesBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  h3 {
+    margin: 0;
+    font-size: 18px;
   }
+}
+
+.emptyState {
+  margin: 0;
+  color: $labelColor;
+}
+
+.nodeList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.nodeItem {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: $borderRadiusSmall;
+  background: rgba($white, 0.04);
+  border: 1px solid rgba($white, 0.08);
+}
+
+.nodeHeading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: $spacingBase;
+
+  strong {
+    font-size: 15px;
+  }
+}
+
+.nodeStatus {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba($white, 0.08);
+  color: rgba($white, 0.88);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.nodeMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  color: $labelColor;
+  font-size: 13px;
+}
+
+.nodeError {
+  margin: 0;
+  color: color.adjust($dangerColor, $lightness: 16%);
+  line-height: 1.5;
 }

@@ -3,7 +3,6 @@ import { useParams } from 'react-router-dom';
 import { usePipelineEditorStore } from '../../features/pipelineEditor/store/pipelineEditorStore';
 import { EditorToolbar } from '../../features/pipelineEditor/components/EditorToolbar';
 import { PipelineWorkspaceSection } from './sections/PipelineWorkspaceSection';
-import { RunResultsSection } from './sections/RunResultsSection';
 import styles from './index.module.scss';
 
 export function PipelineEditorPage() {
@@ -18,7 +17,6 @@ export function PipelineEditorPage() {
     <main className={styles.page}>
       <EditorToolbar pipelineId={pipelineId} />
       <PipelineWorkspaceSection pipelineId={pipelineId} />
-      <RunResultsSection pipelineId={pipelineId} />
     </main>
   );
 }

@@ -1,5 +1,4 @@
 import { createPortal } from 'react-dom';
-import { Button } from '../../../../shared/ui/Button';
 import type { PipelineRunDetail } from '../../../../shared/api/types';
 import { RunResultsCard } from '../RunResultsCard';
 import styles from './index.module.scss';
@@ -24,9 +23,9 @@ export function RunResultsModal({ isOpen, run, isLoading = false, onClose }: Run
             <p className={styles.kicker}>Результаты запуска</p>
             <h3>{run ? 'Запуск завершён' : 'Запуск выполняется'}</h3>
           </div>
-          <Button type="button" color="white" onClick={onClose}>
-            Закрыть
-          </Button>
+          <button type="button" className={styles.closeButton} onClick={onClose}>
+            ✕
+          </button>
         </div>
 
         <div className={styles.modalContent}>

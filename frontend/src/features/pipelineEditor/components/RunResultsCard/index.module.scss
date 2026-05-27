@@ -28,6 +28,20 @@
   font-size: 24px;
 }
 
+.statusSuccess {
+  color: #6ee7a2;
+}
+
+.statusFailed {
+  color: #ff7a7a;
+}
+
+.statusPending,
+.statusRunning,
+.statusCancelled {
+  color: $white;
+}
+
 .summary {
   display: flex;
   flex-wrap: wrap;
@@ -131,7 +145,6 @@
   padding: 4px 10px;
   border-radius: 999px;
   background: rgba($white, 0.08);
-  color: rgba($white, 0.88);
   font-size: 12px;
   white-space: nowrap;
 }

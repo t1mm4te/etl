@@ -13,17 +13,28 @@ const STATUS_LABELS: Record<PipelineRunDetail['status'], string> = {
   cancelled: 'Отменён',
 };
 
-const RUN_MODE_LABELS: Record<PipelineRunDetail['run_mode'], string> = {
-  full: 'Полный запуск',
-  preview: 'Превью',
-};
-
 const NODE_STATUS_LABELS: Record<PipelineRunDetail['node_runs'][number]['status'], string> = {
   pending: 'Ожидает',
   running: 'Выполняется',
   success: 'Успешно',
   failed: 'Ошибка',
   skipped: 'Пропущена',
+};
+
+const STATUS_CLASS_NAMES: Record<PipelineRunDetail['status'], string> = {
+  pending: styles.statusPending,
+  running: styles.statusRunning,
+  success: styles.statusSuccess,
+  failed: styles.statusFailed,
+  cancelled: styles.statusCancelled,
+};
+
+const NODE_STATUS_CLASS_NAMES: Record<PipelineRunDetail['node_runs'][number]['status'], string> = {
+  pending: styles.statusPending,
+  running: styles.statusRunning,
+  success: styles.statusSuccess,
+  failed: styles.statusFailed,
+  skipped: styles.statusCancelled,
 };
 
 const formatTimestamp = (value: string | null) => {
@@ -52,10 +63,11 @@ export function RunResultsCard({ run }: RunResultsCardProps) {
       <div className={styles.header}>
         <div>
           <p className={styles.kicker}>Последний запуск</p>
-          <h2 className={styles.title}>{STATUS_LABELS[run.status]}</h2>
+          <h2 className={`${styles.title} ${STATUS_CLASS_NAMES[run.status]}`}>
+            {STATUS_LABELS[run.status]}
+          </h2>
         </div>
         <div className={styles.summary}>
-          <span>{RUN_MODE_LABELS[run.run_mode]}</span>
           <span>Нод: {nodeRuns.length}</span>
         </div>
       </div>
@@ -87,11 +99,13 @@ export function RunResultsCard({ run }: RunResultsCardProps) {
               <li key={nodeRun.id} className={styles.nodeItem}>
                 <div className={styles.nodeHeading}>
                   <strong>{nodeRun.node_label || nodeRun.node_operation}</strong>
-                  <span className={styles.nodeStatus}>{NODE_STATUS_LABELS[nodeRun.status]}</span>
+                  <span
+                    className={`${styles.nodeStatus} ${NODE_STATUS_CLASS_NAMES[nodeRun.status]}`}
+                  >
+                    {NODE_STATUS_LABELS[nodeRun.status]}
+                  </span>
                 </div>
                 <div className={styles.nodeMeta}>
-                  <span>Старт: {formatTimestamp(nodeRun.started_at)}</span>
-                  <span>Финиш: {formatTimestamp(nodeRun.finished_at)}</span>
                   <span>Строк: {nodeRun.output_row_count ?? '—'}</span>
                 </div>
                 {nodeRun.error_message ? (

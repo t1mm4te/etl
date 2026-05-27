@@ -85,14 +85,14 @@ export function useNodeConfigModalController({
   const [previewRowLimit, setPreviewRowLimit] = useState(15);
   const [activePreviewTab, setActivePreviewTab] = useState<PreviewTab>('input');
 
-  const resetPreviewState = useCallback(() => {
+  const resetPreviewState = useCallback((tab: PreviewTab = 'input') => {
     setInputPreview(null);
     setLeftInputPreview(null);
     setRightInputPreview(null);
     setResultPreview(null);
     setIsPreviewLoading(false);
     setPreviewRowLimit(15);
-    setActivePreviewTab('input');
+    setActivePreviewTab(tab);
   }, []);
 
   const {
@@ -303,27 +303,91 @@ export function useNodeConfigModalController({
     [config, uploadedDatasourceId]
   );
 
-  const resolveNodeRunsForPreview = useCallback(async () => {
-    if (nodeRuns && nodeRuns.length > 0) {
-      return nodeRuns;
-    }
+  const getIncomingSourceNodeIds = useCallback(
+    (node: ApiNode) => {
+      return Array.from(
+        new Set(
+          (edges ?? [])
+            .filter((edge) => edge.target_node === node.id)
+            .map((edge) => edge.source_node)
+        )
+      );
+    },
+    [edges]
+  );
 
-    const runs = await listPipelineRuns(pipelineId);
-    const latestCompletedRun = runs.find(
-      (run) => run.status === 'success' || run.status === 'failed'
-    );
+  const getRelevantPreviewNodeIds = useCallback(
+    (node: ApiNode) => {
+      return Array.from(new Set([...getIncomingSourceNodeIds(node), node.id]));
+    },
+    [getIncomingSourceNodeIds]
+  );
 
-    if (!latestCompletedRun) {
-      return null;
-    }
+  const resolveNodeRunMapForPreview = useCallback(
+    async (node: ApiNode) => {
+      const relevantNodeIds = getRelevantPreviewNodeIds(node);
+      const resolvedRunsByNodeId: Record<string, NodeRun> = {};
 
-    setRunId(latestCompletedRun.id);
-    const runDetail = await getPipelineRun(latestCompletedRun.id);
-    return runDetail.node_runs;
-  }, [nodeRuns, pipelineId, setRunId]);
+      const currentRun = nodeRuns?.find((run) => run.node === node.id && run.status === 'success');
+      if (currentRun) {
+        resolvedRunsByNodeId[node.id] = currentRun;
+      }
+
+      const currentRunNodeIds = new Set(Object.keys(resolvedRunsByNodeId));
+      const missingNodeIds = relevantNodeIds.filter((nodeId) => !currentRunNodeIds.has(nodeId));
+
+      if (missingNodeIds.length === 0) {
+        return Object.keys(resolvedRunsByNodeId).length > 0 ? resolvedRunsByNodeId : null;
+      }
+
+      const runs = await listPipelineRuns(pipelineId);
+      const successfulRuns = runs.filter((run) => run.status === 'success');
+      const runDetailCache = new Map<
+        string,
+        ReturnType<typeof getPipelineRun> extends Promise<infer T> ? T : never
+      >();
+
+      const loadRunDetail = async (runId: string) => {
+        const cachedRunDetail = runDetailCache.get(runId);
+        if (cachedRunDetail) {
+          return cachedRunDetail;
+        }
+
+        const runDetail = await getPipelineRun(runId);
+        runDetailCache.set(runId, runDetail);
+        return runDetail;
+      };
+
+      for (const nodeId of missingNodeIds) {
+        for (const run of successfulRuns) {
+          const runDetail = await loadRunDetail(run.id);
+          const matchingRun = runDetail.node_runs.find(
+            (runItem) => runItem.node === nodeId && runItem.status === 'success'
+          );
+
+          if (!matchingRun) {
+            continue;
+          }
+
+          resolvedRunsByNodeId[nodeId] = matchingRun;
+          if (nodeId === node.id) {
+            setRunId(runDetail.id);
+          }
+          break;
+        }
+      }
+
+      return Object.keys(resolvedRunsByNodeId).length > 0 ? resolvedRunsByNodeId : null;
+    },
+    [getRelevantPreviewNodeIds, nodeRuns, pipelineId, setRunId]
+  );
 
   const fetchNodePreviewsFromRuns = useCallback(
-    async (node: ApiNode, runsOverride?: NodeRun[], rowLimit = previewRowLimit) => {
+    async (
+      node: ApiNode,
+      runsOverride?: Record<string, NodeRun> | null,
+      rowLimit = previewRowLimit
+    ) => {
       setIsPreviewLoading(true);
       setModalError(undefined);
 
@@ -332,7 +396,7 @@ export function useNodeConfigModalController({
           node,
           nodes,
           edges,
-          nodeRuns: runsOverride ?? nodeRuns ?? null,
+          nodeRunsByNodeId: runsOverride,
           rowLimit,
         });
 
@@ -353,7 +417,6 @@ export function useNodeConfigModalController({
     [
       edges,
       nodes,
-      nodeRuns,
       previewRowLimit,
       setInputPreview,
       setIsPreviewLoading,
@@ -392,7 +455,15 @@ export function useNodeConfigModalController({
       });
 
       setRunId(startedRun.id);
-      await fetchNodePreviewsFromRuns(editingNode, completedRun.node_runs);
+      await fetchNodePreviewsFromRuns(
+        editingNode,
+        completedRun.node_runs.reduce<Record<string, NodeRun>>((acc, run) => {
+          if (run.status === 'success') {
+            acc[run.node] = run;
+          }
+          return acc;
+        }, {})
+      );
     } catch (error) {
       setModalError(String(error));
       setIsPreviewLoading(false);
@@ -413,10 +484,18 @@ export function useNodeConfigModalController({
     (limit: number) => {
       setPreviewRowLimit(limit);
       if (editingNode && nodeKind !== 'source') {
-        void fetchNodePreviewsFromRuns(editingNode, undefined, limit);
+        void resolveNodeRunMapForPreview(editingNode).then((runMap) =>
+          fetchNodePreviewsFromRuns(editingNode, runMap ?? undefined, limit)
+        );
       }
     },
-    [editingNode, nodeKind, setPreviewRowLimit, fetchNodePreviewsFromRuns]
+    [
+      editingNode,
+      fetchNodePreviewsFromRuns,
+      nodeKind,
+      resolveNodeRunMapForPreview,
+      setPreviewRowLimit,
+    ]
   );
 
   const openNodeModal = useCallback(
@@ -426,14 +505,15 @@ export function useNodeConfigModalController({
         return;
       }
 
+      const kind = getNodeKind(node.operation_type);
+      const initialPreviewTab: PreviewTab =
+        kind === 'source' ? 'input' : node.operation_type === 'join' ? 'left_input' : 'input';
       setConfig(node.config ?? {});
       resetSourceState();
-      resetPreviewState();
-      setActivePreviewTab('input');
+      resetPreviewState(initialPreviewTab);
       setModalError(undefined);
       await loadAvailableColumns(node.id);
 
-      const kind = getNodeKind(node.operation_type);
       const currentDatasourceId =
         typeof node.config?.datasource_id === 'string' ? node.config.datasource_id : '';
       const currentSourceFileId =
@@ -465,8 +545,8 @@ export function useNodeConfigModalController({
       }
 
       if (kind !== 'source') {
-        const runsForPreview = await resolveNodeRunsForPreview();
-        await fetchNodePreviewsFromRuns(node, runsForPreview ?? undefined);
+        const runMapForPreview = await resolveNodeRunMapForPreview(node);
+        await fetchNodePreviewsFromRuns(node, runMapForPreview ?? undefined);
       }
     },
     [
@@ -476,7 +556,7 @@ export function useNodeConfigModalController({
       resetPreviewState,
       loadAvailableColumns,
       nodes,
-      resolveNodeRunsForPreview,
+      resolveNodeRunMapForPreview,
     ]
   );
 

@@ -20,7 +20,7 @@ type FetchTransformPreviewParams = {
   node: ApiNode;
   nodes?: ApiNode[];
   edges?: Edge[];
-  nodeRuns?: NodeRun[] | null;
+  nodeRunsByNodeId?: Record<string, NodeRun> | null;
   rowLimit?: number;
 };
 
@@ -35,7 +35,7 @@ export async function fetchTransformPreviewFromRuns({
   node,
   nodes,
   edges,
-  nodeRuns,
+  nodeRunsByNodeId,
   rowLimit = 15,
 }: FetchTransformPreviewParams): Promise<TransformPreviews> {
   try {
@@ -61,10 +61,7 @@ export async function fetchTransformPreviewFromRuns({
               preview = await previewDatasource(upstreamDatasourceId, rowLimit);
             }
           } else {
-            const upstreamRun =
-              nodeRuns?.find(
-                (run) => run.node === incomingEdge.source_node && run.status === 'success'
-              ) ?? null;
+            const upstreamRun = nodeRunsByNodeId?.[incomingEdge.source_node] ?? null;
             if (upstreamRun) {
               preview = await previewNodeRun(upstreamRun.id, rowLimit);
             }
@@ -80,8 +77,7 @@ export async function fetchTransformPreviewFromRuns({
       }
     }
 
-    const ownRun =
-      nodeRuns?.find((run) => run.node === node.id && run.status === 'success') ?? null;
+    const ownRun = nodeRunsByNodeId?.[node.id] ?? null;
     if (ownRun) {
       resultPreview = await previewNodeRun(ownRun.id, rowLimit);
     }

@@ -23,13 +23,16 @@
   overflow: hidden;
   height: 100%;
   min-height: 0;
+  box-shadow:
+    0 16px 34px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba($white, 0.12);
 }
 
 .loadingState {
   height: 100%;
-  min-height: 560px;
+  min-height: 730px;
   border-radius: inherit;
-  background: linear-gradient(180deg, rgba($darkGray, 0.74), rgba($darkGrayLighter, 0.78));
+  background: #0f0f0f;
 }
 
 .muted {

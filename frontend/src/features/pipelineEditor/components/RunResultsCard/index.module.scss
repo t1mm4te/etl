@@ -17,8 +17,8 @@
 
 .kicker {
   margin: 0;
-  color: rgba($white, 0.68);
-  font-size: 12px;
+  color: $labelColor;
+  font-size: 14px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -26,6 +26,7 @@
 .title {
   margin: 4px 0 0;
   font-size: 24px;
+  text-transform: uppercase;
 }
 
 .statusSuccess {
@@ -51,9 +52,9 @@
   span {
     padding: 6px 10px;
     border-radius: 999px;
-    background: rgba($white, 0.08);
-    color: rgba($white, 0.9);
-    font-size: 13px;
+    background: $darkGrayLighter;
+    color: $white;
+    font-size: $defaultFontSize;
   }
 }
 
@@ -66,13 +67,13 @@
   div {
     padding: 12px 14px;
     border-radius: $borderRadiusSmall;
-    background: rgba($white, 0.04);
-    border: 1px solid rgba($white, 0.08);
+    background: $darkGrayLighter;
+    border: 1px solid $borderColor;
   }
 
   dt {
-    color: rgba($white, 0.62);
-    font-size: 12px;
+    color: $labelColor;
+    font-size: 14px;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     margin-bottom: 6px;
@@ -81,7 +82,7 @@
   dd {
     margin: 0;
     color: $white;
-    font-size: 14px;
+    font-size: $defaultFontSize;
   }
 }
 
@@ -99,6 +100,11 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  .nodesBlockHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
 
   h3 {
     margin: 0;
@@ -123,11 +129,11 @@
 .nodeItem {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 0px;
   padding: 14px 16px;
   border-radius: $borderRadiusSmall;
-  background: rgba($white, 0.04);
-  border: 1px solid rgba($white, 0.08);
+  background: $darkGrayLighter;
+  border: 1px solid $borderColor;
 }
 
 .nodeHeading {
@@ -137,7 +143,7 @@
   gap: $spacingBase;
 
   strong {
-    font-size: 15px;
+    font-size: $defaultFontSize;
   }
 }
 
@@ -145,7 +151,7 @@
   padding: 4px 10px;
   border-radius: 999px;
   background: rgba($white, 0.08);
-  font-size: 12px;
+  font-size: $defaultFontSize;
   white-space: nowrap;
 }
 
@@ -154,7 +160,7 @@
   flex-wrap: wrap;
   gap: 8px 14px;
   color: $labelColor;
-  font-size: 13px;
+  font-size: $defaultFontSize;
 }
 
 .nodeError {

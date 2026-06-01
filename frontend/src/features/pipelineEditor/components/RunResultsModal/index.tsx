@@ -2,6 +2,7 @@ import { createPortal } from 'react-dom';
 import type { PipelineRunDetail } from '../../../../shared/api/types';
 import { RunResultsCard } from '../RunResultsCard';
 import styles from './index.module.scss';
+import { LoadingState } from '../../../../shared/ui/LoadingState';
 
 type RunResultsModalProps = {
   isOpen: boolean;
@@ -20,8 +21,7 @@ export function RunResultsModal({ isOpen, run, isLoading = false, onClose }: Run
       <div className={styles.modal} onClick={(event) => event.stopPropagation()}>
         <div className={styles.modalHeader}>
           <div>
-            <p className={styles.kicker}>Результаты запуска</p>
-            <h3>{run ? 'Запуск завершён' : 'Запуск выполняется'}</h3>
+            <h3>Результаты запуска</h3>
           </div>
           <button type="button" className={styles.closeButton} onClick={onClose}>
             ✕
@@ -30,9 +30,7 @@ export function RunResultsModal({ isOpen, run, isLoading = false, onClose }: Run
 
         <div className={styles.modalContent}>
           {isLoading && !run ? (
-            <div className={styles.loadingState}>
-              <p>Ожидаем результаты запуска...</p>
-            </div>
+            <LoadingState className={styles.loadingState} spinnerSize={30} />
           ) : (
             <RunResultsCard run={run} />
           )}

@@ -10,14 +10,10 @@ describe('buildNextNodeConfig', () => {
 
   it('adds datasource and sheet metadata when available', () => {
     expect(
-      buildNextNodeConfig(
-        { filter: 'active' },
-        'datasource-1',
-        {
-          selectedSheetName: 'Sheet1',
-          excelSheetNames: ['Sheet1', 'Sheet2'],
-        }
-      )
+      buildNextNodeConfig({ filter: 'active' }, 'datasource-1', {
+        selectedSheetName: 'Sheet1',
+        excelSheetNames: ['Sheet1', 'Sheet2'],
+      })
     ).toEqual({
       filter: 'active',
       datasource_id: 'datasource-1',

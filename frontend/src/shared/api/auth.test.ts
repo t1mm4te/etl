@@ -37,7 +37,9 @@ describe('auth api', () => {
 
   it('calls the auth endpoints with the expected payloads', async () => {
     apiClientMock.post.mockResolvedValueOnce({ data: { auth_token: 'token' } });
-    await expect(login({ email: 'a@b.com', password: 'secret' })).resolves.toEqual({ auth_token: 'token' });
+    await expect(login({ email: 'a@b.com', password: 'secret' })).resolves.toEqual({
+      auth_token: 'token',
+    });
     expect(apiClientMock.post).toHaveBeenCalledWith('/auth/token/login/', {
       email: 'a@b.com',
       password: 'secret',
@@ -53,11 +55,19 @@ describe('auth api', () => {
         password: 'secret',
       })
     ).resolves.toEqual({ ok: true });
-    expect(apiClientMock.post).toHaveBeenCalledWith('/users/', expect.objectContaining({ username: 'ab' }));
+    expect(apiClientMock.post).toHaveBeenCalledWith(
+      '/users/',
+      expect.objectContaining({ username: 'ab' })
+    );
 
     apiClientMock.post.mockResolvedValueOnce({ data: { detail: 'ok' } });
-    await expect(verifyEmail({ email: 'a@b.com', code: '123456' })).resolves.toEqual({ detail: 'ok' });
-    expect(apiClientMock.post).toHaveBeenCalledWith('/auth/verify-email/', { email: 'a@b.com', code: '123456' });
+    await expect(verifyEmail({ email: 'a@b.com', code: '123456' })).resolves.toEqual({
+      detail: 'ok',
+    });
+    expect(apiClientMock.post).toHaveBeenCalledWith('/auth/verify-email/', {
+      email: 'a@b.com',
+      code: '123456',
+    });
 
     apiClientMock.post.mockResolvedValueOnce({ data: { detail: 'ok' } });
     await expect(resendVerificationCode({ email: 'a@b.com' })).resolves.toEqual({ detail: 'ok' });
@@ -68,12 +78,22 @@ describe('auth api', () => {
     expect(apiClientMock.get).toHaveBeenCalledWith('/users/me/');
 
     apiClientMock.patch.mockResolvedValueOnce({ data: { id: 1 } });
-    await expect(patchMe({ username: 'new-name', first_name: 'A', last_name: 'B' })).resolves.toEqual({ id: 1 });
-    expect(apiClientMock.patch).toHaveBeenCalledWith('/users/me/', { username: 'new-name', first_name: 'A', last_name: 'B' });
+    await expect(
+      patchMe({ username: 'new-name', first_name: 'A', last_name: 'B' })
+    ).resolves.toEqual({ id: 1 });
+    expect(apiClientMock.patch).toHaveBeenCalledWith('/users/me/', {
+      username: 'new-name',
+      first_name: 'A',
+      last_name: 'B',
+    });
 
     apiClientMock.put.mockResolvedValueOnce({ data: { avatar: '/media/a.png' } });
-    await expect(putMyAvatar('data:image/png;base64,abc')).resolves.toEqual({ avatar: '/media/a.png' });
-    expect(apiClientMock.put).toHaveBeenCalledWith('/users/me/avatar/', { avatar: 'data:image/png;base64,abc' });
+    await expect(putMyAvatar('data:image/png;base64,abc')).resolves.toEqual({
+      avatar: '/media/a.png',
+    });
+    expect(apiClientMock.put).toHaveBeenCalledWith('/users/me/avatar/', {
+      avatar: 'data:image/png;base64,abc',
+    });
 
     apiClientMock.delete.mockResolvedValueOnce({});
     await expect(deleteMyAvatar()).resolves.toBeUndefined();
@@ -84,11 +104,21 @@ describe('auth api', () => {
     expect(apiClientMock.post).toHaveBeenCalledWith('/auth/token/logout/');
 
     apiClientMock.post.mockResolvedValueOnce({});
-    await expect(setPassword({ current_password: 'old', new_password: 'new' })).resolves.toBeUndefined();
-    expect(apiClientMock.post).toHaveBeenCalledWith('/users/set_password/', { current_password: 'old', new_password: 'new' });
+    await expect(
+      setPassword({ current_password: 'old', new_password: 'new' })
+    ).resolves.toBeUndefined();
+    expect(apiClientMock.post).toHaveBeenCalledWith('/users/set_password/', {
+      current_password: 'old',
+      new_password: 'new',
+    });
 
     apiClientMock.post.mockResolvedValueOnce({});
-    await expect(setEmail({ current_password: 'old', new_email: 'new@b.com' })).resolves.toBeUndefined();
-    expect(apiClientMock.post).toHaveBeenCalledWith('/users/set_username/', { current_password: 'old', new_email: 'new@b.com' });
+    await expect(
+      setEmail({ current_password: 'old', new_email: 'new@b.com' })
+    ).resolves.toBeUndefined();
+    expect(apiClientMock.post).toHaveBeenCalledWith('/users/set_username/', {
+      current_password: 'old',
+      new_email: 'new@b.com',
+    });
   });
 });

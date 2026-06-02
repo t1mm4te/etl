@@ -17,18 +17,24 @@ describe('apiClient', () => {
   it('adds token header when auth token exists', () => {
     localStorage.setItem('auth_token', 'abc-123');
 
-    const requestHandler = (apiClient.interceptors.request as unknown as {
-      handlers: Array<{ fulfilled?: (config: RequestConfig) => RequestConfig }>;
-    }).handlers[0]?.fulfilled;
+    const requestHandler = (
+      apiClient.interceptors.request as unknown as {
+        handlers: Array<{ fulfilled?: (config: RequestConfig) => RequestConfig }>;
+      }
+    ).handlers[0]?.fulfilled;
 
     expect(requestHandler).toBeTypeOf('function');
-    expect(requestHandler?.({ headers: {} })).toEqual({ headers: { Authorization: 'Token abc-123' } });
+    expect(requestHandler?.({ headers: {} })).toEqual({
+      headers: { Authorization: 'Token abc-123' },
+    });
   });
 
   it('leaves headers unchanged when token is absent', () => {
-    const requestHandler = (apiClient.interceptors.request as unknown as {
-      handlers: Array<{ fulfilled?: (config: RequestConfig) => RequestConfig }>;
-    }).handlers[0]?.fulfilled;
+    const requestHandler = (
+      apiClient.interceptors.request as unknown as {
+        handlers: Array<{ fulfilled?: (config: RequestConfig) => RequestConfig }>;
+      }
+    ).handlers[0]?.fulfilled;
 
     expect(requestHandler?.({ headers: {} })).toEqual({ headers: {} });
   });

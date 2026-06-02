@@ -117,7 +117,9 @@ describe('auth hooks', () => {
 
     const { result } = renderHook(() => useResendCode(), { wrapper });
 
-    await expect(result.current.mutateAsync({ email: 'a@b.com' })).resolves.toEqual({ detail: 'sent' });
+    await expect(result.current.mutateAsync({ email: 'a@b.com' })).resolves.toEqual({
+      detail: 'sent',
+    });
     expect(authApiMocks.resendVerificationCode).toHaveBeenCalledWith({ email: 'a@b.com' });
   });
 

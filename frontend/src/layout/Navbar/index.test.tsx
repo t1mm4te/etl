@@ -23,7 +23,8 @@ vi.mock('../../features/auth/hooks/useLogout', () => ({
 }));
 
 vi.mock('../../shared/lib/getUserInitials', () => ({
-  getUserInitials: (user: { username?: string } | null) => user?.username?.slice(0, 2).toUpperCase() ?? '',
+  getUserInitials: (user: { username?: string } | null) =>
+    user?.username?.slice(0, 2).toUpperCase() ?? '',
 }));
 
 vi.mock('../../shared/lib/resolveMediaUrl', () => ({

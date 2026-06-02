@@ -22,7 +22,9 @@ const editorToolbarMocks = vi.hoisted(() => ({
 
 vi.mock('../../hooks/usePipelineEditorQueries', () => ({
   usePipelineEditorQueries: () => ({
-    pipelineQuery: { data: editorToolbarMocks.pipelineName ? { name: editorToolbarMocks.pipelineName } : undefined },
+    pipelineQuery: {
+      data: editorToolbarMocks.pipelineName ? { name: editorToolbarMocks.pipelineName } : undefined,
+    },
     runQuery: { data: editorToolbarMocks.runData },
   }),
 }));

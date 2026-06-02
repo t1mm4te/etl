@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { authMeKey, operationsCatalogKey, pipelineDetailKey, pipelineRunKey, pipelinesListKey } from './queryKeys';
+import {
+  authMeKey,
+  operationsCatalogKey,
+  pipelineDetailKey,
+  pipelineRunKey,
+  pipelinesListKey,
+} from './queryKeys';
 
 describe('queryKeys', () => {
   it('builds stable query keys', () => {

@@ -149,34 +149,6 @@ export function useNodeConfigModalController({
     [clearSourcePreviews, previewRowLimit]
   );
 
-  const onSaveSourceNodeConfig = useCallback(async () => {
-    if (!editingNode) {
-      return;
-    }
-
-    setModalError(undefined);
-
-    try {
-      const nextConfig = buildNextNodeConfig(config, uploadedDatasourceId, {
-        selectedSheetName,
-        excelSheetNames,
-      });
-      await saveNodeConfig(editingNode.id, nextConfig);
-      closeModal();
-    } catch (error) {
-      setModalError(extractError(error, 'Не удалось сохранить конфигурацию ноды'));
-    }
-  }, [
-    closeModal,
-    config,
-    editingNode,
-    excelSheetNames,
-    saveNodeConfig,
-    selectedSheetName,
-    setModalError,
-    uploadedDatasourceId,
-  ]);
-
   const onUploadProgress = useCallback((progressEvent: AxiosProgressEvent) => {
     if (!progressEvent.total) return;
     const percent = Math.min(100, Math.round((progressEvent.loaded / progressEvent.total) * 100));
@@ -427,18 +399,6 @@ export function useNodeConfigModalController({
     ]
   );
 
-  const onSaveTransformNodeConfig = useCallback(async () => {
-    if (!editingNode) return;
-    setModalError(undefined);
-    try {
-      const nextConfig = getNextConfig();
-      await saveNodeConfig(editingNode.id, nextConfig);
-      closeModal();
-    } catch (error) {
-      setModalError(String(error));
-    }
-  }, [closeModal, editingNode, getNextConfig, saveNodeConfig]);
-
   const onApplyPreview = useCallback(async () => {
     if (!editingNode || nodeKind === 'source') return;
 
@@ -625,7 +585,6 @@ export function useNodeConfigModalController({
       onConfigChange: setConfig,
       onFileChange: onSourceFileChange,
       onSourceDbConnected,
-      onSaveConfig: nodeKind === 'source' ? onSaveSourceNodeConfig : onSaveTransformNodeConfig,
       onPreviewRowLimitChange:
         nodeKind === 'source' ? onSourcePreviewRowLimitChange : onTransformPreviewRowLimitChange,
     },

@@ -3,39 +3,142 @@
 .previewTableWrapper {
   width: 100%;
   max-width: 100%;
-  height: 640px;
-  // max-height: clamp(280px, 60vh, 600px);
+  height: 693px;
   overflow-x: auto;
   overflow-y: auto;
   border: 1px solid $borderColor;
   border-radius: 0 $borderRadiusSmall 0 0;
   background-color: $darkGrayLighter;
-  padding: 10px;
+
+  // Улучшенный скроллбар (опционально)
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: $darkGrayLighter;
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: $borderColor;
+    border-radius: 4px;
+
+    &:hover {
+      background: lighten($borderColor, 10%);
+    }
+  }
 
   table {
     width: max-content;
     min-width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate; // Меняем для красивых границ
+    border-spacing: 0;
     background-color: $darkGrayLighter;
+
+    // Добавляем тень для заголовка при скролле
+    thead {
+      position: sticky;
+      top: 0;
+
+      // Псевдоэлемент для тени
+      &::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: -4px;
+        height: 4px;
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.2), transparent);
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s;
+      }
+
+      // Показываем тень при скролле (можно добавить JS для динамики)
+      &.scrolled::after {
+        opacity: 1;
+      }
+    }
 
     th,
     td {
-      border-bottom: 1px solid $borderColor;
-      padding: 6px;
+      padding: 8px 15px;
       color: $white;
       text-align: left;
       white-space: nowrap;
-      font-size: 16px;
+      font-size: 17px; // Немного уменьшим для элегантности
+
+      // Все границы ячеек
+      border-right: 1px solid $borderColor;
+      border-bottom: 1px solid $borderColor;
     }
 
+    // Убираем правую границу у последнего столбца
+    th:last-child,
+    td:last-child {
+      border-right: none;
+    }
+
+    // Верхняя граница для заголовков
     th {
+      font-weight: 600;
+      background: $darkGrayLighter;
+      border-top: 1px solid $borderColor;
+      font-size: $defaultFontSize;
+      // text-transform: uppercase;
+      color: $white;
+
+      // Фикс для sticky - добавляем фоновый цвет и тень
       position: sticky;
       top: 0;
-      background: $darkGrayLighter;
+      z-index: 1;
+
+      // Тень под заголовком для перекрытия контента
+      &::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: -1px;
+        height: 1px;
+        background: $borderColor;
+        z-index: -1;
+      }
+    }
+
+    // Стили для строк
+    tr {
+      transition: background-color 0.2s ease;
+
+      &:hover td {
+        background-color: rgba($white, 0.05);
+      }
+    }
+
+    // Альтернативная раскраска строк для читаемости
+    tbody tr:nth-child(even) td {
+      background-color: rgba($white, 0.02);
     }
 
     td {
       color: $labelColor;
+      font-weight: 400;
     }
+  }
+}
+
+// Дополнительно: класс для динамической тени (добавьте JS при необходимости)
+.previewTableWrapper {
+  position: relative;
+
+  .shadow-detector {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    pointer-events: none;
   }
 }

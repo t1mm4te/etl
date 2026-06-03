@@ -13,6 +13,7 @@ import { RenameColumnsConfigEditor } from '../RenameColumnsConfigEditor/index';
 import { SelectColumnsConfigEditor } from '../SelectColumnsConfigEditor/index';
 import { SortConfigEditor } from '../SortConfigEditor/index';
 import { SplitColumnConfigEditor } from '../SplitColumnConfigEditor/index';
+import { Alert } from '../../../../../../shared/ui/Alert';
 
 type TransformConfigEditorProps = {
   operationType: string;
@@ -20,6 +21,7 @@ type TransformConfigEditorProps = {
   availableColumns: string[];
   availableColumnsByPort?: Record<string, string[]>;
   inputNodeLabelsByPort?: Record<string, string>;
+  errorText?: string | null;
   onConfigChange: (config: NodeConfig) => void;
 };
 
@@ -29,6 +31,7 @@ export function TransformConfigEditor({
   availableColumns,
   availableColumnsByPort,
   inputNodeLabelsByPort,
+  errorText,
   onConfigChange,
 }: TransformConfigEditorProps) {
   return (
@@ -138,6 +141,8 @@ export function TransformConfigEditor({
           onChange={onConfigChange}
         />
       ) : null}
+
+      {errorText ? <Alert>{errorText}</Alert> : null}
     </div>
   );
 }

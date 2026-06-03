@@ -4,6 +4,7 @@ import styles from './index.module.scss';
 import type { SourceFileConfigEditorProps } from '../types';
 import { CustomSelect, type SelectOption } from '../../../../../../shared/ui/CustomSelect';
 import { getFileExtension } from '../../../../utils/sourceNodePreviewUtils';
+import { Alert } from '../../../../../../shared/ui/Alert';
 
 export function SourceFileConfigEditor({
   selectedFile,
@@ -12,6 +13,7 @@ export function SourceFileConfigEditor({
   excelSheetNames,
   isUploading = false,
   uploadProgress = null,
+  errorText,
   onFileChange,
   onSheetNameChange,
 }: SourceFileConfigEditorProps) {
@@ -89,6 +91,8 @@ export function SourceFileConfigEditor({
       ) : null}
 
       {currentFileName ? <p className={styles.muted}>Выбран файл: {currentFileName}</p> : null}
+
+      {errorText ? <Alert className={styles.error}>{errorText}</Alert> : null}
 
       {showSheetSelector ? (
         <div className={styles.sheetSelector}>

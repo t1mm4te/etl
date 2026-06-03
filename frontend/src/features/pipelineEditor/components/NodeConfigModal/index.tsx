@@ -36,7 +36,6 @@ type NodeConfigModalProps = {
     onConfigChange: (value: NodeConfig) => void;
     onFileChange: (file: File | null, sheetName?: string) => void;
     onSourceDbConnected: (datasourceId: string, datasourceName: string) => Promise<void> | void;
-    onSaveConfig: () => void;
     onPreviewRowLimitChange: (value: number) => void;
   };
   previewActions: {
@@ -80,7 +79,6 @@ export function NodeConfigModal({
     onConfigChange,
     onFileChange,
     onSourceDbConnected,
-    onSaveConfig,
     onPreviewRowLimitChange,
   } = modalActions;
 
@@ -112,6 +110,7 @@ export function NodeConfigModal({
                     excelSheetNames={excelSheetNames}
                     isUploading={isSourceFileUploading}
                     uploadProgress={sourceFileUploadProgress}
+                    errorText={modalError}
                     onFileChange={onFileChange}
                     onSheetNameChange={(sheetName) => {
                       previewCallbacks?.onSetSelectedSheetName(sheetName);
@@ -122,6 +121,7 @@ export function NodeConfigModal({
 
                 {isSourceDb ? (
                   <SourceDbConfigEditor
+                    errorText={modalError}
                     onConnected={async (datasource: { id: string; name: string }) => {
                       await onSourceDbConnected(datasource.id, datasource.name);
                     }}
@@ -149,6 +149,7 @@ export function NodeConfigModal({
                   availableColumns={availableColumns}
                   availableColumnsByPort={availableColumnsByPort}
                   inputNodeLabelsByPort={inputNodeLabelsByPort}
+                  errorText={modalError}
                   onConfigChange={onConfigChange}
                 />
 
@@ -180,6 +181,7 @@ export function NodeConfigModal({
                   availableColumns={availableColumns}
                   availableColumnsByPort={availableColumnsByPort}
                   inputNodeLabelsByPort={inputNodeLabelsByPort}
+                  errorText={modalError}
                   onConfigChange={onConfigChange}
                 />
 
@@ -200,16 +202,6 @@ export function NodeConfigModal({
             </div>
           ) : null}
 
-          {modalError ? <p className={styles.error}>{modalError}</p> : null}
-
-          <div className={styles.modalActions}>
-            <Button type="button" color="white" onClick={onClose}>
-              Отмена
-            </Button>
-            <Button type="button" onClick={onSaveConfig}>
-              Сохранить
-            </Button>
-          </div>
         </div>
       </div>
     </div>

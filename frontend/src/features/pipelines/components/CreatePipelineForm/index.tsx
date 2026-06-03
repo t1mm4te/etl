@@ -9,6 +9,7 @@ import { extractError } from '../../../../shared/lib/extractError';
 import { pipelinesListKey } from '../../../../shared/api/queryKeys';
 import styles from './index.module.scss';
 import { Input } from '../../../../shared/ui/Input';
+import { Alert } from '../../../../shared/ui/Alert';
 
 type CreatePipelineFormValues = {
   name: string;
@@ -59,7 +60,9 @@ export function CreatePipelineForm() {
               required: 'Введите название пайплайна',
               validate: (value) => value.trim().length > 0 || 'Введите название пайплайна',
             })}
+            isInvalid={Boolean(errors.name)}
           />
+          {errors.name?.message && <span className={styles.error}>{errors.name.message}</span>}
         </label>
 
         <label className={styles.label}>
@@ -75,8 +78,7 @@ export function CreatePipelineForm() {
           {createMutation.isPending ? 'Создаём...' : 'Создать новый пайплайн'}
         </Button>
       </form>
-      {errors.name?.message && <p className={styles.error}>{errors.name.message}</p>}
-      {errorText && <p className={styles.error}>{errorText}</p>}
+      {errorText && <Alert>{errorText}</Alert>}
     </section>
   );
 }

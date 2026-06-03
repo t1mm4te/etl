@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import styles from './index.module.scss';
+import { Alert } from '../../../../shared/ui/Alert';
 
 interface AuthShellProps {
   title: string;
@@ -26,9 +27,13 @@ export function AuthShell({
       <section className={styles.card}>
         <h1 className={styles.title}>{title}</h1>
 
-        {successText && <div className={`${styles.alert} ${styles.success}`}>{successText}</div>}
+        {successText && (
+          <Alert className={styles.alert} color="green">
+            {successText}
+          </Alert>
+        )}
 
-        {errorText && <div className={`${styles.alert} ${styles.error}`}>{errorText}</div>}
+        {errorText && <Alert className={styles.alert}>{errorText}</Alert>}
 
         {children}
 

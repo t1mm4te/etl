@@ -8,6 +8,7 @@ import { extractError } from '../../../../shared/lib/extractError';
 import { Button } from '../../../../shared/ui/Button';
 import { PasswordInput } from '../../../../shared/ui/PasswordInput';
 import styles from './index.module.scss';
+import { Alert } from '../../../../shared/ui/Alert';
 
 const passwordSchema = z
   .object({
@@ -98,8 +99,8 @@ export function PasswordForm() {
           disabled={mutation.isPending}
         />
 
-        {errorText ? <p className={styles.error}>{errorText}</p> : null}
-        {successText ? <p className={styles.success}>{successText}</p> : null}
+        {errorText ? <Alert>{errorText}</Alert> : null}
+        {successText ? <Alert color="green">{successText}</Alert> : null}
 
         <Button disabled={mutation.isPending} type="submit">
           {mutation.isPending ? 'Обновляем...' : 'Обновить пароль'}

@@ -11,6 +11,7 @@ import { Button } from '../../../../shared/ui/Button';
 import { Input } from '../../../../shared/ui/Input';
 import { PasswordInput } from '../../../../shared/ui/PasswordInput';
 import styles from './index.module.scss';
+import { Alert } from '../../../../shared/ui/Alert';
 
 const emailSchema = z.object({
   new_email: z.email('Введите корректный email'),
@@ -107,8 +108,8 @@ export function EmailForm({ user }: EmailFormProps) {
           disabled={mutation.isPending}
         />
 
-        {errorText ? <p className={styles.error}>{errorText}</p> : null}
-        {successText ? <p className={styles.success}>{successText}</p> : null}
+        {errorText ? <Alert>{errorText}</Alert> : null}
+        {successText ? <Alert color="green">{successText}</Alert> : null}
 
         <Button disabled={mutation.isPending} type="submit">
           {mutation.isPending ? 'Обновляем...' : 'Обновить email'}

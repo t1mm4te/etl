@@ -32,24 +32,7 @@
     }
 
     .alert {
-      border-radius: $borderRadiusSmall;
-      font-size: 14px;
       margin-bottom: $spacingBase;
-      padding: 12px $spacingBase;
-      line-height: 1.4;
-      animation: fadeIn 200ms ease-out;
-    }
-
-    .error {
-      background-color: $dangerBg;
-      border: 1px solid $dangerBorder;
-      color: $dangerColor;
-    }
-
-    .success {
-      background-color: $successBg;
-      border: 1px solid $successBorder;
-      color: $successColor;
     }
 
     .footer {

@@ -1,0 +1,22 @@
+@use '../../../styles/vars' as *;
+
+.alert {
+  text-align: center;
+  padding: 8px 15px;
+  border-radius: $borderRadiusSmall;
+  background: rgba($dangerColor, 0.14);
+  border: 1px solid rgba($dangerColor, 0.28);
+  color: $dangerColor;
+  font-size: $defaultFontSize;
+  animation: fadeIn 200ms ease-out;
+}
+
+.alert.green {
+  background: rgba($successBorder, 0.54);
+  border: 1px solid rgba($successColor, 0.98);
+  color: $defaultBackgroundColor;
+
+  color: $successColor;
+  background: rgba($successBg, 0.1);
+  border: 1px solid rgba($successBorder, 0.32);
+}

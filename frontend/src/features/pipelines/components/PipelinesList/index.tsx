@@ -5,6 +5,7 @@ import { extractError } from '../../../../shared/lib/extractError.ts';
 import { LoadingState } from '../../../../shared/ui/LoadingState';
 import { PipelineCard } from '../PipelineCard/index.tsx';
 import styles from './index.module.scss';
+import { Alert } from '../../../../shared/ui/Alert/index.tsx';
 
 export function PipelinesList() {
   const pipelinesQuery = useQuery({ queryKey: pipelinesListKey, queryFn: listPipelines });
@@ -15,7 +16,9 @@ export function PipelinesList() {
         <LoadingState className={styles.loadingState} spinnerSize={28} />
       ) : null}
       {pipelinesQuery.isError && (
-        <p className={styles.error}>{extractError(pipelinesQuery.error, 'Ошибка загрузки')}</p>
+        <Alert className={styles.error}>
+          {extractError(pipelinesQuery.error, 'Ошибка загрузки')}
+        </Alert>
       )}
 
       {!pipelinesQuery.isLoading && pipelinesQuery.data?.results.length === 0 ? (

@@ -1,4 +1,5 @@
 import type { PipelineRunDetail } from '../../../../shared/api/types';
+import { Alert } from '../../../../shared/ui/Alert';
 import styles from './index.module.scss';
 
 type RunResultsCardProps = {
@@ -92,7 +93,7 @@ export function RunResultsCard({ run }: RunResultsCardProps) {
         </div>
       </dl>
 
-      {run.error_message ? <p className={styles.error}>{run.error_message}</p> : null}
+      {run.error_message ? <Alert>{run.error_message}</Alert> : null}
 
       <div className={styles.nodesBlock}>
         <h3>Узлы пайплана</h3>

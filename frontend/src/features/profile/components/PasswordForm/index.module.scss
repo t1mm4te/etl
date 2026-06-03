@@ -34,26 +34,6 @@
   }
 }
 
-.error,
-.success {
-  margin: 0;
-  border-radius: $borderRadiusSmall;
-  padding: 10px 12px;
-  font-size: 15px;
-}
-
-.error {
-  color: $dangerColor;
-  background: rgba($dangerBg, 0.12);
-  border: 1px solid rgba($dangerBorder, 0.35);
-}
-
-.success {
-  color: $successColor;
-  background: rgba($successBg, 0.1);
-  border: 1px solid rgba($successBorder, 0.32);
-}
-
 @media (max-width: 720px) {
   .card {
     padding: 16px;

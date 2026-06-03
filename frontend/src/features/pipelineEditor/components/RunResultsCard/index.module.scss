@@ -86,16 +86,6 @@
   }
 }
 
-.error {
-  margin: 0;
-  padding: 12px 14px;
-  border-radius: $borderRadiusSmall;
-  background: rgba($dangerColor, 0.14);
-  border: 1px solid rgba($dangerColor, 0.28);
-  color: color.adjust($dangerColor, $lightness: 14%);
-  line-height: 1.5;
-}
-
 .nodesBlock {
   display: flex;
   flex-direction: column;

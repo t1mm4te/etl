@@ -12,6 +12,7 @@ import { resolveMediaUrl } from '../../../../shared/lib/resolveMediaUrl';
 import { Button } from '../../../../shared/ui/Button';
 import { Input } from '../../../../shared/ui/Input';
 import styles from './index.module.scss';
+import { Alert } from '../../../../shared/ui/Alert';
 
 const profileSchema = z.object({
   username: z
@@ -222,8 +223,8 @@ export function ProfileForm({ user }: ProfileFormProps) {
         </Button>
       ) : null}
 
-      {avatarErrorText ? <p className={styles.error}>{avatarErrorText}</p> : null}
-      {avatarSuccessText ? <p className={styles.success}>{avatarSuccessText}</p> : null}
+      {avatarErrorText ? <Alert>{avatarErrorText}</Alert> : null}
+      {avatarSuccessText ? <Alert color="green">{avatarSuccessText}</Alert> : null}
 
       <form className={styles.form} onSubmit={onSubmit}>
         <label className={styles.label} htmlFor="username">
@@ -270,8 +271,8 @@ export function ProfileForm({ user }: ProfileFormProps) {
           </label>
         </div>
 
-        {profileErrorText ? <p className={styles.error}>{profileErrorText}</p> : null}
-        {profileSuccessText ? <p className={styles.success}>{profileSuccessText}</p> : null}
+        {profileErrorText ? <Alert>{profileErrorText}</Alert> : null}
+        {profileSuccessText ? <Alert color="green">{profileSuccessText}</Alert> : null}
 
         <Button disabled={isLoading} type="submit">
           {isLoading ? 'Сохраняем...' : 'Сохранить изменения'}

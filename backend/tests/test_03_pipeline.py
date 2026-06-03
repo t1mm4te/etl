@@ -1,5 +1,7 @@
 from http import HTTPStatus
 from io import BytesIO
+from urllib.parse import unquote
+import re
 
 import pandas as pd
 import pytest
@@ -18,6 +20,17 @@ class Test03PipelineAPI:
     URL_PIPELINES_ID = '/api/v1/pipelines/{pipeline_id}/'
     URL_PIPELINES_RUN = '/api/v1/pipelines/{pipeline_id}/run/'
     URL_PIPELINES_RUNS = '/api/v1/pipelines/{pipeline_id}/runs/'
+
+    def _download_filename(self, content_disposition: str) -> str:
+        match = re.search(r"filename\*=utf-8''([^;]+)", content_disposition, re.I)
+        if match:
+            return unquote(match.group(1))
+
+        match = re.search(r'filename="([^"]+)"', content_disposition)
+        if match:
+            return match.group(1)
+
+        raise AssertionError(f'Cannot parse filename from: {content_disposition}')
 
     def test_03_pipelines_list_returns_only_owner_records(
         self,
@@ -211,6 +224,14 @@ class Test03PipelineAPI:
         )
         assert list(parquet_dataframe.columns) == ['id', 'name', 'amount']
         assert len(parquet_dataframe) == 2
+
+        russian_named_response = user_client.get(
+            f'/api/v1/node-runs/{owner_node_run_success.id}/download/?file_name=Отчёт за июнь'
+        )
+        assert russian_named_response.status_code == HTTPStatus.OK
+        assert self._download_filename(
+            russian_named_response['Content-Disposition']
+        ) == 'Отчёт за июнь.xlsx'
 
 
 @pytest.mark.django_db(transaction=True)

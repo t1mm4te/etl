@@ -87,6 +87,14 @@ _DOWNLOAD_FORMAT_PARAM = OpenApiParameter(
     required=False,
 )
 
+_DOWNLOAD_FILE_NAME_PARAM = OpenApiParameter(
+    name='file_name',
+    type=str,
+    location=OpenApiParameter.QUERY,
+    description='Название скачиваемого файла без расширения.',
+    required=False,
+)
+
 _DOWNLOAD_FORMATS = {'xlsx', 'csv', 'parquet'}
 
 
@@ -99,18 +107,33 @@ def _parse_download_format(request) -> str:
     return fmt
 
 
+def _parse_download_file_name(request, default_name: str) -> str:
+    raw_name = request.query_params.get('file_name')
+    if raw_name is None:
+        return default_name
+
+    cleaned_name = raw_name.strip()
+    if not cleaned_name:
+        raise serializers.ValidationError(
+            {'file_name': 'Название файла не может быть пустым.'}
+        )
+    if '/' in cleaned_name or '\\' in cleaned_name:
+        raise serializers.ValidationError(
+            {'file_name': 'Название файла не должно содержать пути.'}
+        )
+    return Path(cleaned_name).stem
+
+
 def _build_download_response(
     parquet_path: str,
-    base_name: str,
+    file_stem: str,
     fmt: str,
 ) -> FileResponse:
-    stem = Path(base_name).stem
-
     if fmt == 'parquet':
         return FileResponse(
             open(parquet_path, 'rb'),
             as_attachment=True,
-            filename=f'{stem}.parquet',
+            filename=f'{file_stem}.parquet',
         )
 
     dataframe = pd.read_parquet(parquet_path, engine='pyarrow')
@@ -121,7 +144,7 @@ def _build_download_response(
         return FileResponse(
             content,
             as_attachment=True,
-            filename=f'{stem}.csv',
+            filename=f'{file_stem}.csv',
         )
 
     content = io.BytesIO()
@@ -130,7 +153,7 @@ def _build_download_response(
     return FileResponse(
         content,
         as_attachment=True,
-        filename=f'{stem}.xlsx',
+        filename=f'{file_stem}.xlsx',
     )
 
 
@@ -460,9 +483,10 @@ class DataSourceViewSet(
         description=(
             'Возвращает готовый файл для источника в статусе `ready`. '
             'Поддерживаются форматы `xlsx` (по умолчанию), `csv`, `parquet`. '
+            'Можно передать `file_name` для задания имени файла. '
             'Если обработка ещё не завершена, возвращается 409.'
         ),
-        parameters=[_DOWNLOAD_FORMAT_PARAM],
+        parameters=[_DOWNLOAD_FORMAT_PARAM, _DOWNLOAD_FILE_NAME_PARAM],
         responses={status.HTTP_200_OK: None},
     )
     @action(detail=True, methods=['get'], url_path='download')
@@ -475,10 +499,11 @@ class DataSourceViewSet(
             )
 
         fmt = _parse_download_format(request)
-        base_name = ds.source_file.original_filename if ds.source_file else ds.name
+        default_name = ds.source_file.original_filename if ds.source_file else ds.name
+        file_stem = _parse_download_file_name(request, Path(default_name).stem)
         return _build_download_response(
             parquet_path=ds.parquet_file.path,
-            base_name=base_name,
+            file_stem=file_stem,
             fmt=fmt,
         )
 
@@ -915,9 +940,10 @@ class NodeRunPreviewView(generics.GenericAPIView):
     description=(
         'Возвращает готовый файл для успешно выполненного узла '
         '(NodeRun в статусе `success`). Поддерживаются форматы '
-        '`xlsx` (по умолчанию), `csv`, `parquet`.'
+        '`xlsx` (по умолчанию), `csv`, `parquet`. Можно передать '
+        '`file_name` для задания имени файла.'
     ),
-    parameters=[_DOWNLOAD_FORMAT_PARAM],
+    parameters=[_DOWNLOAD_FORMAT_PARAM, _DOWNLOAD_FILE_NAME_PARAM],
     responses={status.HTTP_200_OK: None},
 )
 class NodeRunDownloadView(generics.GenericAPIView):
@@ -945,8 +971,9 @@ class NodeRunDownloadView(generics.GenericAPIView):
             )
 
         fmt = _parse_download_format(request)
+        file_stem = _parse_download_file_name(request, nr.node.label)
         return _build_download_response(
             parquet_path=nr.output_parquet.path,
-            base_name=nr.node.label,
+            file_stem=file_stem,
             fmt=fmt,
         )

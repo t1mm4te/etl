@@ -1,5 +1,7 @@
 from http import HTTPStatus
 from io import BytesIO
+from urllib.parse import unquote
+import re
 
 import pandas as pd
 import pytest
@@ -18,6 +20,17 @@ class Test02DataSourceAPI:
     URL_DATASOURCES_CONNECT_DB = '/api/v1/datasources/connect-db/'
     URL_DATASOURCES_PREVIEW = '/api/v1/datasources/{datasource_id}/preview/'
     URL_DATASOURCES_DOWNLOAD = '/api/v1/datasources/{datasource_id}/download/'
+
+    def _download_filename(self, content_disposition: str) -> str:
+        match = re.search(r"filename\*=utf-8''([^;]+)", content_disposition, re.I)
+        if match:
+            return unquote(match.group(1))
+
+        match = re.search(r'filename="([^"]+)"', content_disposition)
+        if match:
+            return match.group(1)
+
+        raise AssertionError(f'Cannot parse filename from: {content_disposition}')
 
     def test_02_files_list_returns_only_owner_records(
         self,
@@ -437,19 +450,21 @@ class Test02DataSourceAPI:
         assert list(parquet_dataframe.columns) == ['id', 'name', 'amount']
         assert len(parquet_dataframe) == 3
 
-    def test_02_datasources_preview_not_ready_returns_409(
+    def test_02_datasources_download_file_name_with_english_spaces(
         self,
         user_client,
-        pending_datasource,
+        ready_datasource,
     ):
         response = user_client.get(
-            self.URL_DATASOURCES_PREVIEW.format(
-                datasource_id=pending_datasource.id,
-            )
+            self.URL_DATASOURCES_DOWNLOAD.format(
+                datasource_id=ready_datasource.id,
+            ) + '?file_name=Sales Report June'
         )
 
-        assert response.status_code == HTTPStatus.CONFLICT
-        assert isinstance(response.json(), dict)
+        assert response.status_code == HTTPStatus.OK
+        assert self._download_filename(
+            response['Content-Disposition']
+        ) == 'Sales Report June.xlsx'
 
     def test_02_datasources_download_invalid_format_returns_400(
         self,
@@ -464,6 +479,36 @@ class Test02DataSourceAPI:
 
         assert response.status_code == HTTPStatus.BAD_REQUEST
         assert 'file_format' in response.json()
+
+    def test_02_datasources_download_file_name_with_russian_spaces(
+        self,
+        user_client,
+        ready_datasource,
+    ):
+        response = user_client.get(
+            self.URL_DATASOURCES_DOWNLOAD.format(
+                datasource_id=ready_datasource.id,
+            ) + '?file_name=Отчёт за июнь'
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        assert self._download_filename(
+            response['Content-Disposition']
+        ) == 'Отчёт за июнь.xlsx'
+
+    def test_02_datasources_preview_not_ready_returns_409(
+        self,
+        user_client,
+        pending_datasource,
+    ):
+        response = user_client.get(
+            self.URL_DATASOURCES_PREVIEW.format(
+                datasource_id=pending_datasource.id,
+            )
+        )
+
+        assert response.status_code == HTTPStatus.CONFLICT
+        assert isinstance(response.json(), dict)
 
     def test_02_datasources_preview_ready_without_parquet_returns_409(
         self,
@@ -524,3 +569,45 @@ class Test02DataSourceAPI:
         assert ds.status == DataSource.Status.ERROR
         assert not ds.parquet_file
         assert expected_error_part in ds.error_message
+
+    def test_02_datasources_upload_sanitizes_column_names(
+        self,
+        user_client,
+        user,
+        spaced_headers_csv_upload_file,
+        celery_task_eager,
+    ):
+        sf_resp = user_client.post(
+            self.URL_FILES,
+            data={'file': spaced_headers_csv_upload_file},
+            format='multipart',
+        )
+        assert sf_resp.status_code == HTTPStatus.CREATED
+
+        response = user_client.post(
+            self.URL_DATASOURCES,
+            data={
+                'source_file_id': sf_resp.json()['id'],
+                'sheet_name': 'default',
+            },
+            format='json',
+        )
+
+        assert response.status_code == HTTPStatus.CREATED
+        ds = DataSource.objects.get(id=response.json()['id'])
+        assert ds.status == DataSource.Status.READY, ds.error_message
+        assert [col['name'] for col in ds.columns_meta] == [
+            'full_name',
+            'order_amount',
+        ]
+
+        preview_response = user_client.get(
+            self.URL_DATASOURCES_PREVIEW.format(
+                datasource_id=ds.id,
+            )
+        )
+        assert preview_response.status_code == HTTPStatus.OK
+        assert preview_response.json()['columns'] == [
+            'full_name',
+            'order_amount',
+        ]

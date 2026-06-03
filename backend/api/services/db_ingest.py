@@ -15,6 +15,7 @@ from .file_processing import (
     FileProcessingError,
     dataframe_to_parquet_bytes,
     get_columns_meta,
+    normalize_dataframe_columns,
 )
 
 
@@ -108,6 +109,7 @@ def process_db_source(datasource: DataSource, db_password: str) -> None:
 
     try:
         df, total_rows = _read_table(datasource, db_password)
+        df = normalize_dataframe_columns(df)
 
         parquet_bytes = dataframe_to_parquet_bytes(df)
         parquet_filename = f'db_{datasource.pk}.parquet'

@@ -1,4 +1,5 @@
 import logging
+import re
 from pathlib import Path
 
 import pandas as pd
@@ -13,6 +14,30 @@ ALLOWED_EXTENSIONS = {'.csv', '.xlsx', '.xls'}
 
 class FileProcessingError(Exception):
     """Ошибки при обработке файла."""
+
+
+def _normalize_column_name(column_name: object) -> str:
+    name = str(column_name).strip()
+    return re.sub(r'\s+', '_', name)
+
+
+def normalize_dataframe_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Заменяет пробелы в названиях столбцов на нижнее подчёркивание."""
+    renamed_columns = {
+        column: _normalize_column_name(column)
+        for column in df.columns
+    }
+    normalized_names = list(renamed_columns.values())
+
+    if any(not name for name in normalized_names):
+        raise FileProcessingError('Название столбца не может быть пустым.')
+
+    if len(set(normalized_names)) != len(normalized_names):
+        raise FileProcessingError(
+            'После нормализации названий столбцов появились дубликаты.'
+        )
+
+    return df.rename(columns=renamed_columns)
 
 
 def validate_extension(filename: str) -> str:
@@ -109,6 +134,7 @@ def process_uploaded_file(datasource) -> None:
         df = read_uploaded_file(
             file_path, ext, datasource.sheet_name or None,
         )
+        df = normalize_dataframe_columns(df)
 
         # Конвертация в Parquet
         parquet_bytes = dataframe_to_parquet_bytes(df)

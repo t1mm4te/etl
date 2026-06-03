@@ -110,6 +110,24 @@ def multi_sheet_xlsx_upload_file():
 
 
 @pytest.fixture
+def spaced_headers_csv_upload_file():
+    dataframe = pd.DataFrame(
+        [
+            {'full name': 'Alice Smith', 'order amount': 10},
+            {'full name': 'Bob Stone', 'order amount': 20},
+        ]
+    )
+    buffer = BytesIO()
+    dataframe.to_csv(buffer, index=False)
+    buffer.seek(0)
+    return SimpleUploadedFile(
+        name='spaced_headers.csv',
+        content=buffer.getvalue(),
+        content_type='text/csv',
+    )
+
+
+@pytest.fixture
 def owner_source_file(user, minimal_csv_upload_file):
     return SourceFile.objects.create(
         owner=user,

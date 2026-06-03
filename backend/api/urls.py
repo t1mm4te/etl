@@ -91,4 +91,9 @@ urlpatterns = [
         views.NodeRunPreviewView.as_view(),
         name='node-run-preview',
     ),
+        path(
+            'node-runs/<uuid:pk>/download/',
+            views.NodeRunDownloadView.as_view(),
+            name='node-run-download',
+        ),
 ]

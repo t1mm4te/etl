@@ -1,5 +1,7 @@
 from http import HTTPStatus
+from io import BytesIO
 
+import pandas as pd
 import pytest
 
 from api.services.pipeline_executor import (
@@ -167,6 +169,25 @@ class Test03PipelineAPI:
             str(newer.id),
             str(older.id),
         ]
+
+    def test_03_node_run_download_returns_parquet_file(
+        self,
+        user_client,
+        datasource_media_root,
+        owner_node_run_success,
+    ):
+        response = user_client.get(
+            f'/api/v1/node-runs/{owner_node_run_success.id}/download/'
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        assert 'attachment' in response['Content-Disposition']
+        assert '.parquet' in response['Content-Disposition']
+
+        payload = b''.join(response.streaming_content)
+        dataframe = pd.read_parquet(BytesIO(payload), engine='pyarrow')
+        assert list(dataframe.columns) == ['id', 'name', 'amount']
+        assert len(dataframe) == 2
 
 
 @pytest.mark.django_db(transaction=True)
@@ -690,6 +711,7 @@ class Test03PipelineExecutionPreviewRun:
         pipeline_run.refresh_from_db()
         assert pipeline_run.status == PipelineRun.Status.FAILED
         assert 'Broken C' in pipeline_run.error_message
+        assert 'не найден' in pipeline_run.error_message.lower()
 
         broken_node_run = NodeRun.objects.get(
             pipeline_run=pipeline_run,

@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 import logging
 from collections import defaultdict, deque
+from typing import Any
 
 import pandas as pd
 from django.core.files.base import ContentFile
@@ -17,6 +18,51 @@ logger = logging.getLogger(__name__)
 
 class PipelineExecutionError(Exception):
     """Ошибка при выполнении пайплайна."""
+
+
+def _format_operation_error(node: Node, exc: Exception) -> str:
+    """Возвращает понятную пользователю русскоязычную ошибку операции."""
+    node_label = f'«{node.label}»'
+
+    if isinstance(exc, KeyError):
+        missing_key: Any = exc.args[0] if exc.args else None
+        if isinstance(missing_key, str):
+            return (
+                f'В операции {node_label} не найден обязательный '
+                f'параметр или столбец «{missing_key}». '
+                f'Проверьте конфигурацию узла и входные данные.'
+            )
+        return (
+            f'В операции {node_label} не найден обязательный '
+            f'параметр или столбец. Проверьте конфигурацию узла '
+            f'и входные данные.'
+        )
+
+    if isinstance(exc, ValueError):
+        message = str(exc).strip()
+        if message:
+            return (
+                f'В операции {node_label} указаны некорректные '
+                f'значения: {message}'
+            )
+        return (
+            f'В операции {node_label} указаны некорректные значения '
+            f'параметров.'
+        )
+
+    if isinstance(exc, TypeError):
+        return (
+            f'В операции {node_label} несовместимые типы данных или '
+            f'неверная конфигурация.'
+        )
+
+    if isinstance(exc, ZeroDivisionError):
+        return f'В операции {node_label} произошло деление на ноль.'
+
+    return (
+        f'В операции {node_label} произошла непредвиденная ошибка. '
+        f'Проверьте логи сервера для подробностей.'
+    )
 
 
 def topological_sort(nodes: list[Node], edges: list[Edge]) -> list[Node]:
@@ -158,7 +204,7 @@ def _execute_ordered_nodes(
 
         except Exception as exc:
             nr.status = NodeRun.Status.FAILED
-            nr.error_message = str(exc)
+            nr.error_message = _format_operation_error(node, exc)
             nr.finished_at = timezone.now()
             nr.save(update_fields=['status', 'error_message', 'finished_at'])
             logger.exception('Ошибка в узле %s', node.label)
@@ -171,7 +217,7 @@ def _execute_ordered_nodes(
 
             _set_pipeline_failed(
                 pipeline_run,
-                f'Ошибка в узле «{node.label}»: {exc}',
+                _format_operation_error(node, exc),
             )
             return False
 

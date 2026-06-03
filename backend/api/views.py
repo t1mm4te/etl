@@ -1,6 +1,8 @@
 import random
+from pathlib import Path
 from django.conf import settings
 from django.db.models import Count, OuterRef, Subquery
+from django.http import FileResponse
 from djoser.views import UserViewSet as UserViewSetBase
 from drf_spectacular.utils import (
     OpenApiParameter,
@@ -396,6 +398,31 @@ class DataSourceViewSet(
         )
         data = preview_parquet(ds.parquet_file.path, limit)
         return Response(data)
+
+    @extend_schema(
+        summary='Скачивание обработанного источника данных',
+        description=(
+            'Возвращает готовый Parquet-файл для источника в статусе `ready`. '
+            'Если обработка ещё не завершена, возвращается 409.'
+        ),
+        responses={status.HTTP_200_OK: None},
+    )
+    @action(detail=True, methods=['get'], url_path='download')
+    def download(self, request, pk=None):
+        ds = self.get_object()
+        if ds.status != DataSource.Status.READY or not ds.parquet_file:
+            return Response(
+                {'detail': 'Данные ещё не готовы.'},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        base_name = ds.source_file.original_filename if ds.source_file else ds.name
+        filename = f'{Path(base_name).stem}.parquet'
+        return FileResponse(
+            open(ds.parquet_file.path, 'rb'),
+            as_attachment=True,
+            filename=filename,
+        )
 
 
 @extend_schema(tags=['Пайплайны'])
@@ -822,3 +849,44 @@ class NodeRunPreviewView(generics.GenericAPIView):
         )
         data = preview_parquet(nr.output_parquet.path, limit)
         return Response(data)
+
+
+@extend_schema(
+    tags=['Запуски пайплайнов'],
+    summary='Скачивание результата узла',
+    description=(
+        'Возвращает готовый Parquet-файл для успешно выполненного узла '
+        '(NodeRun в статусе `success`).'
+    ),
+    responses={status.HTTP_200_OK: None},
+)
+class NodeRunDownloadView(generics.GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = None
+
+    def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return NodeRun.objects.none()
+        return NodeRun.objects.filter(
+            pipeline_run__pipeline__owner=self.request.user,
+        )
+
+    def get(self, request, pk=None):
+        nr = self.get_queryset().filter(pk=pk).first()
+        if not nr:
+            return Response(
+                {'detail': 'Не найдено.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        if nr.status != NodeRun.Status.SUCCESS or not nr.output_parquet:
+            return Response(
+                {'detail': 'Результат ещё не готов.'},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        filename = f'{nr.node.label}.parquet'
+        return FileResponse(
+            open(nr.output_parquet.path, 'rb'),
+            as_attachment=True,
+            filename=filename,
+        )

@@ -1,5 +1,7 @@
 from http import HTTPStatus
+from io import BytesIO
 
+import pandas as pd
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 
@@ -15,6 +17,7 @@ class Test02DataSourceAPI:
     URL_DATASOURCES_ID = '/api/v1/datasources/{datasource_id}/'
     URL_DATASOURCES_CONNECT_DB = '/api/v1/datasources/connect-db/'
     URL_DATASOURCES_PREVIEW = '/api/v1/datasources/{datasource_id}/preview/'
+    URL_DATASOURCES_DOWNLOAD = '/api/v1/datasources/{datasource_id}/download/'
 
     def test_02_files_list_returns_only_owner_records(
         self,
@@ -385,6 +388,27 @@ class Test02DataSourceAPI:
         assert response_json['total_rows'] == 3
         assert response_json['columns'] == ['id', 'name', 'amount']
         assert len(response_json['data']) == 2
+
+    def test_02_datasources_download_ready_success(
+        self,
+        user_client,
+        datasource_media_root,
+        ready_datasource,
+    ):
+        response = user_client.get(
+            self.URL_DATASOURCES_DOWNLOAD.format(
+                datasource_id=ready_datasource.id,
+            )
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        assert 'attachment' in response['Content-Disposition']
+        assert '.parquet' in response['Content-Disposition']
+
+        payload = b''.join(response.streaming_content)
+        dataframe = pd.read_parquet(BytesIO(payload), engine='pyarrow')
+        assert list(dataframe.columns) == ['id', 'name', 'amount']
+        assert len(dataframe) == 3
 
     def test_02_datasources_preview_not_ready_returns_409(
         self,

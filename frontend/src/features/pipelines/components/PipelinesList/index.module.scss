@@ -8,9 +8,9 @@
 .loadingState {
   min-height: 240px;
   margin-bottom: 16px;
-  border: 1px solid rgba($borderColor, 0.6);
+  border: 1px solid rgba($borderColor, 0.4);
   border-radius: $borderRadiusLarge;
-  background: linear-gradient(180deg, rgba($darkGray, 0.6), rgba($darkGrayLighter, 0.7));
+  background: linear-gradient(180deg, rgba($darkGray, 0.4), rgba($darkGrayLighter, 0.5));
 }
 
 .muted {

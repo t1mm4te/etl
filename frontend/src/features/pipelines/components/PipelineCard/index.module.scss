@@ -1,24 +1,20 @@
 @use '../../../../styles/_vars.scss' as *;
 
 .root {
-  padding: 12px;
+  padding: 12px; // вернул как было
   display: flex;
   justify-content: space-between;
   gap: 14px;
-  transition:
-    border-color $transitionFast,
-    transform $transitionFast,
-    box-shadow $transitionFast;
+  transition: all $transitionFast;
   border-radius: $borderRadiusLarge;
   background: linear-gradient(180deg, rgba($darkGray, 0.4), rgba($darkGray, 0.5));
-  border: 1px solid rgba($primaryColor, 0.32);
+  border: 1px solid rgba($primaryColor, 0.3);
 
   &:hover {
     transform: translateY(-1px);
-    border-color: rgba($primaryColor, 0.62);
-    box-shadow:
-      0 14px 26px rgba(0, 0, 0, 0.28),
-      inset 0 1px 0 rgba($primaryColor, 0.16);
+    border-color: rgba($primaryColor, 0.5);
+    background: linear-gradient(180deg, rgba($darkGray, 0.5), rgba($darkGrayLighter, 0.4));
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   }
 }
 
@@ -32,7 +28,7 @@
 .card {
   cursor: pointer;
   width: 100%;
-  padding: 10px 10px 10px 12px;
+  padding: 10px 10px 10px 12px; // вернул как было
   border-radius: 8px;
   position: relative;
   color: inherit;
@@ -46,13 +42,13 @@
     bottom: 10px;
     width: 3px;
     border-radius: 999px;
-    background: linear-gradient(180deg, rgba($primaryColor, 0.95), rgba($white, 0.3));
+    background: linear-gradient(180deg, $primaryColor, rgba($primaryColor, 0.5));
     opacity: 0.85;
   }
 
   &:focus-visible {
-    box-shadow: 0 0 0 3px rgba($primaryColor, 0.3);
-    background: rgba($primaryColor, 0.08);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba($primaryColor, 0.3);
   }
 }
 
@@ -75,19 +71,22 @@
   font-size: 20px;
   line-height: 1.2;
   color: $white;
+  font-weight: 700;
 }
 
 .description {
   margin: 0;
   color: rgba($white, 0.7);
   max-width: 70ch;
-  font-size: $defaultFontSize;
+  font-size: 16px;
+  line-height: 1.4;
 }
 
 .badges {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  margin-top: 2px;
 
   span {
     background: rgba($darkGrayLighter, 0.84);
@@ -128,27 +127,35 @@
   color: $white;
   font-size: 14px;
   padding: 10px;
-  transition:
-    opacity $transitionFast,
-    border-color $transitionFast,
-    background $transitionFast;
+  cursor: pointer;
+  transition: all $transitionFast;
 }
 
 .saveButton {
   background: rgba($successBorder, 0.45);
 
-  &:hover {
+  &:hover:not(:disabled) {
     border-color: rgba($successColor, 0.62);
     background: rgba($successBorder, 0.62);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 }
 
 .cancelButton {
   background: rgba($darkGrayLighter, 0.82);
 
-  &:hover {
+  &:hover:not(:disabled) {
     border-color: rgba($white, 0.45);
     background: rgba($darkGrayLighter, 1);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 }
 
@@ -162,24 +169,30 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 1;
-  transition:
-    opacity $transitionFast,
-    border-color $transitionFast,
-    background $transitionFast;
+  cursor: pointer;
+  transition: all $transitionFast;
 
   img {
     width: 36px;
     height: 36px;
   }
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }
 
-.deleteButton:hover {
+.deleteButton:hover:not(:disabled) {
   border-color: rgba($dangerColor, 0.62);
   background: rgba($dangerBorder, 0.5);
 }
 
-.editButton:hover {
+.editButton:hover:not(:disabled) {
   border-color: rgba($primaryColor, 0.62);
   background: rgba($successBorder, 0.5);
 }
@@ -188,6 +201,7 @@
   margin-left: 4px;
   margin-top: 8px;
   color: $dangerColor;
+  font-size: 13px;
 }
 
 @media (max-width: 760px) {
@@ -205,6 +219,22 @@
           max-width: 100%;
         }
       }
+    }
+  }
+
+  .buttons {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .deleteButton,
+  .editButton {
+    width: 40px;
+    height: 40px;
+
+    img {
+      width: 28px;
+      height: 28px;
     }
   }
 }

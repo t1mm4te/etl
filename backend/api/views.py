@@ -1,5 +1,7 @@
 import random
+import io
 from pathlib import Path
+import pandas as pd
 from django.conf import settings
 from django.db.models import Count, OuterRef, Subquery
 from django.http import FileResponse
@@ -76,6 +78,60 @@ _LIMIT_PARAM = OpenApiParameter(
                  'settings.NUMBER_OF_PREVIEW_LINES).'),
     required=False,
 )
+
+_DOWNLOAD_FORMAT_PARAM = OpenApiParameter(
+    name='file_format',
+    type=str,
+    location=OpenApiParameter.QUERY,
+    description='Формат скачивания: `xlsx` (по умолчанию), `csv` или `parquet`.',
+    required=False,
+)
+
+_DOWNLOAD_FORMATS = {'xlsx', 'csv', 'parquet'}
+
+
+def _parse_download_format(request) -> str:
+    fmt = request.query_params.get('file_format', 'xlsx').lower()
+    if fmt not in _DOWNLOAD_FORMATS:
+        raise serializers.ValidationError(
+            {'file_format': 'Допустимые значения: xlsx, csv, parquet.'}
+        )
+    return fmt
+
+
+def _build_download_response(
+    parquet_path: str,
+    base_name: str,
+    fmt: str,
+) -> FileResponse:
+    stem = Path(base_name).stem
+
+    if fmt == 'parquet':
+        return FileResponse(
+            open(parquet_path, 'rb'),
+            as_attachment=True,
+            filename=f'{stem}.parquet',
+        )
+
+    dataframe = pd.read_parquet(parquet_path, engine='pyarrow')
+
+    if fmt == 'csv':
+        payload = dataframe.to_csv(index=False).encode('utf-8')
+        content = io.BytesIO(payload)
+        return FileResponse(
+            content,
+            as_attachment=True,
+            filename=f'{stem}.csv',
+        )
+
+    content = io.BytesIO()
+    dataframe.to_excel(content, index=False)
+    content.seek(0)
+    return FileResponse(
+        content,
+        as_attachment=True,
+        filename=f'{stem}.xlsx',
+    )
 
 
 class UserViewSet(UserViewSetBase):
@@ -402,9 +458,11 @@ class DataSourceViewSet(
     @extend_schema(
         summary='Скачивание обработанного источника данных',
         description=(
-            'Возвращает готовый Parquet-файл для источника в статусе `ready`. '
+            'Возвращает готовый файл для источника в статусе `ready`. '
+            'Поддерживаются форматы `xlsx` (по умолчанию), `csv`, `parquet`. '
             'Если обработка ещё не завершена, возвращается 409.'
         ),
+        parameters=[_DOWNLOAD_FORMAT_PARAM],
         responses={status.HTTP_200_OK: None},
     )
     @action(detail=True, methods=['get'], url_path='download')
@@ -416,12 +474,12 @@ class DataSourceViewSet(
                 status=status.HTTP_409_CONFLICT,
             )
 
+        fmt = _parse_download_format(request)
         base_name = ds.source_file.original_filename if ds.source_file else ds.name
-        filename = f'{Path(base_name).stem}.parquet'
-        return FileResponse(
-            open(ds.parquet_file.path, 'rb'),
-            as_attachment=True,
-            filename=filename,
+        return _build_download_response(
+            parquet_path=ds.parquet_file.path,
+            base_name=base_name,
+            fmt=fmt,
         )
 
 
@@ -855,9 +913,11 @@ class NodeRunPreviewView(generics.GenericAPIView):
     tags=['Запуски пайплайнов'],
     summary='Скачивание результата узла',
     description=(
-        'Возвращает готовый Parquet-файл для успешно выполненного узла '
-        '(NodeRun в статусе `success`).'
+        'Возвращает готовый файл для успешно выполненного узла '
+        '(NodeRun в статусе `success`). Поддерживаются форматы '
+        '`xlsx` (по умолчанию), `csv`, `parquet`.'
     ),
+    parameters=[_DOWNLOAD_FORMAT_PARAM],
     responses={status.HTTP_200_OK: None},
 )
 class NodeRunDownloadView(generics.GenericAPIView):
@@ -884,9 +944,9 @@ class NodeRunDownloadView(generics.GenericAPIView):
                 status=status.HTTP_409_CONFLICT,
             )
 
-        filename = f'{nr.node.label}.parquet'
-        return FileResponse(
-            open(nr.output_parquet.path, 'rb'),
-            as_attachment=True,
-            filename=filename,
+        fmt = _parse_download_format(request)
+        return _build_download_response(
+            parquet_path=nr.output_parquet.path,
+            base_name=nr.node.label,
+            fmt=fmt,
         )

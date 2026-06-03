@@ -176,18 +176,41 @@ class Test03PipelineAPI:
         datasource_media_root,
         owner_node_run_success,
     ):
-        response = user_client.get(
+        default_response = user_client.get(
             f'/api/v1/node-runs/{owner_node_run_success.id}/download/'
         )
 
-        assert response.status_code == HTTPStatus.OK
-        assert 'attachment' in response['Content-Disposition']
-        assert '.parquet' in response['Content-Disposition']
+        assert default_response.status_code == HTTPStatus.OK
+        assert 'attachment' in default_response['Content-Disposition']
+        assert '.xlsx' in default_response['Content-Disposition']
 
-        payload = b''.join(response.streaming_content)
-        dataframe = pd.read_parquet(BytesIO(payload), engine='pyarrow')
-        assert list(dataframe.columns) == ['id', 'name', 'amount']
-        assert len(dataframe) == 2
+        default_payload = b''.join(default_response.streaming_content)
+        default_dataframe = pd.read_excel(BytesIO(default_payload))
+        assert list(default_dataframe.columns) == ['id', 'name', 'amount']
+        assert len(default_dataframe) == 2
+
+        csv_response = user_client.get(
+            f'/api/v1/node-runs/{owner_node_run_success.id}/download/?file_format=csv'
+        )
+        assert csv_response.status_code == HTTPStatus.OK
+        assert '.csv' in csv_response['Content-Disposition']
+        csv_payload = b''.join(csv_response.streaming_content)
+        csv_dataframe = pd.read_csv(BytesIO(csv_payload))
+        assert list(csv_dataframe.columns) == ['id', 'name', 'amount']
+        assert len(csv_dataframe) == 2
+
+        parquet_response = user_client.get(
+            f'/api/v1/node-runs/{owner_node_run_success.id}/download/?file_format=parquet'
+        )
+        assert parquet_response.status_code == HTTPStatus.OK
+        assert '.parquet' in parquet_response['Content-Disposition']
+        parquet_payload = b''.join(parquet_response.streaming_content)
+        parquet_dataframe = pd.read_parquet(
+            BytesIO(parquet_payload),
+            engine='pyarrow',
+        )
+        assert list(parquet_dataframe.columns) == ['id', 'name', 'amount']
+        assert len(parquet_dataframe) == 2
 
 
 @pytest.mark.django_db(transaction=True)

@@ -395,20 +395,47 @@ class Test02DataSourceAPI:
         datasource_media_root,
         ready_datasource,
     ):
-        response = user_client.get(
+        default_response = user_client.get(
             self.URL_DATASOURCES_DOWNLOAD.format(
                 datasource_id=ready_datasource.id,
             )
         )
 
-        assert response.status_code == HTTPStatus.OK
-        assert 'attachment' in response['Content-Disposition']
-        assert '.parquet' in response['Content-Disposition']
+        assert default_response.status_code == HTTPStatus.OK
+        assert 'attachment' in default_response['Content-Disposition']
+        assert '.xlsx' in default_response['Content-Disposition']
 
-        payload = b''.join(response.streaming_content)
-        dataframe = pd.read_parquet(BytesIO(payload), engine='pyarrow')
-        assert list(dataframe.columns) == ['id', 'name', 'amount']
-        assert len(dataframe) == 3
+        default_payload = b''.join(default_response.streaming_content)
+        default_dataframe = pd.read_excel(BytesIO(default_payload))
+        assert list(default_dataframe.columns) == ['id', 'name', 'amount']
+        assert len(default_dataframe) == 3
+
+        csv_response = user_client.get(
+            self.URL_DATASOURCES_DOWNLOAD.format(
+                datasource_id=ready_datasource.id,
+            ) + '?file_format=csv'
+        )
+        assert csv_response.status_code == HTTPStatus.OK
+        assert '.csv' in csv_response['Content-Disposition']
+        csv_payload = b''.join(csv_response.streaming_content)
+        csv_dataframe = pd.read_csv(BytesIO(csv_payload))
+        assert list(csv_dataframe.columns) == ['id', 'name', 'amount']
+        assert len(csv_dataframe) == 3
+
+        parquet_response = user_client.get(
+            self.URL_DATASOURCES_DOWNLOAD.format(
+                datasource_id=ready_datasource.id,
+            ) + '?file_format=parquet'
+        )
+        assert parquet_response.status_code == HTTPStatus.OK
+        assert '.parquet' in parquet_response['Content-Disposition']
+        parquet_payload = b''.join(parquet_response.streaming_content)
+        parquet_dataframe = pd.read_parquet(
+            BytesIO(parquet_payload),
+            engine='pyarrow',
+        )
+        assert list(parquet_dataframe.columns) == ['id', 'name', 'amount']
+        assert len(parquet_dataframe) == 3
 
     def test_02_datasources_preview_not_ready_returns_409(
         self,
@@ -423,6 +450,20 @@ class Test02DataSourceAPI:
 
         assert response.status_code == HTTPStatus.CONFLICT
         assert isinstance(response.json(), dict)
+
+    def test_02_datasources_download_invalid_format_returns_400(
+        self,
+        user_client,
+        ready_datasource,
+    ):
+        response = user_client.get(
+            self.URL_DATASOURCES_DOWNLOAD.format(
+                datasource_id=ready_datasource.id,
+            ) + '?file_format=xml'
+        )
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert 'file_format' in response.json()
 
     def test_02_datasources_preview_ready_without_parquet_returns_409(
         self,

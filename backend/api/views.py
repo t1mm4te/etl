@@ -218,7 +218,7 @@ def verify_email(request):
     code = request.data.get('code')
 
     if not email or not code:
-        return Response({'error': 'Поля email и code обязательны.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': 'Поля email и код обязательны.'}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
         user = User.objects.get(email=email)

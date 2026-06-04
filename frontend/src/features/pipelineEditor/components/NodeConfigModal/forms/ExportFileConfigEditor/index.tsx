@@ -2,7 +2,7 @@ import styles from './index.module.scss';
 import type { LoadConfigEditorProps } from '../types';
 import { CustomSelect, type SelectOption } from '../../../../../../shared/ui/CustomSelect';
 import { Input } from '../../../../../../shared/ui/Input';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const EXPORT_FORMATS = [
   { value: 'csv', label: 'CSV (.csv)', extension: '.csv' },
@@ -17,15 +17,22 @@ export function ExportFileConfigEditor({ config, onChange }: LoadConfigEditorPro
 
   const currentFormat = typeof typedConfig.format === 'string' ? typedConfig.format : 'csv';
 
-  // Инициализируем состояние один раз при монтировании
-  const [filename, setFilename] = useState(() =>
-    typeof typedConfig.filename === 'string' ? typedConfig.filename : DEFAULT_FILENAME
-  );
+  const [filename, setFilename] = useState(DEFAULT_FILENAME);
 
-  // При смене формата — меняем расширение в имени файла
+  // Синхронизируем filename с config при изменении config
+  useEffect(() => {
+    const configFilename = typedConfig.filename;
+    if (typeof configFilename === 'string' && configFilename.trim() !== '') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setFilename(configFilename);
+    } else {
+      setFilename(DEFAULT_FILENAME);
+    }
+  }, [typedConfig.filename]); // Зависимость от filename из config
+
   const handleFormatChange = (newFormat: string) => {
     const newExtension = EXPORT_FORMATS.find((f) => f.value === newFormat)?.extension ?? '.csv';
-    const nameWithoutExt = filename.replace(/\.[^/.]+$/, ''); // удаляем старое расширение
+    const nameWithoutExt = filename.replace(/\.[^/.]+$/, '');
     const newFilename = nameWithoutExt + newExtension;
 
     setFilename(newFilename);

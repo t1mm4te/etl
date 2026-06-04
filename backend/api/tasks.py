@@ -1,7 +1,9 @@
 import logging
+import io
 
 from celery import shared_task
-from django.core.mail import send_mail
+import pandas as pd
+from django.core.mail import EmailMessage, send_mail
 from django.conf import settings
 
 from .services.db_ingest import process_db_source
@@ -21,7 +23,7 @@ def send_verification_email(self, email: str, code: str) -> dict:
     """Асинхронная отправка письма с кодом подтверждения."""
     subject = 'Код подтверждения регистрации'
     message = f'Ваш код подтверждения: {code}\nКод действителен в течение {settings.EMAIL_VERIFICATION_CODE_LIFETIME_MINUTES} минут.'
-    
+
     try:
         send_mail(
             subject,
@@ -92,4 +94,62 @@ def run_pipeline_preview(self, pipeline_run_id: str) -> dict:
         return {'status': 'ok', 'pipeline_run_id': str(pipeline_run_id)}
     except Exception as exc:
         logger.exception('Задача run_pipeline_preview провалена: %s', exc)
+        return {'status': 'error', 'error': str(exc)}
+
+
+@shared_task(bind=True, max_retries=3)
+def send_export_email_task(self, node_run_id: str, export_format: str) -> dict:
+    """Асинхронная конвертация и отправка результата выполнения узла на почту."""
+    from core.models import NodeRun
+
+    try:
+        # Достаем NodeRun вместе с информацией о пайплайне и пользователе
+        nr = NodeRun.objects.select_related(
+            'pipeline_run__pipeline__owner',
+            'node'
+        ).get(pk=node_run_id)
+
+        user = nr.pipeline_run.pipeline.owner
+
+        # Читаем Parquet-файл
+        df = pd.read_parquet(nr.output_parquet.path, engine='pyarrow')
+
+        content = io.BytesIO()
+
+        # Конвертируем в запрошенный формат
+        if export_format == 'csv':
+            content.write(df.to_csv(index=False).encode('utf-8'))
+            mime_type = 'text/csv'
+        elif export_format == 'parquet':
+            df.to_parquet(content, index=False, engine='pyarrow')
+            mime_type = 'application/octet-stream'
+        else:
+            export_format = 'xlsx'  # fallback
+            df.to_excel(content, index=False)
+            mime_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+
+        content.seek(0)
+        filename = f"{nr.node.label}.{export_format}"
+
+        # Формируем письмо с вложением
+        subject = f"Отчет из пайплайна: {nr.pipeline_run.pipeline.name}"
+        body = (
+            f"Здравствуйте, {user.first_name}!\n\n"
+            f"Во вложении находится результат пайплайна."
+        )
+
+        email = EmailMessage(
+            subject=subject,
+            body=body,
+            from_email=settings.EMAIL_HOST_USER,
+            to=[user.email],
+        )
+        email.attach(filename, content.read(), mime_type)
+        email.send(fail_silently=False)
+
+        return {'status': 'ok', 'user_email': user.email}
+
+    except Exception as exc:
+        logger.exception('Ошибка при отправке письма с файлом: %s', exc)
+        self.retry(exc=exc, countdown=60)
         return {'status': 'error', 'error': str(exc)}

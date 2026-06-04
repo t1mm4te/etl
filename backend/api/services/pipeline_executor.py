@@ -202,6 +202,14 @@ def _execute_ordered_nodes(
             ])
             logger.info('Узел %s выполнен: %d строк', node.label, len(df))
 
+            # Отправляем письмо только если это экспортный узел и это полноценный запуск (а не preview)
+            if node.operation_type == Node.OperationType.EXPORT_FILE:
+                if pipeline_run.run_mode == PipelineRun.RunMode.FULL:
+                    from ..tasks import send_export_email_task
+
+                    export_format = node.config.get('format', 'xlsx')
+                    send_export_email_task.delay(str(nr.pk), export_format)
+
         except Exception as exc:
             nr.status = NodeRun.Status.FAILED
             nr.error_message = _format_operation_error(node, exc)

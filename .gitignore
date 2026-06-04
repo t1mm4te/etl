@@ -6,3 +6,4 @@ __pycache__/
 .env
 env
 docker_tests.txt
+context.txt

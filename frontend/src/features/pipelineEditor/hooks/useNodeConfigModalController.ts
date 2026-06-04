@@ -300,17 +300,25 @@ export function useNodeConfigModalController({
       const relevantNodeIds = getRelevantPreviewNodeIds(node);
       const resolvedRunsByNodeId: Record<string, NodeRun> = {};
 
-      const currentRun = nodeRuns?.find((run) => run.node === node.id && run.status === 'success');
-      if (currentRun) {
-        resolvedRunsByNodeId[node.id] = currentRun;
+      // ШАГ 1: Пытаемся найти все нужные узлы в текущем nodeRuns
+      for (const nodeId of relevantNodeIds) {
+        const existingRun = nodeRuns?.find(
+          (run) => run.node === nodeId && run.status === 'success'
+        );
+        if (existingRun) {
+          resolvedRunsByNodeId[nodeId] = existingRun;
+        }
       }
 
-      const currentRunNodeIds = new Set(Object.keys(resolvedRunsByNodeId));
-      const missingNodeIds = relevantNodeIds.filter((nodeId) => !currentRunNodeIds.has(nodeId));
+      // ШАГ 2: Если нашли всё - возвращаем результат
+      const allFound = relevantNodeIds.every((nodeId) => resolvedRunsByNodeId[nodeId]);
 
-      if (missingNodeIds.length === 0) {
-        return Object.keys(resolvedRunsByNodeId).length > 0 ? resolvedRunsByNodeId : null;
+      if (allFound) {
+        return resolvedRunsByNodeId;
       }
+
+      // ШАГ 3: Если чего-то не хватает - лезем в API
+      const missingNodeIds = relevantNodeIds.filter((nodeId) => !resolvedRunsByNodeId[nodeId]);
 
       const runs = await listPipelineRuns(pipelineId);
       const successfulRuns = runs.filter((run) => run.status === 'success');

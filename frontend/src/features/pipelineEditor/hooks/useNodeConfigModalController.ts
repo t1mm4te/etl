@@ -472,7 +472,6 @@ export function useNodeConfigModalController({
       resetSourceState();
       resetPreviewState(initialPreviewTab);
       setModalError(undefined);
-      await loadAvailableColumns(node.id);
 
       const currentDatasourceId =
         typeof node.config?.datasource_id === 'string' ? node.config.datasource_id : '';
@@ -504,6 +503,9 @@ export function useNodeConfigModalController({
         }
       }
 
+      if (kind === 'transform') {
+        await loadAvailableColumns(node.id);
+      }
       if (kind !== 'source') {
         const runMapForPreview = await resolveNodeRunMapForPreview(node);
         await fetchNodePreviewsFromRuns(node, runMapForPreview ?? undefined);
@@ -548,6 +550,17 @@ export function useNodeConfigModalController({
     [config, editingNode, fetchSourcePreview, previewRowLimit, saveNodeConfig]
   );
 
+  const onSaveNodeConfig = useCallback(async () => {
+    if (!editingNode) return;
+    setModalError(undefined);
+    try {
+      await saveNodeConfig(editingNode.id, config);
+      closeModal();
+    } catch (error) {
+      setModalError(String(error));
+    }
+  }, [closeModal, config, editingNode, saveNodeConfig]);
+
   return {
     editingNode,
     nodeKind,
@@ -583,6 +596,7 @@ export function useNodeConfigModalController({
     modalActions: {
       onClose: closeModal,
       onConfigChange: setConfig,
+      onSaveNodeConfig,
       onFileChange: onSourceFileChange,
       onSourceDbConnected,
       onPreviewRowLimitChange:

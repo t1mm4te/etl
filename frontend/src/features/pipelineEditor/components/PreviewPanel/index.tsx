@@ -105,7 +105,48 @@ export function PreviewPanel({
     );
   }
 
-  // Transform/Sink node: show multiple tabs
+  if (nodeKind == 'sink') {
+    return (
+      <section className={styles.previewPanel}>
+        <div className={styles.metadataRow}>
+          <p className={styles.metadata}>
+            {inputPreview
+              ? `Всего ${inputPreview.total_rows} строк, ${inputPreview.columns.length} столбцов`
+              : ''}
+          </p>
+          <CustomSelect
+            options={rowLimitOptions}
+            value={rowLimitOptions.find((opt) => opt.value === String(previewRowLimit))}
+            onChange={(option) => {
+              const selectedOption = Array.isArray(option) ? option[0] : option;
+
+              if (selectedOption) {
+                onPreviewRowLimitChange(Number(selectedOption.value));
+              }
+            }}
+            isSearchable={false}
+            isClearable={false}
+            className={styles.rowLimitSelect}
+          />
+        </div>
+        <div className={styles.tabRow}>
+          <button type="button" className={styles.tabActive}>
+            Результат узла
+          </button>
+        </div>
+        <div className={styles.previewBody}>
+          {inputPreview ? <PreviewTable preview={inputPreview} /> : null}
+          {isPreviewLoading ? (
+            <LoadingState className={styles.loadingState} spinnerSize={30} />
+          ) : inputPreview ? null : (
+            renderEmptyState('Предпросмотр источника пока недоступен.')
+          )}
+        </div>
+      </section>
+    );
+  }
+
+  // Transform node: show multiple tabs
   return (
     <section className={styles.previewPanel}>
       {!hasIncomingData ? (

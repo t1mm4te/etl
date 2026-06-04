@@ -4,7 +4,6 @@ import { AggregateConfigEditor } from '../AggregateConfigEditor/index';
 import { CastTypesConfigEditor } from '../CastTypesConfigEditor/index';
 import { ComputedColumnConfigEditor } from '../ComputedColumnConfigEditor/index';
 import { DeduplicateConfigEditor } from '../DeduplicateConfigEditor/index';
-import { ExportFileConfigEditor } from '../ExportFileConfigEditor/index';
 import { FilterRowsConfigEditor } from '../FilterRowsConfigEditor/index';
 import { FillMissingConfigEditor } from '../FillMissingConfigEditor/index';
 import { JoinConfigEditor } from '../JoinConfigEditor/index';
@@ -128,14 +127,6 @@ export function TransformConfigEditor({
 
       {operationType === 'fill_missing' ? (
         <FillMissingConfigEditor
-          config={config}
-          availableColumns={availableColumns}
-          onChange={onConfigChange}
-        />
-      ) : null}
-
-      {operationType === 'export_file' ? (
-        <ExportFileConfigEditor
           config={config}
           availableColumns={availableColumns}
           onChange={onConfigChange}

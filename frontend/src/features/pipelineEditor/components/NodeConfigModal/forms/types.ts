@@ -25,3 +25,8 @@ export type SourceDbConfigEditorProps = {
   onConnected?: (datasource: DataSourceDetail) => Promise<void> | void;
   errorText?: string | null;
 };
+
+export type LoadConfigEditorProps = {
+  config: NodeConfig;
+  onChange: (config: NodeConfig) => void;
+};

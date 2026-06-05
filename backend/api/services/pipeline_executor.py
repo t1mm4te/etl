@@ -206,13 +206,11 @@ def _execute_ordered_nodes(
                 if pipeline_run.run_mode == PipelineRun.RunMode.FULL:
                     from ..tasks import send_export_email_task
 
-                    # Забираем из конфигурации узла формат и желаемое имя
                     export_format = node.config.get('format', 'xlsx')
-                    custom_file_name = node.config.get('file_name')
+                    custom_filename = node.config.get('filename')
 
-                    # Прокидываем в таску
                     send_export_email_task.delay(
-                        str(nr.pk), export_format, custom_file_name
+                        str(nr.pk), export_format, custom_filename
                     )
 
         except Exception as exc:

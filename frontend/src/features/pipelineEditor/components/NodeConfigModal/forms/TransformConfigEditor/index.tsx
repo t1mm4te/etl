@@ -4,7 +4,6 @@ import { AggregateConfigEditor } from '../AggregateConfigEditor/index';
 import { CastTypesConfigEditor } from '../CastTypesConfigEditor/index';
 import { ComputedColumnConfigEditor } from '../ComputedColumnConfigEditor/index';
 import { DeduplicateConfigEditor } from '../DeduplicateConfigEditor/index';
-import { ExportFileConfigEditor } from '../ExportFileConfigEditor/index';
 import { FilterRowsConfigEditor } from '../FilterRowsConfigEditor/index';
 import { FillMissingConfigEditor } from '../FillMissingConfigEditor/index';
 import { JoinConfigEditor } from '../JoinConfigEditor/index';
@@ -13,6 +12,7 @@ import { RenameColumnsConfigEditor } from '../RenameColumnsConfigEditor/index';
 import { SelectColumnsConfigEditor } from '../SelectColumnsConfigEditor/index';
 import { SortConfigEditor } from '../SortConfigEditor/index';
 import { SplitColumnConfigEditor } from '../SplitColumnConfigEditor/index';
+import { Alert } from '../../../../../../shared/ui/Alert';
 
 type TransformConfigEditorProps = {
   operationType: string;
@@ -20,6 +20,7 @@ type TransformConfigEditorProps = {
   availableColumns: string[];
   availableColumnsByPort?: Record<string, string[]>;
   inputNodeLabelsByPort?: Record<string, string>;
+  errorText?: string | null;
   onConfigChange: (config: NodeConfig) => void;
 };
 
@@ -29,6 +30,7 @@ export function TransformConfigEditor({
   availableColumns,
   availableColumnsByPort,
   inputNodeLabelsByPort,
+  errorText,
   onConfigChange,
 }: TransformConfigEditorProps) {
   return (
@@ -131,13 +133,7 @@ export function TransformConfigEditor({
         />
       ) : null}
 
-      {operationType === 'export_file' ? (
-        <ExportFileConfigEditor
-          config={config}
-          availableColumns={availableColumns}
-          onChange={onConfigChange}
-        />
-      ) : null}
+      {errorText ? <Alert>{errorText}</Alert> : null}
     </div>
   );
 }

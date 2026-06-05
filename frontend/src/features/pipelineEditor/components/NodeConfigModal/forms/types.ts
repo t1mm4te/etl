@@ -16,10 +16,17 @@ export type SourceFileConfigEditorProps = {
   excelSheetNames: string[];
   isUploading?: boolean;
   uploadProgress?: number | null;
+  errorText?: string | null;
   onFileChange: (file: File | null, sheetName?: string) => void;
   onSheetNameChange: (sheetName: string) => void;
 };
 
 export type SourceDbConfigEditorProps = {
   onConnected?: (datasource: DataSourceDetail) => Promise<void> | void;
+  errorText?: string | null;
+};
+
+export type LoadConfigEditorProps = {
+  config: NodeConfig;
+  onChange: (config: NodeConfig) => void;
 };

@@ -27,3 +27,24 @@ a {
   color: inherit;
   text-decoration: none;
 }
+
+* {
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba($borderColor, 0.1);
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba($borderColor, 0.4);
+    border-radius: 4px;
+
+    &:hover {
+      background: rgba($borderColor, 0.6);
+    }
+  }
+}

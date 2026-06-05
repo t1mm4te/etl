@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { getDatasourceDetail, getNodeInputColumns } from '../../../shared/api/pipelines';
+import { getNodeInputColumns } from '../../../shared/api/pipelines';
 import type { Edge, Node as ApiNode } from '../../../shared/api/types';
 
 type UseNodeColumnsParams = {
@@ -48,72 +48,27 @@ export function useNodeColumns({ pipelineId, editingNode, nodes, edges }: UseNod
     async (nodeId: string) => {
       try {
         const response = await getNodeInputColumns(pipelineId, nodeId);
-        const incomingEdges = edges?.filter((edge) => edge.target_node === nodeId) ?? [];
-        const sourceNodeColumnsByPort = new Map<string, string[]>();
 
-        await Promise.all(
-          incomingEdges.map(async (edge) => {
-            const sourceNode = nodes?.find((node) => node.id === edge.source_node);
-            const port = edge.target_port || 'main';
+        const byPort: Record<string, string[]> = {};
+        const allColumnNames: string[] = [];
 
-            if (
-              !sourceNode ||
-              (sourceNode.operation_type !== 'source_file' &&
-                sourceNode.operation_type !== 'source_db')
-            ) {
-              return;
-            }
+        Object.entries(response.columns).forEach(([port, items]) => {
+          const names = items
+            .map((item) => item.name)
+            .filter((name): name is string => typeof name === 'string' && name.length > 0);
 
-            const datasourceId = sourceNode.config?.datasource_id;
-            if (typeof datasourceId !== 'string' || !datasourceId) {
-              return;
-            }
-
-            const datasource = await getDatasourceDetail(datasourceId);
-            if (datasource.status !== 'ready') {
-              return;
-            }
-
-            sourceNodeColumnsByPort.set(
-              port,
-              Array.from(
-                new Set(
-                  (datasource.columns_meta || [])
-                    .map((item) => item.name)
-                    .filter((name): name is string => typeof name === 'string' && name.length > 0)
-                )
-              )
-            );
-          })
-        );
-
-        const byPort = Object.entries(response.columns).reduce<Record<string, string[]>>(
-          (acc, [port, items]) => {
-            const names = items
-              .map((item) => item.name)
-              .filter((name): name is string => typeof name === 'string' && name.length > 0);
-            acc[port] = Array.from(new Set(names));
-            return acc;
-          },
-          {}
-        );
-
-        for (const [port, columns] of sourceNodeColumnsByPort.entries()) {
-          byPort[port] = columns;
-        }
-
-        const names = Object.values(byPort)
-          .flatMap((items) => items)
-          .filter((name): name is string => typeof name === 'string' && name.length > 0);
+          byPort[port] = Array.from(new Set(names));
+          allColumnNames.push(...names);
+        });
 
         setAvailableColumnsByPort(byPort);
-        setAvailableColumns(Array.from(new Set(names)));
+        setAvailableColumns(Array.from(new Set(allColumnNames)));
       } catch {
         setAvailableColumnsByPort({});
         setAvailableColumns([]);
       }
     },
-    [edges, nodes, pipelineId]
+    [pipelineId]
   );
 
   const resetAvailableColumns = useCallback(() => {

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Button } from '../../../../../../shared/ui/Button';
 import styles from './index.module.scss';
 import type { OperationConfigEditorProps } from '../types';
@@ -40,7 +41,7 @@ export function RenameColumnsConfigEditor({
   onChange,
 }: OperationConfigEditorProps) {
   const typedConfig = config as Record<string, unknown>;
-  const rows = rowsFromConfig(typedConfig);
+  const [rows, setRows] = useState<RenameRow[]>(() => rowsFromConfig(typedConfig));
 
   const sourceOptions: SelectOption[] = availableColumns.map((column) => ({
     value: column,
@@ -48,6 +49,7 @@ export function RenameColumnsConfigEditor({
   }));
 
   const updateRows = (nextRows: RenameRow[]) => {
+    setRows(nextRows);
     const nextConfig: Record<string, unknown> = {
       ...typedConfig,
       mapping: mappingFromRows(nextRows),

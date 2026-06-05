@@ -149,34 +149,6 @@ export function useNodeConfigModalController({
     [clearSourcePreviews, previewRowLimit]
   );
 
-  const onSaveSourceNodeConfig = useCallback(async () => {
-    if (!editingNode) {
-      return;
-    }
-
-    setModalError(undefined);
-
-    try {
-      const nextConfig = buildNextNodeConfig(config, uploadedDatasourceId, {
-        selectedSheetName,
-        excelSheetNames,
-      });
-      await saveNodeConfig(editingNode.id, nextConfig);
-      closeModal();
-    } catch (error) {
-      setModalError(extractError(error, 'Не удалось сохранить конфигурацию ноды'));
-    }
-  }, [
-    closeModal,
-    config,
-    editingNode,
-    excelSheetNames,
-    saveNodeConfig,
-    selectedSheetName,
-    setModalError,
-    uploadedDatasourceId,
-  ]);
-
   const onUploadProgress = useCallback((progressEvent: AxiosProgressEvent) => {
     if (!progressEvent.total) return;
     const percent = Math.min(100, Math.round((progressEvent.loaded / progressEvent.total) * 100));
@@ -328,17 +300,25 @@ export function useNodeConfigModalController({
       const relevantNodeIds = getRelevantPreviewNodeIds(node);
       const resolvedRunsByNodeId: Record<string, NodeRun> = {};
 
-      const currentRun = nodeRuns?.find((run) => run.node === node.id && run.status === 'success');
-      if (currentRun) {
-        resolvedRunsByNodeId[node.id] = currentRun;
+      // ШАГ 1: Пытаемся найти все нужные узлы в текущем nodeRuns
+      for (const nodeId of relevantNodeIds) {
+        const existingRun = nodeRuns?.find(
+          (run) => run.node === nodeId && run.status === 'success'
+        );
+        if (existingRun) {
+          resolvedRunsByNodeId[nodeId] = existingRun;
+        }
       }
 
-      const currentRunNodeIds = new Set(Object.keys(resolvedRunsByNodeId));
-      const missingNodeIds = relevantNodeIds.filter((nodeId) => !currentRunNodeIds.has(nodeId));
+      // ШАГ 2: Если нашли всё - возвращаем результат
+      const allFound = relevantNodeIds.every((nodeId) => resolvedRunsByNodeId[nodeId]);
 
-      if (missingNodeIds.length === 0) {
-        return Object.keys(resolvedRunsByNodeId).length > 0 ? resolvedRunsByNodeId : null;
+      if (allFound) {
+        return resolvedRunsByNodeId;
       }
+
+      // ШАГ 3: Если чего-то не хватает - лезем в API
+      const missingNodeIds = relevantNodeIds.filter((nodeId) => !resolvedRunsByNodeId[nodeId]);
 
       const runs = await listPipelineRuns(pipelineId);
       const successfulRuns = runs.filter((run) => run.status === 'success');
@@ -427,18 +407,6 @@ export function useNodeConfigModalController({
     ]
   );
 
-  const onSaveTransformNodeConfig = useCallback(async () => {
-    if (!editingNode) return;
-    setModalError(undefined);
-    try {
-      const nextConfig = getNextConfig();
-      await saveNodeConfig(editingNode.id, nextConfig);
-      closeModal();
-    } catch (error) {
-      setModalError(String(error));
-    }
-  }, [closeModal, editingNode, getNextConfig, saveNodeConfig]);
-
   const onApplyPreview = useCallback(async () => {
     if (!editingNode || nodeKind === 'source') return;
 
@@ -512,7 +480,6 @@ export function useNodeConfigModalController({
       resetSourceState();
       resetPreviewState(initialPreviewTab);
       setModalError(undefined);
-      await loadAvailableColumns(node.id);
 
       const currentDatasourceId =
         typeof node.config?.datasource_id === 'string' ? node.config.datasource_id : '';
@@ -544,6 +511,9 @@ export function useNodeConfigModalController({
         }
       }
 
+      if (kind === 'transform') {
+        await loadAvailableColumns(node.id);
+      }
       if (kind !== 'source') {
         const runMapForPreview = await resolveNodeRunMapForPreview(node);
         await fetchNodePreviewsFromRuns(node, runMapForPreview ?? undefined);
@@ -588,6 +558,17 @@ export function useNodeConfigModalController({
     [config, editingNode, fetchSourcePreview, previewRowLimit, saveNodeConfig]
   );
 
+  const onSaveNodeConfig = useCallback(async () => {
+    if (!editingNode) return;
+    setModalError(undefined);
+    try {
+      await saveNodeConfig(editingNode.id, config);
+      closeModal();
+    } catch (error) {
+      setModalError(String(error));
+    }
+  }, [closeModal, config, editingNode, saveNodeConfig]);
+
   return {
     editingNode,
     nodeKind,
@@ -623,9 +604,9 @@ export function useNodeConfigModalController({
     modalActions: {
       onClose: closeModal,
       onConfigChange: setConfig,
+      onSaveNodeConfig,
       onFileChange: onSourceFileChange,
       onSourceDbConnected,
-      onSaveConfig: nodeKind === 'source' ? onSaveSourceNodeConfig : onSaveTransformNodeConfig,
       onPreviewRowLimitChange:
         nodeKind === 'source' ? onSourcePreviewRowLimitChange : onTransformPreviewRowLimitChange,
     },

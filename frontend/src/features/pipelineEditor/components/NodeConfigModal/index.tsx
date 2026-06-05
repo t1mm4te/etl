@@ -1,6 +1,11 @@
 import type { Node as ApiNode, NodeConfig, PreviewResponse } from '../../../../shared/api/types';
 import { Button } from '../../../../shared/ui/Button';
-import { SourceDbConfigEditor, SourceFileConfigEditor, TransformConfigEditor } from './forms';
+import {
+  ExportFileConfigEditor,
+  SourceDbConfigEditor,
+  SourceFileConfigEditor,
+  TransformConfigEditor,
+} from './forms';
 import { PreviewPanel } from '../PreviewPanel';
 import styles from './index.module.scss';
 import type { NodeKind, PreviewTab } from '../../types/nodeConfigModalTypes';
@@ -36,8 +41,8 @@ type NodeConfigModalProps = {
     onConfigChange: (value: NodeConfig) => void;
     onFileChange: (file: File | null, sheetName?: string) => void;
     onSourceDbConnected: (datasourceId: string, datasourceName: string) => Promise<void> | void;
-    onSaveConfig: () => void;
     onPreviewRowLimitChange: (value: number) => void;
+    onSaveNodeConfig: () => void;
   };
   previewActions: {
     onApplyPreview: () => void;
@@ -75,14 +80,8 @@ export function NodeConfigModal({
     previewRowLimit,
     activePreviewTab,
   } = modalState;
-  const {
-    onClose,
-    onConfigChange,
-    onFileChange,
-    onSourceDbConnected,
-    onSaveConfig,
-    onPreviewRowLimitChange,
-  } = modalActions;
+  const { onClose, onConfigChange, onFileChange, onSourceDbConnected, onPreviewRowLimitChange } =
+    modalActions;
 
   if (!node) {
     return null;
@@ -112,6 +111,7 @@ export function NodeConfigModal({
                     excelSheetNames={excelSheetNames}
                     isUploading={isSourceFileUploading}
                     uploadProgress={sourceFileUploadProgress}
+                    errorText={modalError}
                     onFileChange={onFileChange}
                     onSheetNameChange={(sheetName) => {
                       previewCallbacks?.onSetSelectedSheetName(sheetName);
@@ -122,6 +122,7 @@ export function NodeConfigModal({
 
                 {isSourceDb ? (
                   <SourceDbConfigEditor
+                    errorText={modalError}
                     onConnected={async (datasource: { id: string; name: string }) => {
                       await onSourceDbConnected(datasource.id, datasource.name);
                     }}
@@ -149,6 +150,7 @@ export function NodeConfigModal({
                   availableColumns={availableColumns}
                   availableColumnsByPort={availableColumnsByPort}
                   inputNodeLabelsByPort={inputNodeLabelsByPort}
+                  errorText={modalError}
                   onConfigChange={onConfigChange}
                 />
 
@@ -174,17 +176,9 @@ export function NodeConfigModal({
           {nodeKind === 'sink' ? (
             <div className={styles.transformLayout}>
               <aside className={styles.configPanel}>
-                <TransformConfigEditor
-                  operationType={node.operation_type}
-                  config={config}
-                  availableColumns={availableColumns}
-                  availableColumnsByPort={availableColumnsByPort}
-                  inputNodeLabelsByPort={inputNodeLabelsByPort}
-                  onConfigChange={onConfigChange}
-                />
-
-                <Button type="button" color="white" onClick={previewActions.onApplyPreview}>
-                  Обновить финальный результат
+                <ExportFileConfigEditor config={config} onChange={onConfigChange} />
+                <Button type="button" onClick={modalActions.onSaveNodeConfig}>
+                  Сохранить
                 </Button>
               </aside>
 
@@ -195,21 +189,9 @@ export function NodeConfigModal({
                 previewRowLimit={previewRowLimit}
                 onPreviewRowLimitChange={onPreviewRowLimitChange}
                 activePreviewTab={activePreviewTab}
-                onActivePreviewTabChange={previewCallbacks?.onSetActivePreviewTab}
               />
             </div>
           ) : null}
-
-          {modalError ? <p className={styles.error}>{modalError}</p> : null}
-
-          <div className={styles.modalActions}>
-            <Button type="button" color="white" onClick={onClose}>
-              Отмена
-            </Button>
-            <Button type="button" onClick={onSaveConfig}>
-              Сохранить
-            </Button>
-          </div>
         </div>
       </div>
     </div>

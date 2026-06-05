@@ -42,7 +42,7 @@ export function EditorToolbar({ pipelineId }: EditorToolbarProps) {
       <div className={styles.main}>
         <div className={styles.leftTools}>
           <Button type="button" color="white" onClick={onBack}>
-            ← Мои пайплайны
+            ◄ Вернуться к моим пайплайнам
           </Button>
           <h1 className={styles.pipelineTitle}>{pipelineName ?? 'Редактор пайплайна'}</h1>
         </div>

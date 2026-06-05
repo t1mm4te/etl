@@ -62,6 +62,8 @@ export function PreviewPanel({
     </div>
   );
 
+  const hasAnyPreview = !!(inputPreview || leftInputPreview || rightInputPreview || resultPreview);
+
   if (nodeKind === 'source') {
     return (
       <section className={styles.previewPanel}>
@@ -103,7 +105,48 @@ export function PreviewPanel({
     );
   }
 
-  // Transform/Sink node: show multiple tabs
+  if (nodeKind == 'sink') {
+    return (
+      <section className={styles.previewPanel}>
+        <div className={styles.metadataRow}>
+          <p className={styles.metadata}>
+            {inputPreview
+              ? `Всего ${inputPreview.total_rows} строк, ${inputPreview.columns.length} столбцов`
+              : ''}
+          </p>
+          <CustomSelect
+            options={rowLimitOptions}
+            value={rowLimitOptions.find((opt) => opt.value === String(previewRowLimit))}
+            onChange={(option) => {
+              const selectedOption = Array.isArray(option) ? option[0] : option;
+
+              if (selectedOption) {
+                onPreviewRowLimitChange(Number(selectedOption.value));
+              }
+            }}
+            isSearchable={false}
+            isClearable={false}
+            className={styles.rowLimitSelect}
+          />
+        </div>
+        <div className={styles.tabRow}>
+          <button type="button" className={styles.tabActive}>
+            Результат узла
+          </button>
+        </div>
+        <div className={styles.previewBody}>
+          {inputPreview ? <PreviewTable preview={inputPreview} /> : null}
+          {isPreviewLoading ? (
+            <LoadingState className={styles.loadingState} spinnerSize={30} />
+          ) : inputPreview ? null : (
+            renderEmptyState('Предпросмотр источника пока недоступен.')
+          )}
+        </div>
+      </section>
+    );
+  }
+
+  // Transform node: show multiple tabs
   return (
     <section className={styles.previewPanel}>
       {!hasIncomingData ? (
@@ -119,33 +162,31 @@ export function PreviewPanel({
         </div>
       ) : (
         <>
-          {(inputPreview || leftInputPreview || rightInputPreview || resultPreview) && (
-            <div className={styles.metadataRow}>
-              <p className={styles.metadata}>
-                {currentPreviewTab === 'input'
-                  ? `Всего ${inputPreview?.total_rows ?? 0} строк, ${inputPreview?.columns.length ?? 0} столбцов`
-                  : currentPreviewTab === 'left_input'
-                    ? `Всего ${leftInputPreview?.total_rows ?? 0} строк, ${leftInputPreview?.columns.length ?? 0} столбцов`
-                    : currentPreviewTab === 'right_input'
-                      ? `Всего ${rightInputPreview?.total_rows ?? 0} строк, ${rightInputPreview?.columns.length ?? 0} столбцов`
-                      : `Всего ${resultPreview?.total_rows ?? 0} строк, ${resultPreview?.columns.length ?? 0} столбцов`}
-              </p>
-              <CustomSelect
-                options={rowLimitOptions}
-                value={rowLimitOptions.find((opt) => opt.value === String(previewRowLimit))}
-                onChange={(option) => {
-                  const selectedOption = Array.isArray(option) ? option[0] : option;
-
-                  if (selectedOption) {
-                    onPreviewRowLimitChange(Number(selectedOption.value));
-                  }
-                }}
-                isSearchable={false}
-                isClearable={false}
-                className={styles.rowLimitSelect}
-              />
-            </div>
-          )}
+          <div className={styles.metadataRow}>
+            <p className={styles.metadata}>
+              {currentPreviewTab === 'input'
+                ? `Всего ${inputPreview?.total_rows ?? 0} строк, ${inputPreview?.columns.length ?? 0} столбцов`
+                : currentPreviewTab === 'left_input'
+                  ? `Всего ${leftInputPreview?.total_rows ?? 0} строк, ${leftInputPreview?.columns.length ?? 0} столбцов`
+                  : currentPreviewTab === 'right_input'
+                    ? `Всего ${rightInputPreview?.total_rows ?? 0} строк, ${rightInputPreview?.columns.length ?? 0} столбцов`
+                    : `Всего ${resultPreview?.total_rows ?? 0} строк, ${resultPreview?.columns.length ?? 0} столбцов`}
+            </p>
+            <CustomSelect
+              options={rowLimitOptions}
+              value={rowLimitOptions.find((opt) => opt.value === String(previewRowLimit))}
+              onChange={(option) => {
+                const selectedOption = Array.isArray(option) ? option[0] : option;
+                if (selectedOption) {
+                  onPreviewRowLimitChange(Number(selectedOption.value));
+                }
+              }}
+              isSearchable={false}
+              isClearable={false}
+              className={styles.rowLimitSelect}
+              isDisabled={!hasAnyPreview}
+            />
+          </div>
 
           <div className={styles.tabRow}>
             <button

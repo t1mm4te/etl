@@ -126,7 +126,7 @@ function parseDbOptions(value: string): Record<string, string> | undefined {
   );
 }
 
-export function SourceDbConfigEditor({ onConnected }: SourceDbConfigEditorProps) {
+export function SourceDbConfigEditor({ onConnected, errorText: externalErrorText }: SourceDbConfigEditorProps) {
   const {
     control,
     register,
@@ -151,7 +151,7 @@ export function SourceDbConfigEditor({ onConnected }: SourceDbConfigEditorProps)
     },
   });
 
-  const [errorText, setErrorText] = useState<string | null>(null);
+  const [connectionErrorText, setConnectionErrorText] = useState<string | null>(null);
   const previousEngineRef = useRef<SourceDbFormValues['dbEngine']>('postgresql');
   const selectedEngine = useWatch({ control, name: 'dbEngine' }) ?? 'postgresql';
   const dbOptionsTemplate = useMemo(() => getDbOptionsTemplate(selectedEngine), [selectedEngine]);
@@ -188,7 +188,7 @@ export function SourceDbConfigEditor({ onConnected }: SourceDbConfigEditorProps)
   }, [getValues, selectedEngine, setValue]);
 
   const onSubmit = handleSubmit(async (values) => {
-    setErrorText(null);
+    setConnectionErrorText(null);
 
     try {
       const payload: DataSourceDBRequest = {
@@ -210,9 +210,11 @@ export function SourceDbConfigEditor({ onConnected }: SourceDbConfigEditorProps)
         await onConnected(datasource);
       }
     } catch (err) {
-      setErrorText(extractError(err, 'Ошибка подключения'));
+      setConnectionErrorText(extractError(err, 'Ошибка подключения'));
     }
   });
+
+  const visibleErrorText = externalErrorText ?? connectionErrorText;
 
   return (
     <div className={styles.root}>
@@ -349,7 +351,11 @@ export function SourceDbConfigEditor({ onConnected }: SourceDbConfigEditorProps)
         </div>
       </details>
 
-      {errorText ? <p className={styles.error}>{errorText}</p> : null}
+      {visibleErrorText ? (
+        <p className={styles.error} role="alert">
+          {visibleErrorText}
+        </p>
+      ) : null}
 
       <div className={styles.actions}>
         <Button type="button" onClick={onSubmit} disabled={isSubmitting}>
